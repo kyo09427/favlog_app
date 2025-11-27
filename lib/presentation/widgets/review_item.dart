@@ -1,28 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:favlog_app/main.dart';
-import 'package:favlog_app/screens/edit_review_screen.dart'; // Import EditReviewScreen
-import 'package:favlog_app/screens/review_detail_screen.dart'; // New import
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Import Riverpod
+import 'package:favlog_app/domain/models/product.dart';
+import 'package:favlog_app/domain/models/review.dart';
+import 'package:favlog_app/data/repositories/supabase_auth_repository.dart'; // Import authRepositoryProvider
+import 'package:favlog_app/presentation/screens/edit_review_screen.dart'; // Import EditReviewScreen
+import 'package:favlog_app/presentation/screens/review_detail_screen.dart'; // New import
 
-class ReviewItem extends StatefulWidget {
-  final Map<String, dynamic> product;
-  final Map<String, dynamic> review;
-  final SupabaseClient supabaseClient; // For ownership check
+class ReviewItem extends ConsumerStatefulWidget { // Change to ConsumerStatefulWidget
+  final Product product;
+  final Review review;
   final VoidCallback onReviewEdited; // Callback to refresh home screen
 
   const ReviewItem({
     super.key,
     required this.product,
     required this.review,
-    required this.supabaseClient,
     required this.onReviewEdited,
   });
 
   @override
-  State<ReviewItem> createState() => _ReviewItemState();
+  ConsumerState<ReviewItem> createState() => _ReviewItemState(); // Change State to ConsumerState
 }
 
-class _ReviewItemState extends State<ReviewItem> with SingleTickerProviderStateMixin {
+class _ReviewItemState extends ConsumerState<ReviewItem> with SingleTickerProviderStateMixin {
   late AnimationController _scaleController;
   late Animation<double> _scaleAnimation;
   late final String? _currentUserId;
@@ -31,8 +31,8 @@ class _ReviewItemState extends State<ReviewItem> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _currentUserId = widget.supabaseClient.auth.currentUser?.id;
-    _isOwner = _currentUserId == widget.review['user_id'];
+    _currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id; // Use authRepositoryProvider
+    _isOwner = _currentUserId == widget.review.userId; // Use model property
 
     _scaleController = AnimationController(
       vsync: this,
@@ -62,7 +62,15 @@ class _ReviewItemState extends State<ReviewItem> with SingleTickerProviderStateM
 
   void _onLongPressEnd(LongPressEndDetails details) {
     if (_isOwner) {
-      _scaleController.reverse();
+      _scaleController.reverse(); // Revert animation
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => EditReviewScreen(
+            product: widget.product,
+            review: widget.review,
+          ),
+        ),
+      ).then((_) => widget.onReviewEdited()); // Call callback to refresh after returning
     }
   }
 
@@ -78,29 +86,13 @@ class _ReviewItemState extends State<ReviewItem> with SingleTickerProviderStateM
       scale: _scaleAnimation,
       child: GestureDetector(
         onLongPressStart: _onLongPressStart,
-        onLongPressEnd: (details) async { // Modified to handle navigation
-          if (_isOwner) {
-            _scaleController.reverse(); // Revert animation
-            await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => EditReviewScreen(
-                  product: widget.product,
-                  review: widget.review,
-                ),
-              ),
-            );
-            widget.onReviewEdited(); // Call callback to refresh home screen
-          }
-        },
+        onLongPressEnd: _onLongPressEnd,
         onLongPressCancel: _onLongPressCancel,
         onTap: () { // New onTap callback for detail view
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => ReviewDetailScreen(
-                product: widget.product,
-              ),
-            ),
-          );
+          // The onTap to ReviewDetailScreen from here is redundant,
+          // as HomeScreen already handles navigation to ReviewDetailScreen
+          // via GestureDetector on the whole Card.
+          // This onTap will be removed or changed based on desired UX.
         },
         child: Padding(
           padding: const EdgeInsets.only(top: 8.0, left: 8.0), // Original padding
@@ -110,15 +102,15 @@ class _ReviewItemState extends State<ReviewItem> with SingleTickerProviderStateM
               Row(
                 children: List.generate(5, (starIndex) {
                   return Icon(
-                    starIndex < widget.review['rating'] ? Icons.star : Icons.star_border,
+                    starIndex < widget.review.rating ? Icons.star : Icons.star_border, // Use model property
                     color: Colors.amber,
                     size: 16,
                   );
                 }),
               ),
-              Text(widget.review['review_text']),
+              Text(widget.review.reviewText), // Use model property
               Text(
-                '投稿日: ${DateTime.parse(widget.review['created_at']).toLocal().toShortString()}',
+                '投稿日: ${widget.review.createdAt.toLocal().toString().split('.')[0]}', // Use model property
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
               ),
               if (_isOwner)
@@ -137,11 +129,5 @@ class _ReviewItemState extends State<ReviewItem> with SingleTickerProviderStateM
         ),
       ),
     );
-  }
-}
-
-extension on DateTime {
-  String toShortString() {
-    return '$year/${month.toString().padLeft(2, '0')}/${day.toString().padLeft(2, '0')} ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
   }
 }

@@ -1,46 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Add this import
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:favlog_app/screens/auth_screen.dart';
-import 'package:favlog_app/screens/home_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Import Riverpod
+import 'package:favlog_app/presentation/screens/auth_screen.dart'; // Updated path
+import 'package:favlog_app/presentation/screens/home_screen.dart'; // Updated path
+import 'package:favlog_app/presentation/screens/email_verification_screen.dart'; // Add this import
+import 'package:favlog_app/core/providers/auth_providers.dart'; // Import authStateChangesProvider
 
-final supabase = Supabase.instance.client;
+// Define a Riverpod provider for SupabaseClient
+final supabaseProvider = Provider<SupabaseClient>((ref) {
+  return Supabase.instance.client;
+});
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env"); // Load .env file
 
   await Supabase.initialize(
-    url: 'https://qdnyhvveunwufkpxwcjn.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkbnlodnZldW53dWZrcHh3Y2puIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxMzg3NzQsImV4cCI6MjA3OTcxNDc3NH0.tauMuFY5AB-q2qdocXvseNd8onu3e_-UZn43yT8Os9Y',
+    url: dotenv.env['SUPABASE_URL']!, // Use environment variable
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!, // Use environment variable
   );
-  runApp(const MyApp());
+  // Wrap the entire application with ProviderScope
+  runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget { // Change StatelessWidget to ConsumerWidget
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) { // Add WidgetRef ref
+    final authState = ref.watch(authStateChangesProvider); // Use authStateChangesProvider
     return MaterialApp(
       title: 'FavLog App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: StreamBuilder<AuthState>(
-        stream: supabase.auth.onAuthStateChange,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-          final session = snapshot.data?.session;
+      home: authState.when(
+        data: (authState) {
+          final session = authState.session;
           if (session == null) {
             return const AuthScreen();
           } else {
+            // セッションがあるがメールが未確認の場合、EmailVerificationScreenへ
+            if (session.user?.emailConfirmedAt == null) {
+              return const EmailVerificationScreen();
+            }
             return const HomeScreen();
           }
         },
+        loading: () => const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+        error: (error, stack) => Scaffold(
+          body: Center(child: Text('Error: $error')),
+        ),
       ),
     );
   }

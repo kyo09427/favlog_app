@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Import Riverpod
+import '../../data/repositories/supabase_auth_repository.dart'; // Import the new repository
+import '../../presentation/widgets/error_dialog.dart'; // Add this import
 
-class AuthScreen extends StatefulWidget {
+class AuthScreen extends ConsumerStatefulWidget { // Change StatefulWidget to ConsumerStatefulWidget
   const AuthScreen({super.key});
 
   @override
-  State<AuthScreen> createState() => _AuthScreenState();
+  ConsumerState<AuthScreen> createState() => _AuthScreenState(); // Change State to ConsumerState
 }
 
-class _AuthScreenState extends State<AuthScreen> {
+class _AuthScreenState extends ConsumerState<AuthScreen> { // Change State to ConsumerState
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
@@ -18,9 +21,10 @@ class _AuthScreenState extends State<AuthScreen> {
       _isLoading = true;
     });
     try {
-      final response = await Supabase.instance.client.auth.signUp(
-        email: _emailController.text,
-        password: _passwordController.text,
+      final authRepository = ref.read(authRepositoryProvider); // Access the auth repository
+      final response = await authRepository.signUp(
+        _emailController.text,
+        _passwordController.text,
       );
       if (mounted) {
         if (response.user != null) {
@@ -28,22 +32,19 @@ class _AuthScreenState extends State<AuthScreen> {
             const SnackBar(content: Text('登録が完了しました。メールを確認してください。')),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('登録に失敗しました: ${response.user.toString()}')), // Handle error better
-          );
+          // エラーダイアログを表示
+          await ErrorDialog.show(context, '登録に失敗しました: ${response.user.toString()}');
         }
       }
     } on AuthException catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.message)),
-        );
+        // エラーダイアログを表示
+        await ErrorDialog.show(context, error.message);
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('予期せぬエラーが発生しました: $error')),
-        );
+        // エラーダイアログを表示
+        await ErrorDialog.show(context, '予期せぬエラーが発生しました: $error');
       }
     } finally {
       if (mounted) {
@@ -59,9 +60,10 @@ class _AuthScreenState extends State<AuthScreen> {
       _isLoading = true;
     });
     try {
-      final response = await Supabase.instance.client.auth.signInWithPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
+      final authRepository = ref.read(authRepositoryProvider); // Access the auth repository
+      final response = await authRepository.signIn(
+        _emailController.text,
+        _passwordController.text,
       );
       if (mounted) {
         if (response.user != null) {
@@ -70,22 +72,19 @@ class _AuthScreenState extends State<AuthScreen> {
           );
           // Navigate to home screen or authenticated part of the app
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('ログインに失敗しました: ${response.user.toString()}')), // Handle error better
-          );
+          // エラーダイアログを表示
+          await ErrorDialog.show(context, 'ログインに失敗しました: ${response.user.toString()}');
         }
       }
     } on AuthException catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.message)),
-        );
+        // エラーダイアログを表示
+        await ErrorDialog.show(context, error.message);
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('予期せぬエラーが発生しました: $error')),
-        );
+        // エラーダイアログを表示
+        await ErrorDialog.show(context, '予期せぬエラーが発生しました: $error');
       }
     } finally {
       if (mounted) {
