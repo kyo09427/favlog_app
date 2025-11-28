@@ -22,6 +22,19 @@ class Product {
   })  : id = id ?? const Uuid().v4(),
         createdAt = createdAt ?? DateTime.now();
 
+  factory Product.empty() {
+    return Product(
+      id: const Uuid().v4(), // Generate a new ID for empty product
+      createdAt: DateTime.now(),
+      userId: '', // Empty user ID
+      url: null,
+      name: '', // Empty name
+      category: null,
+      subcategory: null,
+      imageUrl: null,
+    );
+  }
+
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
       id: json['id'] as String,

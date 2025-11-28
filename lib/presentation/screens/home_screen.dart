@@ -77,7 +77,7 @@ class HomeScreen extends ConsumerWidget {
       onTap: () async {
         await Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => ReviewDetailScreen(product: product),
+            builder: (context) => ReviewDetailScreen(productId: product.id),
           ),
         );
         // Refresh products after returning from detail screen

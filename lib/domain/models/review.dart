@@ -18,6 +18,17 @@ class Review {
   })  : id = id ?? const Uuid().v4(),
         createdAt = createdAt ?? DateTime.now();
 
+  factory Review.empty() {
+    return Review(
+      id: const Uuid().v4(), // Generate a new ID for empty review
+      createdAt: DateTime.now(),
+      userId: '', // Empty user ID
+      productId: '', // Empty product ID
+      reviewText: '', // Empty review text
+      rating: 3, // Default rating within valid range (1-5)
+    );
+  }
+
   factory Review.fromJson(Map<String, dynamic> json) {
     return Review(
       id: json['id'] as String,

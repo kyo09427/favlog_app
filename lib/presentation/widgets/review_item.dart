@@ -66,8 +66,8 @@ class _ReviewItemState extends ConsumerState<ReviewItem> with SingleTickerProvid
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => EditReviewScreen(
-            product: widget.product,
-            review: widget.review,
+            productId: widget.product.id,
+            reviewId: widget.review.id,
           ),
         ),
       ).then((_) => widget.onReviewEdited()); // Call callback to refresh after returning

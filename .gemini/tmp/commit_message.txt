@@ -1,0 +1,31 @@
+feat: Implement search functionality, responsive design, image optimization, and UI/UX improvements
+
+This commit introduces a suite of enhancements to the FavLog application, focusing on improved user experience, performance, and responsiveness.
+
+Key changes include:
+
+- **Search Functionality:**
+  - Added a lightweight search bar to the home screen, allowing users to filter products by name.
+  - Implemented debouncing for the search input to optimize API calls.
+  - Ensured search interacts correctly with existing category filters.
+
+- **Responsive Design:**
+  - Refactored the home screen layout using `LayoutBuilder` to adapt to various screen sizes.
+  - Displays a `ListView` on narrow screens (mobile) and a `GridView` on wider screens (tablets, web).
+
+- **Image Optimization:**
+  - Integrated `cached_network_image` for efficient image caching and faster loading.
+  - Implemented shimmer loading effects as placeholders for images.
+  - Configured error widgets to display when images fail to load.
+  - Added image compression before uploading to Supabase Storage, reducing data transfer and storage costs.
+
+- **Category Selection UI/UX Improvements:**
+  - Replaced the `DropdownButtonFormField` for category selection with a more visual and interactive `ChoiceChip` wrapped in a `Wrap` widget.
+  - Added autocomplete suggestions for subcategory input fields, improving user input efficiency.
+
+- **Bug Fixes & Refinements:**
+  - Corrected the handling of JWT expiration, ensuring automatic user logout and redirection to the login screen for seamless session management.
+  - Resolved issues with category dropdowns, including removing the "選択してください" placeholder and ensuring the "すべて" filter works as expected.
+  - Fixed various minor UI bugs and ensured consistent error handling.
+
+These improvements significantly enhance the application's usability, performance, and adaptability across different devices.

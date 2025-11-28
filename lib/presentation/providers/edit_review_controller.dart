@@ -12,12 +12,8 @@ import '../../domain/models/product.dart';
 import '../../domain/models/review.dart';
 
 class EditReviewState {
-  final String productUrl;
-  final String productName;
-  final String subcategory;
-  final String selectedCategory;
-  final String reviewText;
-  final double rating;
+  final Product product;
+  final Review review;
   final File? imageFile;
   final String? currentImageUrl; // Existing image URL from product
   final bool isLoading;
@@ -26,12 +22,8 @@ class EditReviewState {
   final List<String> subcategorySuggestions;
 
   EditReviewState({
-    required this.productUrl,
-    required this.productName,
-    required this.subcategory,
-    required this.selectedCategory,
-    required this.reviewText,
-    required this.rating,
+    required this.product,
+    required this.review,
     this.imageFile,
     this.currentImageUrl,
     this.isLoading = false,
@@ -41,12 +33,8 @@ class EditReviewState {
   });
 
   EditReviewState copyWith({
-    String? productUrl,
-    String? productName,
-    String? subcategory,
-    String? selectedCategory,
-    String? reviewText,
-    double? rating,
+    Product? product,
+    Review? review,
     File? imageFile,
     String? currentImageUrl,
     bool? isLoading,
@@ -55,12 +43,8 @@ class EditReviewState {
     List<String>? subcategorySuggestions,
   }) {
     return EditReviewState(
-      productUrl: productUrl ?? this.productUrl,
-      productName: productName ?? this.productName,
-      subcategory: subcategory ?? this.subcategory,
-      selectedCategory: selectedCategory ?? this.selectedCategory,
-      reviewText: reviewText ?? this.reviewText,
-      rating: rating ?? this.rating,
+      product: product ?? this.product,
+      review: review ?? this.review,
       imageFile: imageFile ?? this.imageFile,
       currentImageUrl: currentImageUrl ?? this.currentImageUrl,
       isLoading: isLoading ?? this.isLoading,
@@ -73,29 +57,46 @@ class EditReviewState {
 
 final editReviewControllerProvider =
     StateNotifierProvider.family<EditReviewController, EditReviewState, Map<String, dynamic>>((ref, args) {
-  final Product product = args['product'];
-  final Review review = args['review'];
-  return EditReviewController(ref, product, review);
+  final String productId = args['productId']; // Now pass IDs
+  final String reviewId = args['reviewId'];   // Now pass IDs
+  return EditReviewController(ref, productId, reviewId);
 });
 
 class EditReviewController extends StateNotifier<EditReviewState> {
   final Ref _ref;
-  final Product _initialProduct;
-  final Review _initialReview;
+  final String _productId;
+  final String _reviewId;
   final ImagePicker _picker = ImagePicker();
 
-  EditReviewController(this._ref, this._initialProduct, this._initialReview)
+  EditReviewController(this._ref, this._productId, this._reviewId)
       : super(EditReviewState(
-          productUrl: _initialProduct.url ?? '',
-          productName: _initialProduct.name,
-          subcategory: _initialProduct.subcategory ?? '',
-          selectedCategory: _initialProduct.category ?? '',
-          reviewText: _initialReview.reviewText,
-          rating: _initialReview.rating.toDouble(),
-          currentImageUrl: _initialProduct.imageUrl,
+          product: Product.empty(), // Initial placeholder product
+          review: Review.empty(),   // Initial placeholder review
+          isLoading: true,
         )) {
+    _loadData();
     _loadCategories();
-    fetchSubcategorySuggestions(_initialProduct.category ?? ''); // Load initial suggestions
+  }
+
+  Future<void> _loadData() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final productRepository = _ref.read(productRepositoryProvider);
+      final reviewRepository = _ref.read(reviewRepositoryProvider);
+
+      final product = await productRepository.getProductById(_productId);
+      final review = await reviewRepository.getReviewById(_reviewId);
+
+      state = state.copyWith(
+        product: product,
+        review: review,
+        currentImageUrl: product.imageUrl,
+        isLoading: false,
+      );
+      fetchSubcategorySuggestions(product.category ?? ''); // Load initial suggestions based on fetched product
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
   }
 
   Future<void> _loadCategories() async {
@@ -109,15 +110,16 @@ class EditReviewController extends StateNotifier<EditReviewState> {
   }
 
   void updateProductName(String name) {
-    state = state.copyWith(productName: name);
+    state = state.copyWith(product: state.product.copyWith(name: name));
   }
 
   void updateProductUrl(String url) {
-    state = state.copyWith(productUrl: url);
+    state = state.copyWith(product: state.product.copyWith(url: url));
   }
 
   void updateSelectedCategory(String category) {
-    state = state.copyWith(selectedCategory: category, subcategory: ''); // Reset subcategory when category changes
+    final updatedProduct = state.product.copyWith(category: category, subcategory: '');
+    state = state.copyWith(product: updatedProduct);
     fetchSubcategorySuggestions(category);
   }
 
@@ -136,15 +138,15 @@ class EditReviewController extends StateNotifier<EditReviewState> {
   }
 
   void updateSubcategory(String subcategory) {
-    state = state.copyWith(subcategory: subcategory);
+    state = state.copyWith(product: state.product.copyWith(subcategory: subcategory));
   }
 
   void updateReviewText(String text) {
-    state = state.copyWith(reviewText: text);
+    state = state.copyWith(review: state.review.copyWith(reviewText: text));
   }
 
   void updateRating(double rating) {
-    state = state.copyWith(rating: rating);
+    state = state.copyWith(review: state.review.copyWith(rating: rating.toInt()));
   }
 
   Future<void> pickImage() async {
@@ -175,11 +177,11 @@ class EditReviewController extends StateNotifier<EditReviewState> {
       }
 
       // 製品の所有者であることを確認
-      if (_initialProduct.userId != user.id) {
+      if (state.product.userId != user.id) {
         throw Exception('この製品を編集する権限がありません。');
       }
       // レビューの所有者であることを確認
-      if (_initialReview.userId != user.id) {
+      if (state.review.userId != user.id) {
         throw Exception('このレビューを編集する権限がありません。');
       }
 
@@ -203,30 +205,25 @@ class EditReviewController extends StateNotifier<EditReviewState> {
         final fileExtension = state.imageFile!.path.split('.').last;
         
         newImageUrl = await productRepository.uploadProductImage(user.id, compressedBytes, fileExtension);
-      } else if (state.currentImageUrl == null && _initialProduct.imageUrl != null) {
-        // User cleared the image, so remove it from storage.
-        // This requires a way to get the old image file name from the URL.
-        // For simplicity, we'll just set newImageUrl to null for now.
-        // TODO: Implement actual image deletion from storage.
+      } else if (state.currentImageUrl == null && state.product.imageUrl != null) {
         newImageUrl = null;
       }
 
-      final updatedProduct = _initialProduct.copyWith(
-        url: state.productUrl.isEmpty ? null : state.productUrl,
-        name: state.productName,
-        category: state.selectedCategory.isEmpty ? null : state.selectedCategory,
-        subcategory: state.subcategory.isEmpty ? null : state.subcategory,
+      final updatedProduct = state.product.copyWith(
+        url: state.product.url,
+        name: state.product.name,
+        category: state.product.category,
+        subcategory: state.product.subcategory,
         imageUrl: newImageUrl,
       );
       await productRepository.updateProduct(updatedProduct);
 
-      final updatedReview = _initialReview.copyWith(
-        reviewText: state.reviewText,
-        rating: state.rating.toInt(),
+      final updatedReview = state.review.copyWith(
+        reviewText: state.review.reviewText,
+        rating: state.review.rating,
       );
       await reviewRepository.updateReview(updatedReview);
 
-      // Reset state or handle navigation
       state = state.copyWith(isLoading: false);
     } on AuthException catch (e) {
       state = state.copyWith(isLoading: false, error: e.message);

@@ -1,37 +1,48 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:favlog_app/domain/models/product.dart';
+import 'package:favlog_app/domain/models/product.dart'; // Still need Product model for displayedProduct type
 import 'package:favlog_app/presentation/widgets/review_item.dart';
 import 'package:favlog_app/presentation/screens/add_review_to_product_screen.dart';
 import 'package:favlog_app/presentation/providers/review_detail_controller.dart';
 import 'package:favlog_app/domain/models/review.dart'; // Import Review model
 import 'package:shimmer/shimmer.dart';
-// ... (imports)
+import 'package:favlog_app/data/repositories/supabase_auth_repository.dart'; // Add this import
 
 class ReviewDetailScreen extends ConsumerWidget {
-  final Product product;
+  final String productId; // Now takes productId
 
-  const ReviewDetailScreen({super.key, required this.product});
+  const ReviewDetailScreen({super.key, required this.productId}); // Updated constructor
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final reviewDetailState = ref.watch(reviewDetailControllerProvider(product));
-    final reviewDetailController = ref.read(reviewDetailControllerProvider(product).notifier);
+    final reviewDetailState = ref.watch(reviewDetailControllerProvider(productId)); // Pass productId
+    final reviewDetailController = ref.read(reviewDetailControllerProvider(productId).notifier); // Pass productId
+
+    // Use currentProduct from state for display
+    final displayedProduct = reviewDetailState.currentProduct;
+
+    if (displayedProduct.id == Product.empty().id) { // Check for empty placeholder product
+      return Scaffold(
+        appBar: AppBar(title: const Text('詳細')),
+        body: Center(child: reviewDetailState.isLoading ? const CircularProgressIndicator() : Text('製品の読み込みエラー: ${reviewDetailState.error ?? "不明なエラー"}')),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(product.name),
+        title: Text(displayedProduct.name), // Use displayedProduct
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (product.imageUrl != null)
-              Padding(                padding: const EdgeInsets.symmetric(vertical: 8.0),
+            if (displayedProduct.imageUrl != null) // Use displayedProduct
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: CachedNetworkImage(
-                  imageUrl: product.imageUrl!,
+                  imageUrl: displayedProduct.imageUrl!, // Use displayedProduct
                   height: 200,
                   width: double.infinity,
                   fit: BoxFit.cover,
@@ -48,35 +59,35 @@ class ReviewDetailScreen extends ConsumerWidget {
                 ),
               ),
             Text(
-              product.name,
+              displayedProduct.name, // Use displayedProduct
               style: Theme.of(context).textTheme.headlineMedium,
             ),
-            if (product.url != null)
+            if (displayedProduct.url != null) // Use displayedProduct
               Padding(
                 padding: const EdgeInsets.only(top: 4.0),
                 child: Text(
-                  'URL: ${product.url}',
+                  'URL: ${displayedProduct.url}', // Use displayedProduct
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.blue),
                 ),
               ),
-            if (product.category != null)
+            if (displayedProduct.category != null) // Use displayedProduct
               Padding(
                 padding: const EdgeInsets.only(top: 4.0),
                 child: Text(
-                  'カテゴリ: ${product.category}',
+                  'カテゴリ: ${displayedProduct.category}', // Use displayedProduct
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ),
-            if (product.subcategory != null)
+            if (displayedProduct.subcategory != null) // Use displayedProduct
               Padding(
                 padding: const EdgeInsets.only(top: 4.0),
                 child: Text(
-                  'サブカテゴリ: ${product.subcategory}',
+                  'サブカテゴリ: ${displayedProduct.subcategory}', // Use displayedProduct
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ),
             const SizedBox(height: 20),
-            reviewDetailState.isLoading
+            reviewDetailState.isLoading && displayedProduct.id != Product.empty().id // Only show indicator if not initial load
                 ? const Center(child: CircularProgressIndicator())
                 : reviewDetailState.error != null
                     ? Center(child: Text('レビューの読み込みエラー: ${reviewDetailState.error}'))
@@ -92,10 +103,10 @@ class ReviewDetailScreen extends ConsumerWidget {
                               const SizedBox(height: 10),
                               ...reviewDetailState.reviews.map((review) {
                                 return ReviewItem(
-                                  product: product,
+                                  product: displayedProduct, // Pass displayedProduct
                                   review: review,
                                   onReviewEdited: () {
-                                    reviewDetailController.refreshReviews();
+                                    reviewDetailController.refreshAll(); // Refresh all
                                   },
                                 );
                               }).toList(),
@@ -108,11 +119,11 @@ class ReviewDetailScreen extends ConsumerWidget {
         onPressed: () async {
           await Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (context) => AddReviewToProductScreen(product: product),
+              builder: (context) => AddReviewToProductScreen(product: displayedProduct), // Use displayedProduct
             ),
           );
-          // Refresh reviews after returning from AddReviewToProductScreen
-          reviewDetailController.refreshReviews();
+          // Refresh products and reviews after returning
+          reviewDetailController.refreshAll();
         },
         child: const Icon(Icons.add),
       ),

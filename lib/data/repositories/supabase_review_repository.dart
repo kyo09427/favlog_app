@@ -39,20 +39,33 @@ class SupabaseReviewRepository implements ReviewRepository {
     }
     }
   
-    @override
-    Future<List<Review>> getReviewsByProductId(String productId) async {
-      try {
-        final response = await _supabaseClient
-            .from('reviews')
-            .select()
-            .eq('product_id', productId)
-            .order('created_at', ascending: false);
-        return (response as List).map((json) => Review.fromJson(json)).toList();
-      } catch (e) {
-        throw Exception('Failed to get reviews for product $productId: $e');
+      @override
+      Future<List<Review>> getReviewsByProductId(String productId) async {
+        try {
+          final response = await _supabaseClient
+              .from('reviews')
+              .select()
+              .eq('product_id', productId)
+              .order('created_at', ascending: false);
+            return (response as List).map((json) => Review.fromJson(json)).toList();
+        } catch (e) {
+          throw Exception('Failed to get reviews for product $productId: $e');
+        }
       }
-    }
-  
+    
+      @override
+      Future<Review> getReviewById(String reviewId) async {
+        try {
+          final response = await _supabaseClient
+              .from('reviews')
+              .select()
+              .eq('id', reviewId)
+              .single(); // Use single() to get a single record
+          return Review.fromJson(response);
+        } catch (e) {
+          throw Exception('Failed to get review by ID $reviewId: $e');
+        }
+      }  
     @override
     Future<void> createReview(Review review) async {
     try {

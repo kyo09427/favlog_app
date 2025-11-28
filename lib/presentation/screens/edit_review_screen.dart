@@ -6,21 +6,21 @@ import 'package:favlog_app/presentation/providers/edit_review_controller.dart'; 
 import 'package:favlog_app/presentation/widgets/error_dialog.dart'; // Add this import
 
 class EditReviewScreen extends ConsumerWidget { // Change to ConsumerWidget
-  final Product product;
-  final Review review;
+  final String productId; // Now takes IDs
+  final String reviewId;   // Now takes IDs
 
-  const EditReviewScreen({super.key, required this.product, required this.review});
+  const EditReviewScreen({super.key, required this.productId, required this.reviewId}); // Updated constructor
 
   @override
   Widget build(BuildContext context, WidgetRef ref) { // Add WidgetRef ref
-    final editReviewState = ref.watch(editReviewControllerProvider({'product': product, 'review': review}));
-    final editReviewController = ref.read(editReviewControllerProvider({'product': product, 'review': review}).notifier);
+    final editReviewState = ref.watch(editReviewControllerProvider({'productId': productId, 'reviewId': reviewId})); // Pass IDs
+    final editReviewController = ref.read(editReviewControllerProvider({'productId': productId, 'reviewId': reviewId}).notifier); // Pass IDs
 
     final _formKey = GlobalKey<FormState>();
 
     // Listen for error changes
     ref.listen<EditReviewState>(
-      editReviewControllerProvider({'product': product, 'review': review}),
+      editReviewControllerProvider({'productId': productId, 'reviewId': reviewId}), // Pass IDs
       (previous, next) {
         if (next.error != null && next.error != previous?.error) {
           ErrorDialog.show(context, next.error!);
@@ -28,9 +28,21 @@ class EditReviewScreen extends ConsumerWidget { // Change to ConsumerWidget
       },
     );
 
+    if (editReviewState.isLoading && editReviewState.product.id == Product.empty().id) { // Check if initial load is happening
+      return Scaffold(
+        appBar: AppBar(title: const Text('レビューを編集')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // Use product and review from state for UI
+    final currentProduct = editReviewState.product;
+    final currentReview = editReviewState.review;
+
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('レビューを編集'),
+        title: Text('レビューを編集: ${currentProduct.name}'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -40,7 +52,7 @@ class EditReviewScreen extends ConsumerWidget { // Change to ConsumerWidget
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextFormField(
-                initialValue: editReviewState.productName,
+                initialValue: currentProduct.name, // Use currentProduct
                 decoration: const InputDecoration(
                   labelText: '商品名',
                   border: OutlineInputBorder(),
@@ -55,7 +67,7 @@ class EditReviewScreen extends ConsumerWidget { // Change to ConsumerWidget
               ),
               const SizedBox(height: 16.0),
               TextFormField(
-                initialValue: editReviewState.productUrl,
+                initialValue: currentProduct.url, // Use currentProduct
                 keyboardType: TextInputType.url,
                 decoration: const InputDecoration(
                   labelText: '商品URL (オプション)',
@@ -71,7 +83,7 @@ class EditReviewScreen extends ConsumerWidget { // Change to ConsumerWidget
                   }
                   return null;
                 },
-                initialValue: editReviewState.selectedCategory,
+                initialValue: currentProduct.category, // Use currentProduct
                 builder: (FormFieldState<String> field) {
                   return InputDecorator(
                     decoration: InputDecoration(
@@ -87,7 +99,7 @@ class EditReviewScreen extends ConsumerWidget { // Change to ConsumerWidget
                         children: editReviewState.categories.map((String category) {
                           return ChoiceChip(
                             label: Text(category),
-                            selected: editReviewState.selectedCategory == category,
+                            selected: currentProduct.category == category, // Use currentProduct
                             onSelected: (bool selected) {
                               if (selected) {
                                 editReviewController.updateSelectedCategory(category);
@@ -114,7 +126,7 @@ class EditReviewScreen extends ConsumerWidget { // Change to ConsumerWidget
                 onSelected: (String selection) {
                   editReviewController.updateSubcategory(selection);
                 },
-                initialValue: TextEditingValue(text: editReviewState.subcategory),
+                initialValue: TextEditingValue(text: currentProduct.subcategory ?? ''), // Use currentProduct
                 fieldViewBuilder: (BuildContext context, TextEditingController textEditingController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
                   return TextFormField(
                     controller: textEditingController,
@@ -150,20 +162,20 @@ class EditReviewScreen extends ConsumerWidget { // Change to ConsumerWidget
                   child: const Text('画像を削除'),
                 ),
               const SizedBox(height: 16.0),
-              Text('評価: ${editReviewState.rating.toInt()} / 5'),
+              Text('評価: ${currentReview.rating.toInt()} / 5'), // Use currentReview
               Slider(
-                value: editReviewState.rating,
+                value: currentReview.rating.toDouble(), // Use currentReview
                 min: 1,
                 max: 5,
                 divisions: 4,
-                label: editReviewState.rating.round().toString(),
+                label: currentReview.rating.round().toString(), // Use currentReview
                 onChanged: (newRating) {
                   editReviewController.updateRating(newRating);
                 },
               ),
               const SizedBox(height: 16.0),
               TextFormField(
-                initialValue: editReviewState.reviewText,
+                initialValue: currentReview.reviewText, // Use currentReview
                 maxLines: 5,
                 decoration: const InputDecoration(
                   labelText: 'レビュー',
