@@ -223,3 +223,62 @@
     *   `SupabaseProductRepository` の `getProducts` メソッド内で、クエリの`eq`メソッドが`order`メソッドより前に呼び出されるように修正し、`NoSuchMethodError`を解消。
     *   `SupabaseAuthRepository` の `resendEmail` メソッド内で `type` 引数に指定する列挙型が `AuthOtpRequestType.signup` から `OtpType.signup` へ変更されたことに対応し、コンパイルエラーを解消。
     *   `ref.listen` メソッドにおける `fireImmediately: true` パラメータがRiverpodのバージョンと互換性がなかったため、各画面からこのパラメータを削除し、コンパイルエラーを解消。
+## 実装ログ - 2025年11月28日
+
+### UI/UXの改善 - ローディング状態の改善
+
+*   `shimmer` パッケージを `pubspec.yaml` に追加し、`flutter pub get` を実行してインストールを完了。
+*   `lib/presentation/screens/home_screen.dart` を修正し、Shimmer効果を導入。
+    *   `package:shimmer/shimmer.dart` をインポート。
+    *   `_buildShimmerList()` というプライベートウィジェットを作成し、レビューアイテムのレイアウトを模倣したShimmerプレースホルダーを表示。
+    *   `homeScreenState.isLoading` が `true` の場合、メインコンテンツの `CircularProgressIndicator` を `Shimmer.fromColors` でラップされた `_buildShimmerList()` に置き換え。
+    *   カテゴリドロップダウンのローディング状態 (`categoriesAsyncValue.when(loading: ...)`) においても、`CircularProgressIndicator` を `Shimmer.fromColors` でラップされたプレースホルダーに置き換え、視覚的なフィードバックを改善。
+
+### 不具合修正 - JWT有効期限切れエラーハンドリング
+
+*   `lib/presentation/providers/home_screen_controller.dart` の `fetchProducts` メソッド内のエラーハンドリングを修正。
+*   `PostgrestException` を個別にキャッチし、エラーメッセージに "JWT expired" が含まれているかを確認。
+*   トークンの有効期限が切れていた場合、`signOut()` メソッドを呼び出してユーザーを強制的にログアウトさせ、ログイン画面にリダイレクトするよう修正。これにより、セッション切れが適切に処理されるようになった。
+*   `lib/data/repositories/supabase_product_repository.dart` のエラーハンドリングを修正。`getProducts` やその他のCRUD操作において、例外を汎用的な `Exception` でラップするのではなく、`rethrow` を使用して元の例外（例: `PostgretException`）を維持するように変更。これにより、上位のレイヤーで具体的なエラー（JWT切れなど）をハンドリングできるようになった。
+
+### パフォーマンス最適化 - 画像表示の改善
+
+*   **画像キャッシュ**:
+    *   `cached_network_image` パッケージを `pubspec.yaml` に追加し、インストールを完了。
+    *   `lib/presentation/screens/home_screen.dart` および `lib/presentation/screens/review_detail_screen.dart` の `Image.network` を `CachedNetworkImage` ウィジェットに置き換え。
+    *   画像の読み込み中には `Shimmer` 効果によるプレースホルダーを、読み込み失敗時には `Icons.broken_image` を表示するよう設定。
+*   **画像圧縮**:
+    *   `image` パッケージを `pubspec.yaml` に追加し、インストールを完了。
+    *   `lib/domain/repositories/product_repository.dart` の `uploadProductImage` メソッドのシグネチャを、ファイルパスの代わりに `Uint8List` の画像データとファイル拡張子を受け取るように変更。
+    *   `lib/data/repositories/supabase_product_repository.dart` の `uploadProductImage` 実装を、`uploadBinary` を使用してバイトデータを直接アップロードするように更新。
+    *   `lib/presentation/providers/add_review_controller.dart` および `lib/presentation/providers/edit_review_controller.dart` のレビュー送信ロジックを修正。
+    *   画像アップロード前に、選択された画像を最大幅1024pxにリサイズし、品質85%のJPEGとして圧縮する処理を追加。圧縮後のバイトデータをリポジトリメソッドに渡すように変更。
+*   **不具合修正 - カテゴリドロップダウン**:
+    *   `assets/categories.json` から "選択してください" を削除。
+    *   `add_review_controller.dart` と `edit_review_controller.dart` の状態管理とUIを修正し、"選択してください" の代わりに `null` 値とヒントテキストを使用するように変更。これにより、カテゴリ未選択の状態をより適切に処理し、重複値によるエラーを解消。
+    *   `supabase_product_repository.dart` の `getProducts` メソッドのフィルタリング条件を簡略化。
+*   **不具合修正 - カテゴリフィルター「すべて」**:
+    *   `lib/data/repositories/supabase_product_repository.dart` の `getProducts` メソッドを修正。
+    *   カテゴリフィルターの値が "すべて" の場合に、データベースクエリでカテゴリによる絞り込みを行わないように条件を変更。これにより、「すべて」を選択した際にすべての製品が正しく表示されるようになった。
+
+### UI/UXの改善 - レスポンシブデザイン対応
+
+*   `lib/presentation/screens/home_screen.dart` をリファクタリングし、レスポンシブデザインを導入。
+*   レビューカードのUIを `_buildProductCard` というプライベートメソッドに抽出し、コードの重複を削減。
+*   `LayoutBuilder` を使用して、画面幅に応じてレイアウトを動的に変更。
+    *   画面幅が600pxより大きい場合（タブレットやWebなど）は、2列の `GridView` を表示。
+    *   画面幅が600px以下の場合（モバイルなど）は、従来の `ListView` を表示。
+
+### UI/UXの改善 - カテゴリ選択とサブカテゴリオートコンプリート
+
+*   **カテゴリ選択UIの改善**:
+    *   `lib/presentation/screens/add_review_screen.dart` および `lib/presentation/screens/edit_review_screen.dart` のカテゴリ選択UIを `DropdownButtonFormField` から `ChoiceChip` を使用した `Wrap` ウィジェットに変更。
+    *   視覚的で直感的なカテゴリ選択を提供し、バリデーションも適切に処理されるように `FormField` と `InputDecorator` を利用。
+*   **サブカテゴリオートコンプリート機能の追加**:
+    *   `lib/domain/repositories/product_repository.dart` に `Future<List<String>> getSubcategories(String category)` メソッドを追加。
+    *   `lib/data/repositories/supabase_product_repository.dart` に `getSubcategories` メソッドの実装を追加。これは、指定されたカテゴリに属する既存のサブカテゴリのユニークなリストを取得する。
+    *   `lib/presentation/providers/add_review_controller.dart` および `lib/presentation/providers/edit_review_controller.dart` の状態 (`AddReviewState`, `EditReviewState`) に `List<String> subcategorySuggestions` プロパティを追加。
+    *   両コントローラーに `fetchSubcategorySuggestions(String category)` メソッドを実装し、`productRepository.getSubcategories` を呼び出して候補をフェッチし、状態を更新する。
+    *   `updateSelectedCategory` メソッド内で `fetchSubcategorySuggestions` を呼び出し、カテゴリが変更されるたびにサブカテゴリの候補を更新するように設定。`EditReviewController` のコンストラクタからも初期候補を読み込むよう修正。
+    *   `lib/presentation/screens/add_review_screen.dart` および `lib/presentation/screens/edit_review_screen.dart` のサブカテゴリ入力フィールドを `TextFormField` から `Autocomplete<String>` ウィジェットに置き換え。
+    *   `Autocomplete` の `optionsBuilder` は `subcategorySuggestions` を基にユーザー入力に応じて候補をフィルタリングし、`onSelected` は選択された値をコントローラーに渡し、`fieldViewBuilder` で `TextFormField` の外観と動作を維持。

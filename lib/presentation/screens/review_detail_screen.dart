@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:favlog_app/domain/models/product.dart';
@@ -5,6 +6,8 @@ import 'package:favlog_app/presentation/widgets/review_item.dart';
 import 'package:favlog_app/presentation/screens/add_review_to_product_screen.dart';
 import 'package:favlog_app/presentation/providers/review_detail_controller.dart';
 import 'package:favlog_app/domain/models/review.dart'; // Import Review model
+import 'package:shimmer/shimmer.dart';
+// ... (imports)
 
 class ReviewDetailScreen extends ConsumerWidget {
   final Product product;
@@ -26,13 +29,22 @@ class ReviewDetailScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (product.imageUrl != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Image.network(
-                  product.imageUrl!,
+              Padding(                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: CachedNetworkImage(
+                  imageUrl: product.imageUrl!,
                   height: 200,
                   width: double.infinity,
                   fit: BoxFit.cover,
+                  placeholder: (context, url) => Shimmer.fromColors(
+                    baseColor: Colors.grey[300]!,
+                    highlightColor: Colors.grey[100]!,
+                    child: Container(
+                      height: 200,
+                      width: double.infinity,
+                      color: Colors.white,
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => const Icon(Icons.broken_image, size: 200),
                 ),
               ),
             Text(

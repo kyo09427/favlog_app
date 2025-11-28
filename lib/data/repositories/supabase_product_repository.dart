@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/product.dart';
@@ -15,21 +15,25 @@ class SupabaseProductRepository implements ProductRepository {
   SupabaseProductRepository(this._supabaseClient);
 
   @override
-  Future<List<Product>> getProducts({String? category}) async {
+  Future<List<Product>> getProducts({String? category, String? searchQuery}) async {
     try {
       var query = _supabaseClient
           .from('products')
           .select(); // まず select() を呼び出し、FilterBuilder を取得
 
-      if (category != null && category != '選択してください') {
+      if (category != null && category != 'すべて') {
         query = query.eq('category', category); // FilterBuilder に対して eq を適用
+      }
+
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        query = query.ilike('name', '%$searchQuery%'); // Lightweight search by product name
       }
 
       // フィルタリングの後にソートを適用
       final response = await query.order('created_at', ascending: false).limit(100); // Limit to avoid fetching too much data
       return (response as List).map((json) => Product.fromJson(json)).toList();
     } catch (e) {
-      throw Exception('Failed to get products: $e');
+      rethrow;
     }
   }
 
@@ -43,7 +47,7 @@ class SupabaseProductRepository implements ProductRepository {
           .single();
       return Product.fromJson(response);
     } catch (e) {
-      throw Exception('Failed to get product by ID: $e');
+      rethrow;
     }
   }
 
@@ -52,7 +56,7 @@ class SupabaseProductRepository implements ProductRepository {
     try {
       await _supabaseClient.from('products').insert(product.toJson());
     } catch (e) {
-      throw Exception('Failed to create product: $e');
+      rethrow;
     }
   }
 
@@ -61,7 +65,7 @@ class SupabaseProductRepository implements ProductRepository {
     try {
       await _supabaseClient.from('products').update(product.toJson()).eq('id', product.id);
     } catch (e) {
-      throw Exception('Failed to update product: $e');
+      rethrow;
     }
   }
 
@@ -70,29 +74,44 @@ class SupabaseProductRepository implements ProductRepository {
     try {
       await _supabaseClient.from('products').delete().eq('id', productId);
     } catch (e) {
-      throw Exception('Failed to delete product: $e');
+      rethrow;
     }
   }
 
   @override
-  Future<String> uploadProductImage(String userId, String imagePath) async {
+  Future<String> uploadProductImage(String userId, Uint8List imageData, String fileExtension) async {
     try {
-      final file = File(imagePath);
-      final fileExtension = file.path.split('.').last;
       final fileName = '${userId}_${DateTime.now().microsecondsSinceEpoch}.$fileExtension';
-      final response = await _supabaseClient.storage
+      await _supabaseClient.storage
           .from('product_images')
-          .upload(fileName, file,
+          .uploadBinary(fileName, imageData,
               fileOptions: const FileOptions(upsert: false));
-      if (response.isNotEmpty) {
-        return _supabaseClient.storage.from('product_images').getPublicUrl(fileName);
-      } else {
-        throw Exception('Failed to upload image: response is empty');
-      }
+      
+      return _supabaseClient.storage.from('product_images').getPublicUrl(fileName);
     } on StorageException catch (e) {
       throw Exception('Failed to upload image: ${e.message}');
     } catch (e) {
       throw Exception('Failed to upload image: $e');
+    }
+  }
+
+  @override
+  Future<List<String>> getSubcategories(String category) async {
+    try {
+      final response = await _supabaseClient
+          .from('products')
+          .select('subcategory')
+          .eq('category', category)
+          .not('subcategory', 'is', null);
+
+      final subcategories = (response as List)
+          .map((json) => json['subcategory'] as String)
+          .toSet() // Remove duplicates
+          .toList();
+          
+      return subcategories;
+    } catch (e) {
+      rethrow;
     }
   }
 }

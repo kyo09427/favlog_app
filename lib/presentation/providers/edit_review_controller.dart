@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:image/image.dart' as img;
 import '../../data/repositories/supabase_product_repository.dart';
 import '../../data/repositories/supabase_review_repository.dart';
 import '../../data/repositories/asset_category_repository.dart';
@@ -21,6 +23,7 @@ class EditReviewState {
   final bool isLoading;
   final String? error;
   final List<String> categories;
+  final List<String> subcategorySuggestions;
 
   EditReviewState({
     required this.productUrl,
@@ -33,7 +36,8 @@ class EditReviewState {
     this.currentImageUrl,
     this.isLoading = false,
     this.error,
-    this.categories = const ['選択してください'],
+    this.categories = const [],
+    this.subcategorySuggestions = const [],
   });
 
   EditReviewState copyWith({
@@ -48,6 +52,7 @@ class EditReviewState {
     bool? isLoading,
     String? error,
     List<String>? categories,
+    List<String>? subcategorySuggestions,
   }) {
     return EditReviewState(
       productUrl: productUrl ?? this.productUrl,
@@ -61,6 +66,7 @@ class EditReviewState {
       isLoading: isLoading ?? this.isLoading,
       error: error,
       categories: categories ?? this.categories,
+      subcategorySuggestions: subcategorySuggestions ?? this.subcategorySuggestions,
     );
   }
 }
@@ -83,19 +89,20 @@ class EditReviewController extends StateNotifier<EditReviewState> {
           productUrl: _initialProduct.url ?? '',
           productName: _initialProduct.name,
           subcategory: _initialProduct.subcategory ?? '',
-          selectedCategory: _initialProduct.category ?? '選択してください',
+          selectedCategory: _initialProduct.category ?? '',
           reviewText: _initialReview.reviewText,
           rating: _initialReview.rating.toDouble(),
           currentImageUrl: _initialProduct.imageUrl,
         )) {
     _loadCategories();
+    fetchSubcategorySuggestions(_initialProduct.category ?? ''); // Load initial suggestions
   }
 
   Future<void> _loadCategories() async {
     try {
       final categoryRepository = _ref.read(categoryRepositoryProvider);
       final fetchedCategories = await categoryRepository.getCategories();
-      state = state.copyWith(categories: ['選択してください', ...fetchedCategories]);
+      state = state.copyWith(categories: fetchedCategories);
     } catch (e) {
       state = state.copyWith(error: 'カテゴリの読み込みに失敗しました: ${e.toString()}');
     }
@@ -110,7 +117,22 @@ class EditReviewController extends StateNotifier<EditReviewState> {
   }
 
   void updateSelectedCategory(String category) {
-    state = state.copyWith(selectedCategory: category);
+    state = state.copyWith(selectedCategory: category, subcategory: ''); // Reset subcategory when category changes
+    fetchSubcategorySuggestions(category);
+  }
+
+  Future<void> fetchSubcategorySuggestions(String category) async {
+    if (category.isEmpty) { // Don't fetch if no category selected
+      state = state.copyWith(subcategorySuggestions: []);
+      return;
+    }
+    try {
+      final productRepository = _ref.read(productRepositoryProvider);
+      final suggestions = await productRepository.getSubcategories(category);
+      state = state.copyWith(subcategorySuggestions: suggestions);
+    } catch (e) {
+      state = state.copyWith(error: 'サブカテゴリ候補の読み込みに失敗しました: ${e.toString()}');
+    }
   }
 
   void updateSubcategory(String subcategory) {
@@ -164,7 +186,23 @@ class EditReviewController extends StateNotifier<EditReviewState> {
       String? newImageUrl = state.currentImageUrl;
 
       if (state.imageFile != null) {
-        newImageUrl = await productRepository.uploadProductImage(user.id, state.imageFile!.path);
+        // --- Image Compression Logic ---
+        final imageBytes = await state.imageFile!.readAsBytes();
+        img.Image? originalImage = img.decodeImage(imageBytes);
+
+        if (originalImage == null) {
+          throw Exception('画像のデコードに失敗しました。');
+        }
+
+        // Resize the image to a maximum width of 1024px, maintaining aspect ratio
+        final resizedImage = img.copyResize(originalImage, width: 1024);
+        
+        // Encode the image to JPEG format with a quality of 85
+        final compressedBytes = Uint8List.fromList(img.encodeJpg(resizedImage, quality: 85));
+        
+        final fileExtension = state.imageFile!.path.split('.').last;
+        
+        newImageUrl = await productRepository.uploadProductImage(user.id, compressedBytes, fileExtension);
       } else if (state.currentImageUrl == null && _initialProduct.imageUrl != null) {
         // User cleared the image, so remove it from storage.
         // This requires a way to get the old image file name from the URL.
@@ -176,7 +214,7 @@ class EditReviewController extends StateNotifier<EditReviewState> {
       final updatedProduct = _initialProduct.copyWith(
         url: state.productUrl.isEmpty ? null : state.productUrl,
         name: state.productName,
-        category: state.selectedCategory == '選択してください' ? null : state.selectedCategory,
+        category: state.selectedCategory.isEmpty ? null : state.selectedCategory,
         subcategory: state.subcategory.isEmpty ? null : state.subcategory,
         imageUrl: newImageUrl,
       );

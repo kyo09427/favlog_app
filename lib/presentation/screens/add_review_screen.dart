@@ -59,38 +59,71 @@ class AddReviewScreen extends ConsumerWidget { // Change to ConsumerWidget
                 onChanged: addReviewController.updateProductUrl,
               ),
               const SizedBox(height: 16.0),
-              DropdownButtonFormField<String>(
-                value: addReviewState.selectedCategory,
-                decoration: const InputDecoration(
-                  labelText: 'カテゴリ',
-                  border: OutlineInputBorder(),
-                ),
-                items: addReviewState.categories.map((String category) {
-                  return DropdownMenuItem<String>(
-                    value: category,
-                    child: Text(category),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  if (newValue != null) {
-                    addReviewController.updateSelectedCategory(newValue);
-                  }
-                },
+              FormField<String>(
                 validator: (value) {
-                  if (value == null || value == '選択してください') {
+                  if (value == null || value.isEmpty) {
                     return 'カテゴリを選択してください。';
                   }
                   return null;
                 },
+                initialValue: addReviewState.selectedCategory,
+                builder: (FormFieldState<String> field) {
+                  return InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: 'カテゴリ',
+                      errorText: field.errorText,
+                      border: InputBorder.none,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Wrap(
+                        spacing: 8.0,
+                        runSpacing: 8.0,
+                        children: addReviewState.categories.map((String category) {
+                          return ChoiceChip(
+                            label: Text(category),
+                            selected: addReviewState.selectedCategory == category,
+                            onSelected: (bool selected) {
+                              if (selected) {
+                                addReviewController.updateSelectedCategory(category);
+                                field.didChange(category);
+                              }
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 16.0),
-              TextFormField(
-                initialValue: addReviewState.subcategory,
-                decoration: const InputDecoration(
-                  labelText: 'サブカテゴリ (オプション)',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: addReviewController.updateSubcategory,
+              Autocomplete<String>(
+                optionsBuilder: (TextEditingValue textEditingValue) {
+                  if (textEditingValue.text.isEmpty) {
+                    return const Iterable<String>.empty();
+                  }
+                  return addReviewState.subcategorySuggestions.where((String option) {
+                    return option.contains(textEditingValue.text.toLowerCase());
+                  });
+                },
+                onSelected: (String selection) {
+                  addReviewController.updateSubcategory(selection);
+                },
+                initialValue: TextEditingValue(text: addReviewState.subcategory),
+                fieldViewBuilder: (BuildContext context, TextEditingController textEditingController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
+                  return TextFormField(
+                    controller: textEditingController,
+                    focusNode: focusNode,
+                    decoration: const InputDecoration(
+                      labelText: 'サブカテゴリ (オプション)',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (value) {
+                      textEditingController.text = value; // Keep controller in sync
+                      addReviewController.updateSubcategory(value);
+                    },
+                  );
+                },
               ),
               const SizedBox(height: 16.0),
               GestureDetector(

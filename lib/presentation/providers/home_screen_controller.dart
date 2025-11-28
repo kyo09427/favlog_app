@@ -1,3 +1,4 @@
+import 'dart:async'; // Import for Timer
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // For AuthException
 import '../../data/repositories/supabase_auth_repository.dart';
@@ -20,12 +21,14 @@ class HomeScreenState {
   final bool isLoading;
   final String? error;
   final String selectedCategory;
+  final String searchQuery;
 
   HomeScreenState({
     required this.products,
     this.isLoading = false,
     this.error,
     this.selectedCategory = 'すべて',
+    this.searchQuery = '',
   });
 
   HomeScreenState copyWith({
@@ -33,12 +36,14 @@ class HomeScreenState {
     bool? isLoading,
     String? error,
     String? selectedCategory,
+    String? searchQuery,
   }) {
     return HomeScreenState(
       products: products ?? this.products,
       isLoading: isLoading ?? this.isLoading,
       error: error,
       selectedCategory: selectedCategory ?? this.selectedCategory,
+      searchQuery: searchQuery ?? this.searchQuery,
     );
   }
 }
@@ -50,18 +55,25 @@ final homeScreenControllerProvider =
 
 class HomeScreenController extends StateNotifier<HomeScreenState> {
   final Ref _ref;
+  Timer? _debounce; // Debounce timer
 
   HomeScreenController(this._ref) : super(HomeScreenState(products: [])) {
     fetchProducts();
   }
 
-  Future<void> fetchProducts({String? category}) async {
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  Future<void> fetchProducts({String? category, String? searchQuery}) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final productRepository = _ref.read(productRepositoryProvider);
       final reviewRepository = _ref.read(reviewRepositoryProvider);
       
-      final products = await productRepository.getProducts(category: category);
+      final products = await productRepository.getProducts(category: category, searchQuery: searchQuery);
 
       List<ProductWithLatestReview> productsWithLatestReview = [];
       for (var product in products) {
@@ -76,25 +88,41 @@ class HomeScreenController extends StateNotifier<HomeScreenState> {
         products: productsWithLatestReview,
         isLoading: false,
         selectedCategory: category ?? 'すべて',
+        searchQuery: searchQuery ?? '',
       );
+    } on PostgrestException catch (e) {
+      if (e.message.contains('JWT expired')) {
+        // If token expired, sign out the user
+        final authRepository = _ref.read(authRepositoryProvider);
+        await authRepository.signOut();
+      } else {
+        state = state.copyWith(isLoading: false, error: e.toString());
+      }
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
-  Future<void> signOut() async {
-    try {
-      final authRepository = _ref.read(authRepositoryProvider);
-      await authRepository.signOut();
-    } on AuthException catch (e) {
-      state = state.copyWith(error: e.message);
-    } catch (e) {
-      state = state.copyWith(error: e.toString());
-    }
+  void updateSearchQuery(String query) {
+    state = state.copyWith(searchQuery: query);
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      fetchProducts(category: state.selectedCategory, searchQuery: query);
+    });
   }
 
   void selectCategory(String category) {
     state = state.copyWith(selectedCategory: category);
-    fetchProducts(category: category);
+    fetchProducts(category: category, searchQuery: state.searchQuery);
+  }
+
+  // サインアウトメソッドを追加
+  Future<void> signOut() async {
+    try {
+      final authRepository = _ref.read(authRepositoryProvider);
+      await authRepository.signOut();
+    } catch (e) {
+      state = state.copyWith(error: 'サインアウトに失敗しました: ${e.toString()}');
+    }
   }
 }
