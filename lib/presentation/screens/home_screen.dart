@@ -1,265 +1,115 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:favlog_app/presentation/providers/home_screen_controller.dart'; // Import the controller
-import 'package:favlog_app/presentation/providers/category_providers.dart'; // Import categoryProvider
-import 'package:favlog_app/presentation/providers/text_editing_controller_provider.dart'; // 今は使っていなくても残しておいてOK
+import 'package:favlog_app/presentation/providers/home_screen_controller.dart';
+import 'package:favlog_app/presentation/providers/category_providers.dart';
 import 'package:favlog_app/presentation/screens/add_review_screen.dart';
 import 'package:favlog_app/presentation/widgets/review_item.dart';
 import 'package:favlog_app/presentation/screens/review_detail_screen.dart';
-import 'package:favlog_app/presentation/screens/search_screen.dart'; // ★ 追加：検索画面
-import 'package:favlog_app/domain/models/product.dart'; // Import Product model
-import 'package:favlog_app/domain/models/review.dart'; // Import Review model
-import 'package:shimmer/shimmer.dart'; // Import shimmer package
-import 'package:favlog_app/data/repositories/supabase_auth_repository.dart'; // Import for authRepositoryProvider
-import 'dart:async'; // For Timer
-
-// Helper widget for shimmer effect - moved outside the class
-Widget _buildShimmerList() {
-  return ListView.builder(
-    itemCount: 5, // Show 5 shimmer items
-    itemBuilder: (context, index) {
-      return Card(
-        margin: const EdgeInsets.all(8.0),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: double.infinity,
-                height: 20.0,
-                color: Colors.white,
-              ),
-              const SizedBox(height: 8.0),
-              Container(
-                width: double.infinity,
-                height: 150.0,
-                color: Colors.white,
-              ),
-              const SizedBox(height: 8.0),
-              Container(
-                width: double.infinity,
-                height: 16.0,
-                color: Colors.white,
-              ),
-              const SizedBox(height: 8.0),
-              Container(
-                width: double.infinity,
-                height: 16.0,
-                color: Colors.white,
-              ),
-              const SizedBox(height: 8.0),
-              Container(
-                width: double.infinity,
-                height: 16.0,
-                color: Colors.white,
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
-}
+import 'package:favlog_app/presentation/screens/search_screen.dart';
+import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
+import 'package:shimmer/shimmer.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
-  // HTML版の img.h-24 w-24 rounded-lg 相当のサムネイル
-  Widget _buildThumbnail(String? imageUrl) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: SizedBox(
+  // サムネイル画像
+  Widget _buildThumbnail(dynamic imageUrl) {
+    final String? url =
+        (imageUrl is String && imageUrl.isNotEmpty) ? imageUrl : null;
+
+    if (url == null) {
+      return Container(
         width: 96,
         height: 96,
-        child: imageUrl == null
-            ? Container(
-                color: Colors.grey[300],
-                child: const Icon(
-                  Icons.image_not_supported,
-                  color: Colors.grey,
-                ),
-              )
-            : CachedNetworkImage(
-                imageUrl: imageUrl,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Shimmer.fromColors(
-                  baseColor: Colors.grey[300]!,
-                  highlightColor: Colors.grey[100]!,
-                  child: Container(color: Colors.white),
-                ),
-                errorWidget: (context, url, error) =>
-                    const Icon(Icons.broken_image),
-              ),
+        decoration: BoxDecoration(
+          color: Colors.grey[300],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(
+          Icons.image_not_supported,
+          size: 40,
+          color: Colors.grey,
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: CachedNetworkImage(
+        imageUrl: url,
+        width: 96,
+        height: 96,
+        fit: BoxFit.cover,
+        placeholder: (context, _) => Shimmer.fromColors(
+          baseColor: Colors.grey[300]!,
+          highlightColor: Colors.grey[100]!,
+          child: Container(
+            width: 96,
+            height: 96,
+            color: Colors.white,
+          ),
+        ),
+        errorWidget: (context, _, __) => Container(
+          width: 96,
+          height: 96,
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(
+            Icons.broken_image,
+            size: 40,
+            color: Colors.grey,
+          ),
+        ),
       ),
     );
   }
 
-  // 横並びのカードレイアウト（HTML に寄せた版）
-  Widget _buildProductCard(
-    BuildContext context,
-    WidgetRef ref,
-    ProductWithLatestReview productWithReview,
-  ) {
-    final product = productWithReview.product;
-    final latestReview = productWithReview.latestReview;
-    final homeScreenController =
-        ref.read(homeScreenControllerProvider.notifier);
-    final homeScreenState = ref.watch(homeScreenControllerProvider);
-
-    return GestureDetector(
-      onTap: () async {
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => ReviewDetailScreen(productId: product.id),
-          ),
-        );
-        // Refresh products after returning from detail screen
-        homeScreenController.fetchProducts(
-          category: homeScreenState.selectedCategory,
-          searchQuery: homeScreenState.searchQuery,
-        );
-      },
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: Theme.of(context).dividerColor.withOpacity(0.2),
-          ),
-        ),
-        elevation: 0, // Tailwind風にフラットめ
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildThumbnail(product.imageUrl),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 商品名
-                    Text(
-                      product.name,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 4),
-
-                    // カテゴリ & サブカテゴリ（あれば）→ Chip で表示
-                    if (product.category != null || product.subcategory != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 4.0),
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 4,
-                          children: [
-                            if (product.category != null)
-                              Chip(
-                                label: Text(
-                                  product.category!,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(color: Colors.white),
-                                ),
-                                backgroundColor: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withOpacity(0.8),
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 4),
-                              ),
-                            if (product.subcategory != null)
-                              Chip(
-                                label: Text(
-                                  product.subcategory!,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface,
-                                      ),
-                                ),
-                                backgroundColor:
-                                    Theme.of(context).colorScheme.surfaceVariant,
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 4),
-                              ),
-                          ],
-                        ),
-                      ),
-
-                    const SizedBox(height: 4),
-
-                    // URL があれば薄く表示
-                    if (product.url != null && product.url!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 4.0),
-                        child: Text(
-                          product.url!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(color: Colors.grey[600]),
-                        ),
-                      ),
-
-                    const SizedBox(height: 4),
-
-                    // レビュー部分
-                    if (latestReview != null) ...[
-                      Text(
-                        'レビュー',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[800],
-                            ),
-                      ),
-                      const SizedBox(height: 4),
-                      // ReviewItem 自体はそのまま再利用（ロジックを変えない）
-                      ReviewItem(
-                        product: product,
-                        review: latestReview,
-                        onReviewEdited: () {
-                          homeScreenController.fetchProducts(
-                            category: homeScreenState.selectedCategory,
-                            searchQuery: homeScreenState.searchQuery,
-                          );
-                        },
-                      ),
-                    ] else ...[
-                      const SizedBox(height: 4),
-                      const Text(
-                        'まだレビューがありません。',
-                        style: TextStyle(
-                          fontStyle: FontStyle.italic,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+  // ローディング時のシマー
+  Widget _buildLoadingShimmer() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: ListView.builder(
+        itemCount: 5,
+        itemBuilder: (context, index) {
+          return Card(
+            margin: const EdgeInsets.all(8.0),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    height: 20.0,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(height: 8.0),
+                  Container(
+                    width: double.infinity,
+                    height: 150.0,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(height: 8.0),
+                  Container(
+                    width: 120.0,
+                    height: 20.0,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(height: 8.0),
+                  Container(
+                    width: double.infinity,
+                    height: 40.0,
+                    color: Colors.white,
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -270,36 +120,50 @@ class HomeScreen extends ConsumerWidget {
     final homeScreenController =
         ref.read(homeScreenControllerProvider.notifier);
     final categoriesAsyncValue = ref.watch(categoriesProvider);
-    final authRepository = ref.read(authRepositoryProvider); // For logout
+    final theme = Theme.of(context);
+    final primaryColor = const Color(0xFF4CAF50); // 落ち着いた緑色
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('レビューフィード'),
+        backgroundColor: theme.brightness == Brightness.dark
+            ? const Color(0xFF1B5E20)
+            : primaryColor,
+        title: const Text(
+          'FavLog',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_none),
+            icon: const Icon(Icons.notifications_none, color: Colors.white),
             onPressed: () {
               // TODO: 通知画面を作るならここで遷移
             },
           ),
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: () async {
+              final authRepository = ref.read(authRepositoryProvider);
               await authRepository.signOut();
+              if (context.mounted) {
+                Navigator.of(context)
+                    .pushNamedAndRemoveUntil('/login', (route) => false);
+              }
             },
-            tooltip: 'ログアウト',
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(72), // カテゴリ分だけ少し高さ
+          preferredSize: const Size.fromHeight(72),
           child: Column(
             children: [
-              // カテゴリ Dropdown のみ
+              // カテゴリ Dropdown
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
                 child: categoriesAsyncValue.when(
                   data: (categories) {
-                    final allCategories = categories; // categoriesProvider already includes 'すべて'
+                    final allCategories = categories;
                     return DropdownButtonFormField<String>(
                       value: homeScreenState.selectedCategory,
                       decoration: const InputDecoration(
@@ -326,7 +190,7 @@ class HomeScreen extends ConsumerWidget {
                     baseColor: Colors.grey[300]!,
                     highlightColor: Colors.grey[100]!,
                     child: Container(
-                      height: 48.0, // Approximate height of the dropdown
+                      height: 48.0,
                       color: Colors.white,
                     ),
                   ),
@@ -339,66 +203,229 @@ class HomeScreen extends ConsumerWidget {
         ),
       ),
       body: homeScreenState.isLoading
-          ? Shimmer.fromColors(
-              baseColor: Colors.grey[300]!,
-              highlightColor: Colors.grey[100]!,
-              child: _buildShimmerList(),
-            )
+          ? _buildLoadingShimmer()
           : homeScreenState.error != null
-              ? Center(child: Text('エラーが発生しました: ${homeScreenState.error}'))
+              ? Center(
+                  child: Text('エラーが発生しました: ${homeScreenState.error}'))
               : homeScreenState.products.isEmpty
-                  ? const Center(child: Text('まだレビューがありません。'))
-                  : LayoutBuilder(
-                      builder: (context, constraints) {
-                        if (constraints.maxWidth > 600) {
-                          // Use GridView for wider screens (tablets, web)
-                          return GridView.builder(
-                            itemCount: homeScreenState.products.length,
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 1.6, // 横長カードに少し合わせる
+                  ? const Center(
+                      child: Text('まだレビューが投稿されていません。'),
+                    )
+                  : ListView.builder(
+                      itemCount: homeScreenState.products.length,
+                      itemBuilder: (context, index) {
+                        final item = homeScreenState.products[index];
+                        // ProductWithLatestReview を想定: product / latestReview を持つ
+                        final product = item.product;
+                        final latestReview = item.latestReview;
+
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 8.0,
+                            vertical: 4.0,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: theme.dividerColor.withOpacity(0.2),
                             ),
-                            itemBuilder: (context, index) {
-                              final productWithReview =
-                                  homeScreenState.products[index];
-                              return _buildProductCard(
-                                  context, ref, productWithReview);
+                          ),
+                          elevation: 0,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () async {
+                              // 詳細画面へ: productId を渡す
+                              await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => ReviewDetailScreen(
+                                    productId: product.id,
+                                  ),
+                                ),
+                              );
+                              // 詳細画面から戻った後、リフレッシュ
+                              homeScreenController.fetchProducts(
+                                category: homeScreenState.selectedCategory,
+                                searchQuery: homeScreenState.searchQuery,
+                              );
                             },
-                          );
-                        } else {
-                          // Use ListView for narrower screens (mobile)
-                          return ListView.builder(
-                            itemCount: homeScreenState.products.length,
-                            itemBuilder: (context, index) {
-                              final productWithReview =
-                                  homeScreenState.products[index];
-                              return _buildProductCard(
-                                  context, ref, productWithReview);
-                            },
-                          );
-                        }
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _buildThumbnail(product.imageUrl),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            // 商品名
+                                            Text(
+                                              product.name,
+                                              style: theme
+                                                  .textTheme.titleMedium
+                                                  ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 4),
+
+                                            // カテゴリ & サブカテゴリ(あれば)
+                                            if (product.category != null ||
+                                                product.subcategory != null)
+                                              Wrap(
+                                                spacing: 4,
+                                                runSpacing: 4,
+                                                children: [
+                                                  if (product.category != null)
+                                                    Chip(
+                                                      label: Text(
+                                                        product.category!,
+                                                        style: theme.textTheme
+                                                            .bodySmall
+                                                            ?.copyWith(
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                      backgroundColor: theme
+                                                          .colorScheme.primary
+                                                          .withOpacity(0.8),
+                                                      materialTapTargetSize:
+                                                          MaterialTapTargetSize
+                                                              .shrinkWrap,
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                        horizontal: 4,
+                                                      ),
+                                                    ),
+                                                  if (product.subcategory !=
+                                                      null)
+                                                    Chip(
+                                                      label: Text(
+                                                        product.subcategory!,
+                                                        style: theme.textTheme
+                                                            .bodySmall
+                                                            ?.copyWith(
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                      backgroundColor: theme
+                                                          .colorScheme.secondary
+                                                          .withOpacity(0.8),
+                                                      materialTapTargetSize:
+                                                          MaterialTapTargetSize
+                                                              .shrinkWrap,
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                        horizontal: 4,
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+
+                                            const SizedBox(height: 8),
+
+                                            // URL(あれば)
+                                            if (product.url != null &&
+                                                product.url!.isNotEmpty)
+                                              Text(
+                                                product.url!,
+                                                style: theme
+                                                    .textTheme.bodySmall
+                                                    ?.copyWith(
+                                                  color: Colors.blue,
+                                                  decoration: TextDecoration
+                                                      .underline,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+
+                                            const SizedBox(height: 8),
+
+                                            // 星評価(0.5刻み表示): AddReviewScreen と同じロジック
+                                            if (latestReview != null)
+                                              RatingStars(
+                                                rating: (latestReview.rating ??
+                                                        0)
+                                                    .toDouble(),
+                                                color: primaryColor,
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const Divider(),
+
+                                  const Text(
+                                    '最新のレビュー',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+
+                                  if (latestReview != null)
+                                    ReviewItem(
+                                      product: product,
+                                      review: latestReview,
+                                      onReviewEdited: () {
+                                        homeScreenController.fetchProducts(
+                                          category:
+                                              homeScreenState.selectedCategory,
+                                          searchQuery:
+                                              homeScreenState.searchQuery,
+                                        );
+                                      },
+                                    )
+                                  else
+                                    const Text(
+                                      'まだレビューがありません。',
+                                      style: TextStyle(
+                                        fontStyle: FontStyle.italic,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
                       },
                     ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
         onPressed: () async {
-          await Navigator.of(context).push(
+          final result = await Navigator.of(context).push(
             MaterialPageRoute(
-                builder: (context) => const AddReviewScreen()),
+              builder: (_) => const AddReviewScreen(),
+            ),
           );
-          // Refresh products after returning from AddReviewScreen
-          homeScreenController.fetchProducts(
-            category: homeScreenState.selectedCategory,
-            searchQuery: homeScreenState.searchQuery,
-          );
+
+          if (result == true) {
+            homeScreenController.fetchProducts(
+              category: homeScreenState.selectedCategory,
+              searchQuery: homeScreenState.searchQuery,
+            );
+          }
         },
         child: const Icon(Icons.add),
       ),
-      // HTMLの下部ボタンに相当する BottomNavigationBar
+      // 下部ナビゲーションバー
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        currentIndex: 0, // 今はフィード固定
-        selectedItemColor: Theme.of(context).colorScheme.primary,
+        currentIndex: 0,
+        selectedItemColor: theme.colorScheme.primary,
         unselectedItemColor: Colors.grey[600],
         onTap: (index) {
           switch (index) {
@@ -440,6 +467,55 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 0.5刻みで表示する星ウィジェット(表示専用)
+class RatingStars extends StatelessWidget {
+  final double rating;
+  final Color? color;
+
+  const RatingStars({
+    super.key,
+    required this.rating,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final starColor = color ?? const Color(0xFF4CAF50);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (index) {
+        final starIndex = index + 1;
+        final isFilled = rating >= starIndex;
+        final isHalf = rating >= starIndex - 0.5 && rating < starIndex;
+
+        IconData icon;
+        Color iconColor;
+
+        if (isFilled) {
+          icon = Icons.star;
+          iconColor = starColor;
+        } else if (isHalf) {
+          icon = Icons.star_half;
+          iconColor = starColor;
+        } else {
+          icon = Icons.star_border;
+          iconColor = theme.brightness == Brightness.dark
+              ? Colors.grey[600]!
+              : Colors.grey[400]!;
+        }
+
+        return Icon(
+          icon,
+          size: 20,
+          color: iconColor,
+        );
+      }),
     );
   }
 }
