@@ -5,19 +5,29 @@ import 'package:favlog_app/presentation/screens/add_review_screen.dart';
 
 void main() {
   testWidgets('AddReviewScreen renders correctly', (WidgetTester tester) async {
+    // Note: This test now uses dummy providers since the controller depends on them.
+    // A more robust test would use Mockito to mock these dependencies.
     await tester.pumpWidget(
-      const ProviderScope( // ProviderScopeでラップ
+      const ProviderScope(
         child: MaterialApp(home: AddReviewScreen()),
       ),
     );
 
-    expect(find.text('レビューを追加'), findsOneWidget);
-    expect(find.text('商品名'), findsOneWidget);
-    expect(find.text('商品URL (オプション)'), findsOneWidget);
-    expect(find.text('カテゴリ'), findsOneWidget); // テキストを修正 (オプションが削除されたため)
-    expect(find.text('画像をタップして選択 (オプション)'), findsOneWidget);
-    expect(find.text('レビュー'), findsOneWidget);
-    expect(find.text('レビューを投稿'), findsOneWidget);
+    // Header title
+    expect(find.text('レビュー投稿'), findsOneWidget);
+    
+    // Form field labels
+    expect(find.text('商品・サービス名'), findsOneWidget);
+    expect(find.text('商品URL (任意)'), findsOneWidget);
+    expect(find.text('カテゴリ'), findsOneWidget);
+    expect(find.text('サブカテゴリ (任意)'), findsOneWidget);
+    expect(find.text('評価'), findsOneWidget);
+    expect(find.text('写真を追加'), findsNWidgets(2));
+    expect(find.text('レビュー本文'), findsOneWidget);
+    expect(find.text('公開範囲'), findsOneWidget);
+
+    // Submit button
+    expect(find.text('レビューを投稿する'), findsOneWidget);
   });
 
   // More detailed tests would involve mocking Supabase interactions,

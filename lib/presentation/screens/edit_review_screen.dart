@@ -162,13 +162,13 @@ class EditReviewScreen extends ConsumerWidget { // Change to ConsumerWidget
                   child: const Text('画像を削除'),
                 ),
               const SizedBox(height: 16.0),
-              Text('評価: ${currentReview.rating.toInt()} / 5'), // Use currentReview
+              Text('評価: ${currentReview.rating.toStringAsFixed(1)} / 5'), // Use currentReview
               Slider(
-                value: currentReview.rating.toDouble(), // Use currentReview
+                value: currentReview.rating, // Use currentReview
                 min: 1,
                 max: 5,
                 divisions: 4,
-                label: currentReview.rating.round().toString(), // Use currentReview
+                label: currentReview.rating.toStringAsFixed(1), // Use currentReview
                 onChanged: (newRating) {
                   editReviewController.updateRating(newRating);
                 },

@@ -6,7 +6,7 @@ class Review {
   final String userId;
   final String productId;
   final String reviewText;
-  final int rating;
+  final double rating; // Changed from int to double
 
   Review({
     String? id,
@@ -14,7 +14,7 @@ class Review {
     required this.userId,
     required this.productId,
     required this.reviewText,
-    required this.rating,
+    required this.rating, // Type is now double
   })  : id = id ?? const Uuid().v4(),
         createdAt = createdAt ?? DateTime.now();
 
@@ -25,7 +25,7 @@ class Review {
       userId: '', // Empty user ID
       productId: '', // Empty product ID
       reviewText: '', // Empty review text
-      rating: 3, // Default rating within valid range (1-5)
+      rating: 3.0, // Default rating within valid range (1.0-5.0)
     );
   }
 
@@ -36,7 +36,7 @@ class Review {
       userId: json['user_id'] as String,
       productId: json['product_id'] as String,
       reviewText: json['review_text'] as String,
-      rating: json['rating'] as int,
+      rating: (json['rating'] as num).toDouble(), // Changed from int to double parsing
     );
   }
 
@@ -57,7 +57,7 @@ class Review {
     String? userId,
     String? productId,
     String? reviewText,
-    int? rating,
+    double? rating, // Changed from int to double
   }) {
     return Review(
       id: id ?? this.id,

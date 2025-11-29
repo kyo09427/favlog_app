@@ -146,7 +146,7 @@ class EditReviewController extends StateNotifier<EditReviewState> {
   }
 
   void updateRating(double rating) {
-    state = state.copyWith(review: state.review.copyWith(rating: rating.toInt()));
+    state = state.copyWith(review: state.review.copyWith(rating: rating));
   }
 
   Future<void> pickImage() async {

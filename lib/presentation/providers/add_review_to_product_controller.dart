@@ -67,7 +67,7 @@ class AddReviewToProductController extends StateNotifier<AddReviewToProductState
         userId: user.id,
         productId: _product.id,
         reviewText: state.reviewText,
-        rating: state.rating.toInt(),
+        rating: state.rating,
       );
 
       await reviewRepository.createReview(newReview);
