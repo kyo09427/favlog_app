@@ -3,17 +3,49 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:favlog_app/presentation/providers/add_review_controller.dart';
 import 'package:favlog_app/presentation/widgets/error_dialog.dart';
 
-class AddReviewScreen extends ConsumerWidget {
+class AddReviewScreen extends ConsumerStatefulWidget {
   const AddReviewScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AddReviewScreen> createState() => _AddReviewScreenState();
+}
+
+class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _productNameController;
+  late final TextEditingController _productUrlController;
+  late final TextEditingController _subcategoryController;
+  late final TextEditingController _reviewTextController;
+
+  @override
+  void initState() {
+    super.initState();
+    final addReviewState = ref.read(addReviewControllerProvider);
+    _productNameController =
+        TextEditingController(text: addReviewState.productName);
+    _productUrlController =
+        TextEditingController(text: addReviewState.productUrl);
+    _subcategoryController =
+        TextEditingController(text: addReviewState.subcategory);
+    _reviewTextController =
+        TextEditingController(text: addReviewState.reviewText);
+  }
+
+  @override
+  void dispose() {
+    _productNameController.dispose();
+    _productUrlController.dispose();
+    _subcategoryController.dispose();
+    _reviewTextController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final addReviewState = ref.watch(addReviewControllerProvider);
     final addReviewController = ref.read(addReviewControllerProvider.notifier);
 
-    final formKey = GlobalKey<FormState>();
-
-    // エラー発生時にダイアログ表示（元の処理を引き継ぎ）
+    // エラー発生時にダイアログ表示
     ref.listen<AddReviewState>(
       addReviewControllerProvider,
       (previous, next) {
@@ -29,13 +61,12 @@ class AddReviewScreen extends ConsumerWidget {
         : const Color(0xFFF6F8F6); // background-light
 
     Future<void> handleSubmit() async {
-      if (!formKey.currentState!.validate()) {
+      if (!_formKey.currentState!.validate()) {
         return;
       }
 
       await addReviewController.submitReview();
 
-      // 最新の状態を読んでエラーがなければ戻る
       final latestState = ref.read(addReviewControllerProvider);
       if (context.mounted && latestState.error == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -45,7 +76,7 @@ class AddReviewScreen extends ConsumerWidget {
       }
     }
 
-    // 星の表示（1〜5）
+    // 星表示（0.5刻み）
     List<Widget> buildStars() {
       final rating = addReviewState.rating;
       return List.generate(5, (index) {
@@ -75,7 +106,6 @@ class AddReviewScreen extends ConsumerWidget {
           onPressed: addReviewState.isLoading
               ? null
               : () {
-                  // タップで 0.5 刻みっぽく切り替え
                   double newRating;
                   if (rating == starIndex.toDouble()) {
                     newRating = starIndex - 0.5;
@@ -91,8 +121,7 @@ class AddReviewScreen extends ConsumerWidget {
       });
     }
 
-    // 公開範囲（いまはダミー表示のみ）
-    const visibilityLabel = '親しい友達'; // TODO: 状態管理したくなったらProvider追加
+    const visibilityLabel = '親しい友達';
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -106,7 +135,7 @@ class AddReviewScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 上部カスタムヘッダー（close + タイトル + 投稿）
+                    // 上部カスタムヘッダー
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -124,6 +153,7 @@ class AddReviewScreen extends ConsumerWidget {
                       ),
                       child: Row(
                         children: [
+                          // 左：閉じるボタン
                           SizedBox(
                             width: 48,
                             child: IconButton(
@@ -136,6 +166,7 @@ class AddReviewScreen extends ConsumerWidget {
                               onPressed: () => Navigator.of(context).pop(),
                             ),
                           ),
+                          // 中央：タイトル
                           const Expanded(
                             child: Center(
                               child: Text(
@@ -148,6 +179,7 @@ class AddReviewScreen extends ConsumerWidget {
                               ),
                             ),
                           ),
+                          // 右：投稿ボタン
                           SizedBox(
                             width: 48,
                             child: TextButton(
@@ -168,11 +200,14 @@ class AddReviewScreen extends ConsumerWidget {
                       ),
                     ),
 
-                    // フォーム本体
+                    // 本文フォーム
                     Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
                       child: Form(
-                        key: formKey,
+                        key: _formKey,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -186,7 +221,7 @@ class AddReviewScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 8),
                             TextFormField(
-                              initialValue: addReviewState.productName,
+                              controller: _productNameController,
                               decoration: InputDecoration(
                                 hintText: '例：お気に入りの本',
                                 filled: true,
@@ -241,7 +276,7 @@ class AddReviewScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 8),
                             TextFormField(
-                              initialValue: addReviewState.productUrl,
+                              controller: _productUrlController,
                               keyboardType: TextInputType.url,
                               decoration: InputDecoration(
                                 hintText: '例：https://example.com',
@@ -272,12 +307,13 @@ class AddReviewScreen extends ConsumerWidget {
                                   vertical: 15,
                                 ),
                               ),
-                              onChanged: addReviewController.updateProductUrl,
+                              onChanged:
+                                  addReviewController.updateProductUrl,
                             ),
 
                             const SizedBox(height: 24),
 
-                            // カテゴリ（ChoiceChip）
+                            // カテゴリ
                             const Text(
                               'カテゴリ',
                               style: TextStyle(
@@ -293,7 +329,8 @@ class AddReviewScreen extends ConsumerWidget {
                                 }
                                 return null;
                               },
-                              initialValue: addReviewState.selectedCategory,
+                              initialValue:
+                                  addReviewState.selectedCategory,
                               builder: (field) {
                                 return Column(
                                   crossAxisAlignment:
@@ -311,21 +348,27 @@ class AddReviewScreen extends ConsumerWidget {
                                           label: Text(
                                             category,
                                             style: TextStyle(
-                                              fontWeight: selected
-                                                  ? FontWeight.bold
-                                                  : FontWeight.w500,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              color: selected
+                                                  ? const Color(0xFF102216)
+                                                  : (theme.brightness ==
+                                                          Brightness.dark
+                                                      ? Colors.white
+                                                      : Colors.black87),
                                             ),
                                           ),
                                           selected: selected,
-                                          onSelected: addReviewState
-                                                  .isLoading
-                                              ? null
-                                              : (_) {
-                                                  addReviewController
-                                                      .updateSelectedCategory(
+                                          onSelected:
+                                              addReviewState.isLoading
+                                                  ? null
+                                                  : (_) {
+                                                      addReviewController
+                                                          .updateSelectedCategory(
+                                                              category);
+                                                      field.didChange(
                                                           category);
-                                                  field.didChange(category);
-                                                },
+                                                    },
                                           selectedColor:
                                               Colors.greenAccent[400],
                                           labelStyle: TextStyle(
@@ -333,16 +376,26 @@ class AddReviewScreen extends ConsumerWidget {
                                                 ? const Color(0xFF102216)
                                                 : (theme.brightness ==
                                                         Brightness.dark
-                                                    ? Colors.grey[200]
-                                                    : Colors.grey[800]),
+                                                    ? Colors.white
+                                                    : Colors.black87),
                                           ),
-                                          backgroundColor: theme.brightness ==
-                                                  Brightness.dark
-                                              ? Colors.white10
-                                              : Colors.grey.shade100,
+                                          backgroundColor:
+                                              theme.brightness ==
+                                                      Brightness.dark
+                                                  ? Colors.white10
+                                                  : Colors.grey.shade100,
                                           shape: RoundedRectangleBorder(
                                             borderRadius:
-                                                BorderRadius.circular(999),
+                                                BorderRadius.circular(20),
+                                            side: BorderSide(
+                                              color: selected
+                                                  ? Colors.greenAccent[400] ??
+                                                      Colors.green
+                                                  : (theme.brightness ==
+                                                          Brightness.dark
+                                                      ? Colors.white24
+                                                      : Colors.grey.shade300),
+                                            ),
                                           ),
                                         );
                                       }).toList(),
@@ -354,8 +407,7 @@ class AddReviewScreen extends ConsumerWidget {
                                         child: Text(
                                           field.errorText!,
                                           style: TextStyle(
-                                            color:
-                                                theme.colorScheme.error,
+                                            color: theme.colorScheme.error,
                                             fontSize: 12,
                                           ),
                                         ),
@@ -367,7 +419,7 @@ class AddReviewScreen extends ConsumerWidget {
 
                             const SizedBox(height: 24),
 
-                            // サブカテゴリ（任意）※元はAutocompleteだったのを簡略化
+                            // サブカテゴリ（任意）
                             Text(
                               'サブカテゴリ (任意)',
                               style: TextStyle(
@@ -380,10 +432,10 @@ class AddReviewScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 8),
                             TextFormField(
-                              initialValue: addReviewState.subcategory,
+                              controller: _subcategoryController,
                               decoration: InputDecoration(
                                 hintText:
-                                    '例：ミステリー小説、ワイヤレスイヤホン',
+                                    '例：カフェ、書籍、ガジェット、美容、サブスク など',
                                 filled: true,
                                 fillColor:
                                     theme.brightness == Brightness.dark
@@ -417,7 +469,7 @@ class AddReviewScreen extends ConsumerWidget {
 
                             const SizedBox(height: 24),
 
-                            // 評価（星）
+                            // 評価
                             const Text(
                               '評価',
                               style: TextStyle(
@@ -426,11 +478,13 @@ class AddReviewScreen extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            Row(children: buildStars()),
+                            Row(
+                              children: buildStars(),
+                            ),
 
                             const SizedBox(height: 24),
 
-                            // 写真を追加（1枚想定：元の state に合わせて単一ファイル）
+                            // 写真を追加
                             const Text(
                               '写真を追加',
                               style: TextStyle(
@@ -464,35 +518,50 @@ class AddReviewScreen extends ConsumerWidget {
                                             MainAxisAlignment.center,
                                         children: [
                                           Icon(
-                                            Icons
-                                                .add_photo_alternate_outlined,
+                                            Icons.add_a_photo,
                                             size: 28,
-                                            color: theme.brightness ==
-                                                    Brightness.dark
-                                                ? Colors.grey[400]
-                                                : Colors.grey[500],
+                                            color: Colors.greenAccent[400] ??
+                                                Colors.green,
                                           ),
-                                          const SizedBox(height: 4),
+                                          const SizedBox(height: 8),
                                           Text(
                                             '写真を追加',
                                             style: TextStyle(
-                                              fontSize: 12,
                                               color: theme.brightness ==
                                                       Brightness.dark
-                                                  ? Colors.grey[400]
-                                                  : Colors.grey[600],
+                                                  ? Colors.white
+                                                  : Colors.black87,
                                             ),
                                           ),
                                         ],
                                       )
-                                    : ClipRRect(
-                                        borderRadius:
-                                            BorderRadius.circular(12),
-                                        child: Image.file(
-                                          addReviewState.imageFile!,
-                                          fit: BoxFit.cover,
-                                          width: double.infinity,
-                                        ),
+                                    : Row(
+                                        children: [
+                                          const SizedBox(width: 12),
+                                          ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            child: Image.file(
+                                              addReviewState.imageFile!,
+                                              width: 80,
+                                              height: 80,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              '写真が1枚選択されています',
+                                              style: TextStyle(
+                                                color: theme.brightness ==
+                                                        Brightness.dark
+                                                    ? Colors.white
+                                                    : Colors.black87,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                        ],
                                       ),
                               ),
                             ),
@@ -509,7 +578,7 @@ class AddReviewScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 8),
                             TextFormField(
-                              initialValue: addReviewState.reviewText,
+                              controller: _reviewTextController,
                               maxLines: 6,
                               decoration: InputDecoration(
                                 hintText:
@@ -536,7 +605,10 @@ class AddReviewScreen extends ConsumerWidget {
                                     width: 1.5,
                                   ),
                                 ),
-                                contentPadding: const EdgeInsets.all(15),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 15,
+                                  vertical: 15,
+                                ),
                               ),
                               onChanged:
                                   addReviewController.updateReviewText,
@@ -550,7 +622,7 @@ class AddReviewScreen extends ConsumerWidget {
 
                             const SizedBox(height: 24),
 
-                            // 公開範囲（見た目だけ、それっぽく）
+                            // 公開範囲（カード）
                             const Text(
                               '公開範囲',
                               style: TextStyle(
@@ -560,54 +632,60 @@ class AddReviewScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 8),
                             Container(
-                              height: 56,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 12,
+                              ),
                               decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
                                 color: theme.brightness == Brightness.dark
                                     ? Colors.white10
-                                    : Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(12),
+                                    : Colors.white,
+                                border: Border.all(
+                                  color: theme.brightness == Brightness.dark
+                                      ? Colors.white24
+                                      : Colors.grey.shade300,
+                                ),
                               ),
                               child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        height: 32,
-                                        width: 32,
-                                        decoration: BoxDecoration(
-                                          color: (Colors.greenAccent[400] ??
-                                                  Colors.green)
-                                              .withOpacity(0.2),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          Icons.group,
-                                          size: 18,
-                                          color: Colors.greenAccent[400] ??
-                                              Colors.green,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      const Text(
-                                        visibilityLabel,
-                                        style: TextStyle(fontSize: 16),
-                                      ),
-                                    ],
+                                  Container(
+                                    height: 32,
+                                    width: 32,
+                                    decoration: BoxDecoration(
+                                      color: (Colors.greenAccent[400] ??
+                                              Colors.green)
+                                          .withOpacity(0.2),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.group,
+                                      size: 18,
+                                      color: Colors.greenAccent[400] ??
+                                          Colors.green,
+                                    ),
                                   ),
+                                  const SizedBox(width: 12),
+                                  const Text(
+                                    visibilityLabel,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const Spacer(),
                                   Icon(
                                     Icons.arrow_forward_ios,
                                     size: 18,
-                                    color: theme.brightness == Brightness.dark
-                                        ? Colors.grey[500]
-                                        : Colors.grey[400],
+                                    color:
+                                        theme.brightness == Brightness.dark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600],
                                   ),
                                 ],
                               ),
                             ),
+
+                            const SizedBox(height: 48),
                           ],
                         ),
                       ),
@@ -617,66 +695,48 @@ class AddReviewScreen extends ConsumerWidget {
               ),
             ),
 
-            // 下部「レビューを投稿する」ボタン
+            // 下部固定の公開範囲説明
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      bgColor,
-                      bgColor.withOpacity(0.0),
-                    ],
-                  ),
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: addReviewState.isLoading
-                          ? null
-                          : handleSubmit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Colors.greenAccent[400] ?? Colors.green,
-                        foregroundColor: const Color(0xFF102216),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        elevation: 6,
-                        shadowColor:
-                            (Colors.greenAccent[400] ?? Colors.green)
-                                .withOpacity(0.4),
-                      ),
-                      child: addReviewState.isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(
-                                  Colors.black,
-                                ),
-                              ),
-                            )
-                          : const Text(
-                              'レビューを投稿する',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
+                  color: theme.brightness == Brightness.dark
+                      ? const Color(0xFF050B07)
+                      : Colors.white,
+                  border: Border(
+                    top: BorderSide(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.white10
+                          : Colors.grey.shade300,
                     ),
                   ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 18,
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[400]
+                          : Colors.grey[600],
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'このレビューは $visibilityLabel にのみ表示されます',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: theme.brightness == Brightness.dark
+                              ? Colors.grey[300]
+                              : Colors.grey[700],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

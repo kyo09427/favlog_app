@@ -7,6 +7,7 @@ FavLogは、クローズドなコミュニティ（友人、家族、同僚な�
 ### 主要機能
 
 *   **アカウント管理**: ユーザー登録、ログイン、ログアウト機能。メール認証フローの改善（未確認ユーザーへの警告表示、リセンドメール機能）。**JWT有効期限切れ時の自動ログアウトと再認証誘導**。
+*   **プロフィール管理**: ユーザー名とアバター画像の設定・更新。
 *   **レビュー投稿**: 商品名、URL、画像、カテゴリ（ChoiceChipによる視覚的選択）、サブカテゴリ（自由入力、**オートコンプリート候補表示**）、レビューテキスト、評価（0.5単位の星）を含むレビューを投稿。**画像アップロード時の自動圧縮**。
 *   **レビュー表示**: 投稿されたレビューがホーム画面に最新の1件のみ表示され、詳細画面ではすべてのレビューが表示されます。**ローディング状態の改善（Shimmer効果）**、**UI/UXの改善（テキストの省略表示）**。**無限スクロールによる動的なデータ読み込み**。
 *   **レビュー編集**: 作成者のみが自身のレビューを長押しで編集可能。編集時には画像やカテゴリなどの商品情報も更新できます。製品・レビュー所有者チェックの強化。
@@ -124,6 +125,28 @@ CREATE POLICY "Users can delete their own products" ON products
   USING (auth.uid() = user_id);
 ```
 
+#### `profiles` テーブル
+
+```sql
+CREATE TABLE profiles (
+  id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL PRIMARY KEY,
+  username TEXT UNIQUE,
+  avatar_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public profiles are viewable by everyone."
+  ON profiles FOR SELECT USING (TRUE);
+
+CREATE POLICY "Users can insert their own profile."
+  ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Users can update own profile."
+  ON profiles FOR UPDATE USING (auth.uid() = id);
+```
+
 #### `reviews` テーブル
 
 ```sql
@@ -166,6 +189,36 @@ Supabaseダッシュボードの「Storage」セクションで、画像アッ�
 1.  「**New bucket**」をクリックし、バケット名を `product_images` とします。
 2.  「**Public bucket**」のチェックボックスをオンにします。
 3.  以下のSQLを「SQL Editor」で実行し、`product_images` バケットのRLSポリシーを設定します。
+
+#### `avatars` バケット (新規追加)
+
+`avatars`という名前で新しいバケットを作成し、RLSポリシーを設定してください。
+
+1.  「**New bucket**」をクリックし、バケット名を `avatars` とします。
+2.  「**Public bucket**」のチェックボックスをオンにします。
+3.  以下のSQLを「SQL Editor」で実行し、`avatars` バケットのRLSポリシーを設定します。
+
+```sql
+-- 'avatars'バケットのストレージポリシーを設定する
+
+-- アバター画像を誰でも閲覧できるようにするポリシー
+CREATE POLICY "Avatar images are publicly accessible."
+  ON storage.objects FOR SELECT USING (bucket_id = 'avatars');
+
+-- 認証済みユーザーが自身のアバターをアップロードできるようにするポリシー
+CREATE POLICY "Authenticated users can upload an avatar."
+  ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'avatars' AND auth.uid() = owner);
+
+-- 認証済みユーザーが自身のアバターを更新できるようにするポリシー
+CREATE POLICY "Authenticated users can update their own avatar."
+  ON storage.objects FOR UPDATE USING (bucket_id = 'avatars' AND auth.uid() = owner);
+
+-- 認証済みユーザーが自身のアバターを削除できるようにするポリシー
+CREATE POLICY "Authenticated users can delete their own avatar."
+  ON storage.objects FOR DELETE USING (bucket_id = 'avatars' AND auth.uid() = owner);
+```
+
+#### `product_images` バケット (既存)
 
 ```sql
 -- 'product_images'バケットのストレージポリシーを設定する

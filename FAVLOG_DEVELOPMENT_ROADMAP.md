@@ -294,3 +294,38 @@
     *   `updateSelectedCategory` メソッド内で `fetchSubcategorySuggestions` を呼び出し、カテゴリが変更されるたびにサブカテゴリの候補を更新するように設定。`EditReviewController` のコンストラクタからも初期候補を読み込むよう修正。
     *   `lib/presentation/screens/add_review_screen.dart` および `lib/presentation/screens/edit_review_screen.dart` のサブカテゴリ入力フィールドを `TextFormField` から `Autocomplete<String>` ウィジェットに置き換え。
     *   `Autocomplete` の `optionsBuilder` は `subcategorySuggestions` を基にユーザー入力に応じて候補をフィルタリングし、`onSelected` は選択された値をコントローラーに渡し、`fieldViewBuilder` で `TextFormField` の外観と動作を維持。
+
+## 実装ログ - 2025年11月30日
+
+### プロフィール機能の実装
+
+*   **ドメイン層**:
+    *   `Profile` モデル (`lib/domain/models/profile.dart`) を定義。ユーザーID、ユーザー名、アバターURLを保持。
+    *   `ProfileRepository` 抽象インターフェース (`lib/domain/repositories/profile_repository.dart`) を定義。プロフィールの取得と更新のメソッドを宣言。
+*   **データ層**:
+    *   `SupabaseProfileRepository` (`lib/data/repositories/supabase_profile_repository.dart`) を実装。`ProfileRepository` インターフェースを継承し、Supabaseと連携してプロフィールのCRUD操作を実行。
+    *   `fetchProfile` メソッドを `maybeSingle()` を使用するように更新し、Supabase APIの変更に対応。
+    *   `updateProfile` メソッドのエラーハンドリングを改善し、Supabaseの`upsert`操作に合わせて例外処理を調整。
+*   **プロバイダー層**:
+    *   `profileRepositoryProvider` (`lib/core/providers/profile_providers.dart`) を Riverpod で提供。
+    *   `ImagePicker` を Riverpod で管理するため `imagePickerProvider` (`lib/core/providers/common_providers.dart`) を新規作成。
+*   **UI/状態管理層**:
+    *   `ProfileScreenController` (`lib/presentation/providers/profile_screen_controller.dart`) を実装。
+        *   ユーザープロフィールの取得、ユーザー名の更新、アバター画像の選択とSupabaseストレージへのアップロードロジックを管理。
+        *   `ImagePicker` をプロバイダー経由で注入するようにリファクタリングし、テスト容易性を向上。
+        *   `createInitialProfile` メソッドを追加し、プロフィールが存在しない場合に初期プロフィールを作成するロジックを実装。
+    *   `ProfileScreen` (`lib/presentation/screens/profile_screen.dart`) を実装。
+        *   ユーザー名とアバター画像を表示・編集できるUIを提供。
+        *   `CachedNetworkImage` を使用してアバター画像を表示し、`GestureDetector` で画像選択をトリガー。
+        *   ローディング状態には `Shimmer` 効果によるプレースホルダーを表示し、エラー時にはエラーメッセージを表示。
+*   **ナビゲーション**:
+    *   `home_screen.dart` の `BottomNavigationBar` に「プロフィール」タブを追加し、`ProfileScreen` へのナビゲーションを実装。
+    *   `profile_screen.dart` で`Profile`モデルと`profile_screen_controller.dart`のインポートが欠落していた問題を修正。
+*   **ドキュメント**:
+    *   `README.md` にプロフィール機能の概要と、Supabaseの`profiles`テーブルおよび`avatars`ストレージバケットのセットアップSQLとRLSポリシーに関する詳細な手順を追記。
+*   **テスト**:
+    *   `test/screens/profile_screen_test.dart` に`ProfileScreen`用のウィジェットテストを実装。
+    *   `mocktail` の `registerFallbackValue` を `Profile`、`File`、`FileOptions` に対して設定。
+    *   テスト内の`mockSupabaseStorageClient`のモックを修正し、`StorageFileApi.upload`が文字列を返すように調整。
+    *   ローディングインジケーター（Shimmer）の検出ロジックを`find.byType(Shimmer)`に変更し、`shimmer`パッケージのインポートを追加。
+    *   `CircularProgressIndicator`ではなく`Shimmer`ウィジェットを期待するようにアサーションを修正。

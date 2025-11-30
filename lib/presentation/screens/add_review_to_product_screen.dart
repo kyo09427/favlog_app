@@ -4,19 +4,43 @@ import 'package:favlog_app/domain/models/product.dart';
 import 'package:favlog_app/presentation/providers/add_review_to_product_controller.dart';
 import 'package:favlog_app/presentation/widgets/error_dialog.dart';
 
-class AddReviewToProductScreen extends ConsumerWidget {
+class AddReviewToProductScreen extends ConsumerStatefulWidget {
   final Product product; // 既存の商品
 
   const AddReviewToProductScreen({super.key, required this.product});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AddReviewToProductScreen> createState() =>
+      _AddReviewToProductScreenState();
+}
+
+class _AddReviewToProductScreenState
+    extends ConsumerState<AddReviewToProductScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _reviewTextController;
+
+  @override
+  void initState() {
+    super.initState();
+    final addReviewToProductState =
+        ref.read(addReviewToProductControllerProvider(widget.product));
+    _reviewTextController =
+        TextEditingController(text: addReviewToProductState.reviewText);
+  }
+
+  @override
+  void dispose() {
+    _reviewTextController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final product = widget.product;
     final addReviewToProductState =
         ref.watch(addReviewToProductControllerProvider(product));
     final addReviewToProductController =
         ref.read(addReviewToProductControllerProvider(product).notifier);
-
-    final formKey = GlobalKey<FormState>();
 
     // エラー監視（元ファイルの意図そのまま）
     ref.listen<AddReviewToProductState>(
@@ -34,7 +58,7 @@ class AddReviewToProductScreen extends ConsumerWidget {
         : const Color(0xFFF6F8F6); // background-light っぽい色
 
     Future<void> handleSubmit() async {
-      if (!formKey.currentState!.validate()) return;
+      if (!_formKey.currentState!.validate()) return;
 
       await addReviewToProductController.submitReview();
 
@@ -59,7 +83,7 @@ class AddReviewToProductScreen extends ConsumerWidget {
       if (rating >= starPosition) {
         icon = Icons.star;
         color = Colors.greenAccent[400] ?? Colors.green;
-      } else if (rating >= starPosition - 0.5) {
+      } else if (rating >= starPosition - 0.5 && rating < starPosition) {
         icon = Icons.star_half;
         color = Colors.greenAccent[400] ?? Colors.green;
       } else {
@@ -94,10 +118,10 @@ class AddReviewToProductScreen extends ConsumerWidget {
       body: SafeArea(
         child: Stack(
           children: [
-            // メインコンテンツ（スクロール）
+            // スクロール全体
             Positioned.fill(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 96),
+                padding: const EdgeInsets.only(bottom: 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -119,6 +143,7 @@ class AddReviewToProductScreen extends ConsumerWidget {
                       ),
                       child: Row(
                         children: [
+                          // 左：閉じるボタン
                           SizedBox(
                             width: 48,
                             child: IconButton(
@@ -131,10 +156,11 @@ class AddReviewToProductScreen extends ConsumerWidget {
                               onPressed: () => Navigator.of(context).pop(),
                             ),
                           ),
+                          // 中央：タイトル
                           const Expanded(
                             child: Center(
                               child: Text(
-                                'レビュー投稿',
+                                'レビューを書く',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -143,6 +169,7 @@ class AddReviewToProductScreen extends ConsumerWidget {
                               ),
                             ),
                           ),
+                          // 右：投稿ボタン
                           SizedBox(
                             width: 48,
                             child: TextButton(
@@ -166,7 +193,7 @@ class AddReviewToProductScreen extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: Form(
-                        key: formKey,
+                        key: _formKey,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -180,94 +207,128 @@ class AddReviewToProductScreen extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: theme.brightness == Brightness.dark
-                                      ? Colors.white12
+                                      ? Colors.white24
                                       : Colors.grey.shade300,
                                 ),
                               ),
-                              child: Column(
+                              child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // 商品名
-                                  Text(
-                                    product.name,
-                                    style:
-                                        theme.textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-
-                                  // カテゴリ / サブカテゴリ
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 4,
-                                    children: [
-                                      if (product.category != null)
-                                        Chip(
-                                          label: Text(
-                                            product.category!,
-                                            style: theme.textTheme.bodySmall
-                                                ?.copyWith(
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                          backgroundColor:
-                                              Colors.greenAccent[400] ??
-                                                  Colors.green,
-                                          materialTapTargetSize:
-                                              MaterialTapTargetSize
-                                                  .shrinkWrap,
-                                        ),
-                                      if (product.subcategory != null)
-                                        Chip(
-                                          label: Text(
-                                            product.subcategory!,
-                                            style: theme.textTheme.bodySmall,
-                                          ),
-                                          backgroundColor:
-                                              theme.brightness ==
-                                                      Brightness.dark
-                                                  ? Colors.white12
-                                                  : Colors.grey.shade100,
-                                          materialTapTargetSize:
-                                              MaterialTapTargetSize
-                                                  .shrinkWrap,
-                                        ),
-                                    ],
-                                  ),
-
-                                  // URL（あれば表示だけ）
-                                  if (product.url != null &&
-                                      product.url!.isNotEmpty) ...[
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      product.url!,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style:
-                                          theme.textTheme.bodySmall?.copyWith(
-                                        color: theme.brightness ==
-                                                Brightness.dark
-                                            ? Colors.grey[300]
-                                            : Colors.grey[600],
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                    ),
-                                  ],
-
-                                  // 画像（あれば）
-                                  if (product.imageUrl != null) ...[
-                                    const SizedBox(height: 10),
+                                  // サムネイル（あれば）
+                                  if (product.imageUrl != null &&
+                                      product.imageUrl!.isNotEmpty)
                                     ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(8),
                                       child: Image.network(
                                         product.imageUrl!,
-                                        height: 120,
-                                        width: double.infinity,
+                                        width: 64,
+                                        height: 64,
                                         fit: BoxFit.cover,
                                       ),
+                                    )
+                                  else
+                                    Container(
+                                      width: 64,
+                                      height: 64,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        color: theme.brightness ==
+                                                Brightness.dark
+                                            ? Colors.white12
+                                            : Colors.grey.shade200,
+                                      ),
+                                      child: Icon(
+                                        Icons.image_not_supported_outlined,
+                                        color: theme.brightness ==
+                                                Brightness.dark
+                                            ? Colors.white54
+                                            : Colors.grey.shade500,
+                                      ),
                                     ),
-                                  ],
+                                  const SizedBox(width: 12),
+                                  // 商品情報テキスト
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // 商品名
+                                        Text(
+                                          product.name,
+                                          style: theme
+                                              .textTheme.titleMedium
+                                              ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+
+                                        // カテゴリ / サブカテゴリ
+                                        Wrap(
+                                          spacing: 8,
+                                          runSpacing: 4,
+                                          children: [
+                                            if (product.category != null)
+                                              Chip(
+                                                label: Text(
+                                                  product.category!,
+                                                  style: theme
+                                                      .textTheme.bodySmall
+                                                      ?.copyWith(
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                                backgroundColor:
+                                                    Colors.greenAccent[400] ??
+                                                        Colors.green,
+                                                materialTapTargetSize:
+                                                    MaterialTapTargetSize
+                                                        .shrinkWrap,
+                                              ),
+                                            if (product.subcategory != null)
+                                              Chip(
+                                                label: Text(
+                                                  product.subcategory!,
+                                                  style: theme
+                                                      .textTheme.bodySmall
+                                                      ?.copyWith(
+                                                    color: theme.brightness ==
+                                                            Brightness.dark
+                                                        ? Colors.white
+                                                        : Colors.black87,
+                                                  ),
+                                                ),
+                                                backgroundColor:
+                                                    theme.brightness ==
+                                                            Brightness.dark
+                                                        ? Colors.white12
+                                                        : Colors.grey.shade100,
+                                                materialTapTargetSize:
+                                                    MaterialTapTargetSize
+                                                        .shrinkWrap,
+                                              ),
+                                          ],
+                                        ),
+
+                                        // URL（あれば表示だけ）
+                                        if (product.url != null &&
+                                            product.url!.isNotEmpty) ...[
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            product.url!,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                              color: Colors.blueAccent,
+                                              decoration:
+                                                  TextDecoration.underline,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -299,7 +360,7 @@ class AddReviewToProductScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 8),
                             TextFormField(
-                              initialValue: addReviewToProductState.reviewText,
+                              controller: _reviewTextController,
                               maxLines: 6,
                               decoration: InputDecoration(
                                 hintText: '商品の感想を書いてください',
@@ -310,8 +371,7 @@ class AddReviewToProductScreen extends ConsumerWidget {
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(
-                                    color: theme.brightness ==
-                                            Brightness.dark
+                                    color: theme.brightness == Brightness.dark
                                         ? Colors.white24
                                         : Colors.grey.shade300,
                                   ),
@@ -354,67 +414,7 @@ class AddReviewToProductScreen extends ConsumerWidget {
               ),
             ),
 
-            // 🔹 画面下部の「レビューを投稿する」ボタン
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      bgColor,
-                      bgColor.withOpacity(0.0),
-                    ],
-                  ),
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: addReviewToProductState.isLoading
-                          ? null
-                          : handleSubmit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Colors.greenAccent[400] ?? Colors.green,
-                        foregroundColor: const Color(0xFF102216),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        elevation: 6,
-                        shadowColor:
-                            (Colors.greenAccent[400] ?? Colors.green)
-                                .withOpacity(0.4),
-                      ),
-                      child: addReviewToProductState.isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.black),
-                              ),
-                            )
-                          : const Text(
-                              'レビューを投稿する',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            // 下部（情報バーがあればここに追加できる）
           ],
         ),
       ),

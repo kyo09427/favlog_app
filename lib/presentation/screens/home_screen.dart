@@ -7,6 +7,7 @@ import 'package:favlog_app/presentation/screens/add_review_screen.dart';
 import 'package:favlog_app/presentation/widgets/review_item.dart';
 import 'package:favlog_app/presentation/screens/review_detail_screen.dart';
 import 'package:favlog_app/presentation/screens/search_screen.dart';
+import 'package:favlog_app/presentation/screens/profile_screen.dart'; // Added for ProfileScreen
 import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -511,8 +512,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               );
               break;
             case 2:
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('プロフィール機能は準備中です')),
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
               );
               break;
             case 3:
