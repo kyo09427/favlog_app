@@ -360,3 +360,16 @@
     *   いくつかのコントローラーと画面で、エラーメッセージやUIテキストを日本語（一部文字化けしていた部分も）に更新。
 *   **コードクリーンアップ**:
     *   多数の日本語コメント（開発メモ）を削除。
+### ナビゲーションとデータ更新の改善 (ユーザー追加)
+
+本セッション中にユーザーが追加した機能および改善点（以前のコミットから現在の変更まで）は以下の通りです。
+
+*   **データ鮮度の向上**:
+    *   `home_screen.dart` の `_HomeScreenState` に `RouteAware` をミックスインし、`didChangeDependencies()` メソッドをオーバーライド。これにより、画面がアクティブになるたびに `fetchProducts(forceUpdate: true)` を呼び出し、ホーム画面のデータを常に最新の状態に保つ「再開時の更新」ロジックを実装。
+*   **ナビゲーションスタック管理の洗練**:
+    *   `lib/presentation/widgets/common_bottom_nav_bar.dart` の `NavigationHelper.navigateToIndex` メソッドを修正。ホーム画面への遷移時にスタック上の全てのルートを削除（`pushNamedAndRemoveUntil`）し、検索・プロフィール画面への遷移時に現在のルートを置き換え（`pushReplacementNamed`）または新しいルートをプッシュ（`pushNamed`）するように変更。これにより、より制御されたナビゲーションスタックを実現。
+    *   `search_screen.dart` の `AppBar` から `leading` ウィジェットを削除し、`automaticallyImplyLeading: false` を設定。ナビゲーションの制御を `CommonBottomNavBar` に一元化。
+*   **国際化サポートの導入**:
+    *   `pubspec.yaml` に `intl` パッケージ (`^0.19.0`) を追加。日付/時刻のフォーマットなど、ロケールを意識した表示の基盤を導入。
+*   **コードのクリーンアップ**:
+    *   `pubspec.yaml` から不要なコメントを削除。
