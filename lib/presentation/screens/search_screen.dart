@@ -13,10 +13,9 @@ class SearchScreen extends ConsumerStatefulWidget {
 }
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
-  late TextEditingController _searchController;
+  late final TextEditingController _searchController;
   final List<String> _filters = ['すべて', '商品', 'サービス', 'ユーザー'];
 
-  // 人気のキーワード（ダミーデータ）
   final List<String> _popularKeywords = [
     '#キャンプ',
     '#ガジェット',
@@ -161,8 +160,20 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     Row(
                       children: [
                         ...List.generate(5, (index) {
+                          final starIndex = index + 1;
+                          final rating = latestReview.rating;
+                          
+                          IconData icon;
+                          if (rating >= starIndex) {
+                            icon = Icons.star;
+                          } else if (rating >= starIndex - 0.5) {
+                            icon = Icons.star_half;
+                          } else {
+                            icon = Icons.star_border;
+                          }
+                          
                           return Icon(
-                            index < latestReview.rating ? Icons.star : Icons.star_border,
+                            icon,
                             color: Colors.amber,
                             size: 16,
                           );
@@ -194,6 +205,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final searchState = ref.watch(searchControllerProvider);
     final searchController = ref.read(searchControllerProvider.notifier);
 
+    // 検索クエリをTextEditingControllerと同期
+    if (_searchController.text != searchState.searchQuery) {
+      _searchController.text = searchState.searchQuery;
+      _searchController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _searchController.text.length),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -209,7 +228,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Search Bar
+            // 検索バー
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: SizedBox(
@@ -219,7 +238,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   decoration: InputDecoration(
                     hintText: '商品、サービス、タグ、ユーザー名で検索',
                     prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _searchController.text.isNotEmpty
+                    suffixIcon: searchState.searchQuery.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.clear),
                             onPressed: _onClearSearch,
@@ -239,14 +258,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     ),
                   ),
                   onChanged: (value) {
-                    setState(() {}); // For suffixIcon update
                     searchController.updateSearchQuery(value);
                   },
                 ),
               ),
             ),
 
-            // Segmented Buttons
+            // フィルターボタン
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Container(

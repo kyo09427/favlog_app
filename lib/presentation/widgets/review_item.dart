@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // Import Riverpod
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:favlog_app/domain/models/product.dart';
 import 'package:favlog_app/domain/models/review.dart';
-import 'package:favlog_app/data/repositories/supabase_auth_repository.dart'; // Import authRepositoryProvider
-import 'package:favlog_app/presentation/screens/edit_review_screen.dart'; // Import EditReviewScreen
-import 'package:favlog_app/presentation/screens/review_detail_screen.dart'; // New import
+import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
+import 'package:favlog_app/presentation/screens/edit_review_screen.dart';
 
-class ReviewItem extends ConsumerStatefulWidget { // Change to ConsumerStatefulWidget
+class ReviewItem extends ConsumerStatefulWidget {
   final Product product;
   final Review review;
-  final VoidCallback onReviewEdited; // Callback to refresh home screen
+  final VoidCallback onReviewEdited;
 
   const ReviewItem({
     super.key,
@@ -19,7 +18,7 @@ class ReviewItem extends ConsumerStatefulWidget { // Change to ConsumerStatefulW
   });
 
   @override
-  ConsumerState<ReviewItem> createState() => _ReviewItemState(); // Change State to ConsumerState
+  ConsumerState<ReviewItem> createState() => _ReviewItemState();
 }
 
 class _ReviewItemState extends ConsumerState<ReviewItem> with SingleTickerProviderStateMixin {
@@ -31,8 +30,8 @@ class _ReviewItemState extends ConsumerState<ReviewItem> with SingleTickerProvid
   @override
   void initState() {
     super.initState();
-    _currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id; // Use authRepositoryProvider
-    _isOwner = _currentUserId == widget.review.userId; // Use model property
+    _currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id;
+    _isOwner = _currentUserId == widget.review.userId;
 
     _scaleController = AnimationController(
       vsync: this,
@@ -62,7 +61,7 @@ class _ReviewItemState extends ConsumerState<ReviewItem> with SingleTickerProvid
 
   void _onLongPressEnd(LongPressEndDetails details) {
     if (_isOwner) {
-      _scaleController.reverse(); // Revert animation
+      _scaleController.reverse();
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => EditReviewScreen(
@@ -70,7 +69,7 @@ class _ReviewItemState extends ConsumerState<ReviewItem> with SingleTickerProvid
             reviewId: widget.review.id,
           ),
         ),
-      ).then((_) => widget.onReviewEdited()); // Call callback to refresh after returning
+      ).then((_) => widget.onReviewEdited());
     }
   }
 
@@ -82,48 +81,86 @@ class _ReviewItemState extends ConsumerState<ReviewItem> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return ScaleTransition(
       scale: _scaleAnimation,
       child: GestureDetector(
         onLongPressStart: _onLongPressStart,
         onLongPressEnd: _onLongPressEnd,
         onLongPressCancel: _onLongPressCancel,
-        onTap: () { // New onTap callback for detail view
-          // The onTap to ReviewDetailScreen from here is redundant,
-          // as HomeScreen already handles navigation to ReviewDetailScreen
-          // via GestureDetector on the whole Card.
-          // This onTap will be removed or changed based on desired UX.
-        },
         child: Padding(
-          padding: const EdgeInsets.only(top: 8.0, left: 8.0), // Original padding
+          padding: const EdgeInsets.only(top: 8.0, left: 8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 星評価の表示
               Row(
                 children: List.generate(5, (starIndex) {
-                  return Icon(
-                    starIndex < widget.review.rating ? Icons.star : Icons.star_border, // Use model property
-                    color: Colors.amber,
-                    size: 16,
-                  );
+                  final starPosition = starIndex + 1;
+                  final rating = widget.review.rating;
+                  
+                  IconData icon;
+                  Color color;
+                  
+                  if (rating >= starPosition) {
+                    icon = Icons.star;
+                    color = Colors.amber;
+                  } else if (rating >= starPosition - 0.5) {
+                    icon = Icons.star_half;
+                    color = Colors.amber;
+                  } else {
+                    icon = Icons.star_border;
+                    color = theme.brightness == Brightness.dark
+                        ? Colors.grey[600]!
+                        : Colors.grey[400]!;
+                  }
+                  
+                  return Icon(icon, color: color, size: 16);
                 }),
               ),
-              Text(widget.review.reviewText), // Use model property
+              const SizedBox(height: 4),
+              
+              // レビュー本文
               Text(
-                '投稿日: ${widget.review.createdAt.toLocal().toString().split('.')[0]}', // Use model property
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                widget.review.reviewText,
+                style: theme.textTheme.bodyMedium,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
               ),
-              if (_isOwner)
+              const SizedBox(height: 4),
+              
+              // 投稿日
+              Text(
+                '投稿日: ${widget.review.createdAt.toLocal().toString().split('.')[0]}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.brightness == Brightness.dark
+                      ? Colors.grey[400]
+                      : Colors.grey[600],
+                ),
+              ),
+              
+              // 編集可能な場合のヒント
+              if (_isOwner) ...[
+                const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.edit, size: 12, color: Colors.blueGrey),
+                    Icon(
+                      Icons.edit,
+                      size: 12,
+                      color: theme.colorScheme.primary.withOpacity(0.7),
+                    ),
                     const SizedBox(width: 4),
-                    const Text(
+                    Text(
                       '(長押しで編集)',
-                      style: TextStyle(fontSize: 10, color: Colors.blueGrey),
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: theme.colorScheme.primary.withOpacity(0.7),
+                      ),
                     ),
                   ],
                 ),
+              ],
             ],
           ),
         ),
