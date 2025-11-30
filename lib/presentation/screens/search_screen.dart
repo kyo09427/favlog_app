@@ -221,10 +221,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        // leadingを削除して戻るボタンを非表示に
+        automaticallyImplyLeading: false,
         title: const Text(
           'レビュー検索',
           style: TextStyle(fontWeight: FontWeight.bold),

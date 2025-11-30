@@ -16,7 +16,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   final ScrollController _scrollController = ScrollController();
   
   @override
@@ -30,6 +30,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  // 画面が表示されるたびにデータを更新
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 初回ロード時とルート変更時にデータを更新
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final controller = ref.read(homeScreenControllerProvider.notifier);
+        final state = ref.read(homeScreenControllerProvider);
+        controller.fetchProducts(
+          category: state.selectedCategory,
+          searchQuery: state.searchQuery,
+          forceUpdate: true,
+        );
+      }
+    });
   }
 
   void _onScroll() {

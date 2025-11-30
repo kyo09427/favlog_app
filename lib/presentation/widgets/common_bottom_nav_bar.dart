@@ -47,28 +47,29 @@ class NavigationHelper {
   static void navigateToIndex(BuildContext context, int index, int currentIndex) {
     if (index == currentIndex) return;
 
+    // ナビゲーションスタックをクリアして目的の画面に遷移
     switch (index) {
       case 0:
-        // ホーム画面
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        // ホーム画面 - スタックをクリアしてルートに戻る
+        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
         break;
       case 1:
         // 検索画面
         if (currentIndex == 0) {
-          // ホームから検索へ
-          Navigator.of(context).pushReplacementNamed('/search');
+          // ホームから検索へ - 新しいルートとしてプッシュ
+          Navigator.of(context).pushNamed('/search');
         } else {
-          // 他の画面から検索へ
+          // 他の画面から検索へ - 現在の画面を置き換え
           Navigator.of(context).pushReplacementNamed('/search');
         }
         break;
       case 2:
         // プロフィール画面
         if (currentIndex == 0) {
-          // ホームからプロフィールへ
-          Navigator.of(context).pushReplacementNamed('/profile');
+          // ホームからプロフィールへ - 新しいルートとしてプッシュ
+          Navigator.of(context).pushNamed('/profile');
         } else {
-          // 他の画面からプロフィールへ
+          // 他の画面からプロフィールへ - 現在の画面を置き換え
           Navigator.of(context).pushReplacementNamed('/profile');
         }
         break;
