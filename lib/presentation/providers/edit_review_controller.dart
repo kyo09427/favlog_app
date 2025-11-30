@@ -15,7 +15,7 @@ class EditReviewState {
   final Product product;
   final Review review;
   final File? imageFile;
-  final String? currentImageUrl; // Existing image URL from product
+  final String? currentImageUrl;
   final bool isLoading;
   final String? error;
   final List<String> categories;
@@ -55,10 +55,10 @@ class EditReviewState {
   }
 }
 
-final editReviewControllerProvider =
-    StateNotifierProvider.family<EditReviewController, EditReviewState, Map<String, dynamic>>((ref, args) {
-  final String productId = args['productId']; // Now pass IDs
-  final String reviewId = args['reviewId'];   // Now pass IDs
+final editReviewControllerProvider = StateNotifierProvider.family<
+    EditReviewController, EditReviewState, Map<String, dynamic>>((ref, args) {
+  final String productId = args['productId'];
+  final String reviewId = args['reviewId'];
   return EditReviewController(ref, productId, reviewId);
 });
 
@@ -67,25 +67,51 @@ class EditReviewController extends StateNotifier<EditReviewState> {
   final String _productId;
   final String _reviewId;
   final ImagePicker _picker = ImagePicker();
+  bool _isDisposed = false;
 
   EditReviewController(this._ref, this._productId, this._reviewId)
       : super(EditReviewState(
-          product: Product.empty(), // Initial placeholder product
-          review: Review.empty(),   // Initial placeholder review
+          product: Product.empty(),
+          review: Review.empty(),
           isLoading: true,
         )) {
     _loadData();
     _loadCategories();
   }
 
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
+
   Future<void> _loadData() async {
+    if (_isDisposed) return;
+    
     state = state.copyWith(isLoading: true, error: null);
+    
     try {
       final productRepository = _ref.read(productRepositoryProvider);
       final reviewRepository = _ref.read(reviewRepositoryProvider);
+      final authRepository = _ref.read(authRepositoryProvider);
+      
+      final currentUser = authRepository.getCurrentUser();
+      if (currentUser == null) {
+        throw Exception('ユーザーがログインしていません');
+      }
 
       final product = await productRepository.getProductById(_productId);
       final review = await reviewRepository.getReviewById(_reviewId);
+
+      // セキュリティチェック: 所有者確認
+      if (product.userId != currentUser.id) {
+        throw Exception('この商品を編集する権限がありません');
+      }
+      if (review.userId != currentUser.id) {
+        throw Exception('このレビューを編集する権限がありません');
+      }
+
+      if (_isDisposed) return;
 
       state = state.copyWith(
         product: product,
@@ -93,79 +119,131 @@ class EditReviewController extends StateNotifier<EditReviewState> {
         currentImageUrl: product.imageUrl,
         isLoading: false,
       );
-      fetchSubcategorySuggestions(product.category ?? ''); // Load initial suggestions based on fetched product
+      
+      await fetchSubcategorySuggestions(product.category ?? '');
+    } on AuthException catch (e) {
+      if (!_isDisposed) {
+        state = state.copyWith(isLoading: false, error: '認証エラー: ${e.message}');
+      }
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      if (!_isDisposed) {
+        state = state.copyWith(isLoading: false, error: e.toString());
+      }
     }
   }
 
   Future<void> _loadCategories() async {
+    if (_isDisposed) return;
+    
     try {
       final categoryRepository = _ref.read(categoryRepositoryProvider);
       final fetchedCategories = await categoryRepository.getCategories();
-      state = state.copyWith(categories: fetchedCategories);
+      
+      if (!_isDisposed) {
+        state = state.copyWith(categories: fetchedCategories);
+      }
     } catch (e) {
-      state = state.copyWith(error: 'カテゴリの読み込みに失敗しました: ${e.toString()}');
+      if (!_isDisposed) {
+        state = state.copyWith(error: 'カテゴリの読み込みに失敗: ${e.toString()}');
+      }
     }
   }
 
   void updateProductName(String name) {
+    if (_isDisposed) return;
     state = state.copyWith(product: state.product.copyWith(name: name));
   }
 
   void updateProductUrl(String url) {
+    if (_isDisposed) return;
     state = state.copyWith(product: state.product.copyWith(url: url));
   }
 
   void updateSelectedCategory(String category) {
-    final updatedProduct = state.product.copyWith(category: category, subcategory: '');
+    if (_isDisposed) return;
+    
+    final updatedProduct = state.product.copyWith(
+      category: category,
+      subcategory: '', // カテゴリ変更時にサブカテゴリをリセット
+    );
     state = state.copyWith(product: updatedProduct);
     fetchSubcategorySuggestions(category);
   }
 
   Future<void> fetchSubcategorySuggestions(String category) async {
-    if (category.isEmpty) { // Don't fetch if no category selected
-      state = state.copyWith(subcategorySuggestions: []);
+    if (_isDisposed || category.isEmpty) {
+      if (!_isDisposed) {
+        state = state.copyWith(subcategorySuggestions: []);
+      }
       return;
     }
+    
     try {
       final productRepository = _ref.read(productRepositoryProvider);
       final suggestions = await productRepository.getSubcategories(category);
-      state = state.copyWith(subcategorySuggestions: suggestions);
+      
+      if (!_isDisposed) {
+        state = state.copyWith(subcategorySuggestions: suggestions);
+      }
     } catch (e) {
-      state = state.copyWith(error: 'サブカテゴリ候補の読み込みに失敗しました: ${e.toString()}');
+      if (!_isDisposed) {
+        state = state.copyWith(error: 'サブカテゴリ候補取得失敗: ${e.toString()}');
+      }
     }
   }
 
   void updateSubcategory(String subcategory) {
+    if (_isDisposed) return;
     state = state.copyWith(product: state.product.copyWith(subcategory: subcategory));
   }
 
   void updateReviewText(String text) {
+    if (_isDisposed) return;
     state = state.copyWith(review: state.review.copyWith(reviewText: text));
   }
 
   void updateRating(double rating) {
-    state = state.copyWith(review: state.review.copyWith(rating: rating));
+    if (_isDisposed) return;
+    
+    // 評価は1.0〜5.0の範囲に制限
+    final clampedRating = rating.clamp(1.0, 5.0);
+    state = state.copyWith(review: state.review.copyWith(rating: clampedRating));
   }
 
   Future<void> pickImage() async {
+    if (_isDisposed) return;
+    
     try {
-      final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        state = state.copyWith(imageFile: File(pickedFile.path), currentImageUrl: null);
+      final pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920, // 最大幅を制限
+        maxHeight: 1920, // 最大高さを制限
+        imageQuality: 85, // 初期品質
+      );
+      
+      if (pickedFile != null && !_isDisposed) {
+        state = state.copyWith(
+          imageFile: File(pickedFile.path),
+          currentImageUrl: null,
+        );
       }
     } catch (e) {
-      state = state.copyWith(error: '画像の選択に失敗しました: ${e.toString()}');
+      if (!_isDisposed) {
+        state = state.copyWith(error: '画像選択失敗: ${e.toString()}');
+      }
     }
   }
 
   void clearImage() {
+    if (_isDisposed) return;
     state = state.copyWith(imageFile: null, currentImageUrl: null);
   }
 
   Future<void> updateReview() async {
+    if (_isDisposed) return;
+    
     state = state.copyWith(isLoading: true, error: null);
+    
     try {
       final authRepository = _ref.read(authRepositoryProvider);
       final productRepository = _ref.read(productRepositoryProvider);
@@ -173,62 +251,76 @@ class EditReviewController extends StateNotifier<EditReviewState> {
 
       final user = authRepository.getCurrentUser();
       if (user == null) {
-        throw Exception('ユーザーがログインしていません。');
+        throw Exception('ユーザーがログインしていません');
       }
 
-      // 製品の所有者であることを確認
+      // 二重チェック: 所有者確認
       if (state.product.userId != user.id) {
-        throw Exception('この製品を編集する権限がありません。');
+        throw Exception('この商品を編集する権限がありません');
       }
-      // レビューの所有者であることを確認
       if (state.review.userId != user.id) {
-        throw Exception('このレビューを編集する権限がありません。');
+        throw Exception('このレビューを編集する権限がありません');
+      }
+
+      // バリデーション
+      if (state.product.name.trim().isEmpty) {
+        throw Exception('商品名を入力してください');
+      }
+      if (state.review.reviewText.trim().isEmpty) {
+        throw Exception('レビュー本文を入力してください');
+      }
+      if (state.review.rating < 1.0 || state.review.rating > 5.0) {
+        throw Exception('評価は1〜5の範囲で設定してください');
       }
 
       String? newImageUrl = state.currentImageUrl;
 
+      // 新しい画像がある場合
       if (state.imageFile != null) {
-        // --- Image Compression Logic ---
         final imageBytes = await state.imageFile!.readAsBytes();
         img.Image? originalImage = img.decodeImage(imageBytes);
 
         if (originalImage == null) {
-          throw Exception('画像のデコードに失敗しました。');
+          throw Exception('画像のデコードに失敗しました');
         }
 
-        // Resize the image to a maximum width of 1024px, maintaining aspect ratio
+        // リサイズと圧縮
         final resizedImage = img.copyResize(originalImage, width: 1024);
-        
-        // Encode the image to JPEG format with a quality of 85
-        final compressedBytes = Uint8List.fromList(img.encodeJpg(resizedImage, quality: 85));
-        
+        final compressedBytes = Uint8List.fromList(
+          img.encodeJpg(resizedImage, quality: 85),
+        );
+
         final fileExtension = state.imageFile!.path.split('.').last;
         
-        newImageUrl = await productRepository.uploadProductImage(user.id, compressedBytes, fileExtension);
+        newImageUrl = await productRepository.uploadProductImage(
+          user.id,
+          compressedBytes,
+          fileExtension,
+        );
       } else if (state.currentImageUrl == null && state.product.imageUrl != null) {
+        // 画像がクリアされた場合
         newImageUrl = null;
       }
 
-      final updatedProduct = state.product.copyWith(
-        url: state.product.url,
-        name: state.product.name,
-        category: state.product.category,
-        subcategory: state.product.subcategory,
-        imageUrl: newImageUrl,
-      );
+      // 商品情報を更新
+      final updatedProduct = state.product.copyWith(imageUrl: newImageUrl);
       await productRepository.updateProduct(updatedProduct);
 
-      final updatedReview = state.review.copyWith(
-        reviewText: state.review.reviewText,
-        rating: state.review.rating,
-      );
+      // レビューを更新
+      final updatedReview = state.review.copyWith();
       await reviewRepository.updateReview(updatedReview);
 
-      state = state.copyWith(isLoading: false);
+      if (!_isDisposed) {
+        state = state.copyWith(isLoading: false);
+      }
     } on AuthException catch (e) {
-      state = state.copyWith(isLoading: false, error: e.message);
+      if (!_isDisposed) {
+        state = state.copyWith(isLoading: false, error: '認証エラー: ${e.message}');
+      }
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      if (!_isDisposed) {
+        state = state.copyWith(isLoading: false, error: e.toString());
+      }
     }
   }
 }
