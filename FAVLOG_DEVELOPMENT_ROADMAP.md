@@ -169,3 +169,17 @@
 *   **検索状態管理のリファクタリング**: 検索画面の状態管理を setState からRiverpodの StateNotifierProvider (searchControllerProvider) に移行。UIとビジネスロジックを分離し、より堅牢で予測可能な状態管理を実現した。
 *   **レビューテキスト表示の改善**: レビューアイテム (eview_item.dart) において、長いレビューテキストが3行で省略され、末尾に「...」が表示されるように maxLines と overflow プロパティを設定。
 *   **Androidのインターネット権限**: アプリがSupabaseと通信するために必要な ndroid.permission.INTERNET 権限を AndroidManifest.xml に追加。
+
+
+### UI/UXの改善 - ホーム画面の表示と操作性
+
+*   **製品カードの刷新**: ホーム画面の製品表示を _buildProductCard に集約し、サムネイル、カテゴリチップ、URL表示、最新レビューなどの情報をリッチに表示。
+*   **レスポンシブデザイン対応**: 画面幅に応じて ListView と GridView を動的に切り替えることで、モバイルからタブレット・Webまで最適なレイアウトを提供。
+*   **レビューアイテムの視覚的フィードバック強化**: eview_item.dart で、長押し時の背景色変更により視覚的な操作フィードバックを向上。
+*   **レビューアイテムの日付表示改善**: 投稿日時を「〇分前」「昨日」といった相対的な表現に変換して表示。
+
+### パフォーマンスと安定性の改善
+
+*   **ページネーションの実装**: home_screen_controller.dart に etchMoreProducts メソッドを追加し、無限スクロールによる動的なデータ読み込みに対応。
+*   **エラーハンドリングの一貫性**: home_screen_controller.dart および edit_review_controller.dart にて、エラー処理を改善し、ユーザーへのフィードバック（SnackBarなど）を強化。
+

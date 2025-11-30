@@ -410,9 +410,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
+          // isRefresh: trueを明示的に渡す
           await homeScreenController.fetchProducts(
             category: homeScreenState.selectedCategory,
             searchQuery: homeScreenState.searchQuery,
+            isRefresh: true,
           );
         },
         child: homeScreenState.isLoading && homeScreenState.products.isEmpty
