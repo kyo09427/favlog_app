@@ -329,3 +329,34 @@
     *   テスト内の`mockSupabaseStorageClient`のモックを修正し、`StorageFileApi.upload`が文字列を返すように調整。
     *   ローディングインジケーター（Shimmer）の検出ロジックを`find.byType(Shimmer)`に変更し、`shimmer`パッケージのインポートを追加。
     *   `CircularProgressIndicator`ではなく`Shimmer`ウィジェットを期待するようにアサーションを修正。
+
+### ユーザー追加機能
+
+本セッション中にユーザーが追加した機能および改善点は以下の通りです。
+
+*   **堅牢性の向上**:
+    *   `add_review_controller.dart`, `edit_review_controller.dart`, `profile_screen_controller.dart` の各コントローラーに `_isDisposed` フラグと `dispose()` メソッドを追加し、コントローラー破棄後の状態更新によるエラーを防止。各メソッドの冒頭に `if (_isDisposed) return;` チェックを追加。
+*   **UI/UXの強化**:
+    *   **画像処理**:
+        *   `add_review_controller.dart` および `edit_review_controller.dart` の `ImagePicker` 呼び出しに `maxWidth`, `maxHeight`, `imageQuality` オプションを追加し、アップロード前に画像を最適化。
+        *   `edit_review_controller.dart` および `profile_screen_controller.dart` にて、新しい画像をアップロードする際に古い画像をSupabase Storageから削除するロジックを追加し、ストレージのクリーンアップを実現。
+        *   `add_review_controller.dart` に画像圧縮エラーハンドリングを追加。
+    *   **ナビゲーション**:
+        *   `lib/presentation/widgets/common_bottom_nav_bar.dart` という再利用可能なボトムナビゲーションバーコンポーネントを新規作成。
+        *   `home_screen.dart`, `profile_screen.dart`, `search_screen.dart` の既存のボトムナビゲーションバーを `CommonBottomNavBar` に置き換え、ナビゲーションロジックを `NavigationHelper.navigateToIndex` に集約。
+    *   **プロフィール画面 (`profile_screen.dart`)**:
+        *   初期プロフィール読み込み時のUIを改善。`profile` が `null` の場合に `CircularProgressIndicator` とメッセージを表示。
+        *   ユーザー名保存ボタンのロジックに空のユーザー名チェックを追加。
+        *   プロフィールデータの手動更新を可能にする `refresh()` ボタンを追加。
+        *   AppBarに `automaticallyImplyLeading: false` を設定。
+        *   エラー表示にパディングや `maxLines`/`overflow` を追加し、エラーメッセージの見栄えを向上。
+    *   **検索画面 (`search_screen.dart`)**:
+        *   星評価表示ロジックを再利用可能な `_buildStarRating` ウィジェットに抽出。
+        *   検索結果のエラー表示（アイコン、タイトル、詳細メッセージ）と「検索結果なし」表示（アイコン、メッセージ）を改善。
+*   **機能改善**:
+    *   `add_review_controller.dart` の `updateRating` メソッドに `clamp(1.0, 5.0)` を追加し、評価値の範囲を制限。
+    *   `home_screen.dart` の `fetchProducts` 呼び出しに `forceUpdate: true` パラメータを追加し、詳細画面からの戻りや手動更新時にデータの鮮度を保証。
+*   **ローカライズ**:
+    *   いくつかのコントローラーと画面で、エラーメッセージやUIテキストを日本語（一部文字化けしていた部分も）に更新。
+*   **コードクリーンアップ**:
+    *   多数の日本語コメント（開発メモ）を削除。
