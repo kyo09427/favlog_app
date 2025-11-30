@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import '../providers/search_controller.dart';
+import '../widgets/common_bottom_nav_bar.dart';
 import 'review_detail_screen.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -85,6 +86,30 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
+  Widget _buildStarRating(double rating, {double size = 16}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (index) {
+        final starIndex = index + 1;
+        
+        IconData icon;
+        if (rating >= starIndex) {
+          icon = Icons.star;
+        } else if (rating >= starIndex - 0.5) {
+          icon = Icons.star_half;
+        } else {
+          icon = Icons.star_border;
+        }
+        
+        return Icon(
+          icon,
+          color: Colors.amber,
+          size: size,
+        );
+      }),
+    );
+  }
+
   Widget _buildSearchResultItem(SearchResult result) {
     final product = result.product;
     final latestReview = result.latestReview;
@@ -159,25 +184,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        ...List.generate(5, (index) {
-                          final starIndex = index + 1;
-                          final rating = latestReview.rating;
-                          
-                          IconData icon;
-                          if (rating >= starIndex) {
-                            icon = Icons.star;
-                          } else if (rating >= starIndex - 0.5) {
-                            icon = Icons.star_half;
-                          } else {
-                            icon = Icons.star_border;
-                          }
-                          
-                          return Icon(
-                            icon,
-                            color: Colors.amber,
-                            size: 16,
-                          );
-                        }),
+                        _buildStarRating(latestReview.rating),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -205,7 +212,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final searchState = ref.watch(searchControllerProvider);
     final searchController = ref.read(searchControllerProvider.notifier);
 
-    // 検索クエリをTextEditingControllerと同期
     if (_searchController.text != searchState.searchQuery) {
       _searchController.text = searchState.searchQuery;
       _searchController.selection = TextSelection.fromPosition(
@@ -228,7 +234,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // 検索バー
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: SizedBox(
@@ -264,7 +269,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               ),
             ),
 
-            // フィルターボタン
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Container(
@@ -330,12 +334,33 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               ),
             ),
 
-            // 検索結果または履歴
             Expanded(
               child: searchState.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : searchState.error != null
-                      ? Center(child: Text('エラー: ${searchState.error}'))
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 64,
+                                color: Colors.red[300],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'エラーが発生しました',
+                                style: theme.textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                searchState.error!,
+                                style: theme.textTheme.bodySmall,
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        )
                       : searchState.searchResults.isNotEmpty
                           ? ListView.builder(
                               itemCount: searchState.searchResults.length,
@@ -346,11 +371,28 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                               },
                             )
                           : searchState.searchQuery.isNotEmpty
-                              ? const Center(child: Text('検索結果が見つかりませんでした'))
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.search_off,
+                                        size: 64,
+                                        color: Colors.grey[400],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      const Text('検索結果が見つかりませんでした'),
+                                    ],
+                                  ),
+                                )
                               : _buildHistoryAndKeywords(theme, searchState),
             ),
           ],
         ),
+      ),
+      bottomNavigationBar: CommonBottomNavBar(
+        currentIndex: 1,
+        onTap: (index) => NavigationHelper.navigateToIndex(context, index, 1),
       ),
     );
   }
@@ -361,7 +403,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 検索履歴
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
@@ -437,7 +478,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
           const SizedBox(height: 16),
 
-          // 人気のキーワード
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Text(

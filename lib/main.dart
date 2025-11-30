@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart'; // Add this import
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // Import Riverpod
-import 'package:favlog_app/presentation/screens/auth_screen.dart'; // Updated path
-import 'package:favlog_app/presentation/screens/home_screen.dart'; // Updated path
-import 'package:favlog_app/presentation/screens/email_verification_screen.dart'; // Add this import
-import 'package:favlog_app/core/providers/auth_providers.dart'; // Import authStateChangesProvider
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:favlog_app/presentation/screens/auth_screen.dart';
+import 'package:favlog_app/presentation/screens/home_screen.dart';
+import 'package:favlog_app/presentation/screens/email_verification_screen.dart';
+import 'package:favlog_app/presentation/screens/search_screen.dart';
+import 'package:favlog_app/presentation/screens/profile_screen.dart';
+import 'package:favlog_app/core/providers/auth_providers.dart';
 
 // Define a Riverpod provider for SupabaseClient
 final supabaseProvider = Provider<SupabaseClient>((ref) {
@@ -14,22 +16,28 @@ final supabaseProvider = Provider<SupabaseClient>((ref) {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env"); // Load .env file
+  
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint('Error loading .env file: $e');
+  }
 
   await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL']!, // Use environment variable
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!, // Use environment variable
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
-  // Wrap the entire application with ProviderScope
+  
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends ConsumerWidget { // Change StatelessWidget to ConsumerWidget
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) { // Add WidgetRef ref
-    final authState = ref.watch(authStateChangesProvider); // Use authStateChangesProvider
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authStateChangesProvider);
+    
     return MaterialApp(
       title: 'FavLog App',
       theme: ThemeData(
@@ -42,7 +50,6 @@ class MyApp extends ConsumerWidget { // Change StatelessWidget to ConsumerWidget
           if (session == null) {
             return const AuthScreen();
           } else {
-            // セッションがあるがメールが未確認の場合、EmailVerificationScreenへ
             if (session.user?.emailConfirmedAt == null) {
               return const EmailVerificationScreen();
             }
@@ -56,6 +63,11 @@ class MyApp extends ConsumerWidget { // Change StatelessWidget to ConsumerWidget
           body: Center(child: Text('Error: $error')),
         ),
       ),
+      routes: {
+        '/home': (context) => const HomeScreen(),
+        '/search': (context) => const SearchScreen(),
+        '/profile': (context) => const ProfileScreen(),
+      },
     );
   }
 }

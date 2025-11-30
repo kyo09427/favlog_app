@@ -75,73 +75,115 @@ final addReviewControllerProvider =
 class AddReviewController extends StateNotifier<AddReviewState> {
   final Ref _ref;
   final ImagePicker _picker = ImagePicker();
+  bool _isDisposed = false;
 
   AddReviewController(this._ref) : super(AddReviewState()) {
     _loadCategories();
   }
 
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
+
   Future<void> _loadCategories() async {
+    if (_isDisposed) return;
+    
     try {
       final categoryRepository = _ref.read(categoryRepositoryProvider);
       final fetchedCategories = await categoryRepository.getCategories();
-      state = state.copyWith(categories: fetchedCategories);
+      
+      if (!_isDisposed) {
+        state = state.copyWith(categories: fetchedCategories);
+      }
     } catch (e) {
-      state = state.copyWith(error: 'カテゴリの読み込みに失敗しました: ${e.toString()}');
+      if (!_isDisposed) {
+        state = state.copyWith(error: 'カテゴリの読み込みに失敗しました: ${e.toString()}');
+      }
     }
   }
 
   void updateProductName(String name) {
+    if (_isDisposed) return;
     state = state.copyWith(productName: name);
   }
 
   void updateProductUrl(String url) {
+    if (_isDisposed) return;
     state = state.copyWith(productUrl: url);
   }
 
   void updateSelectedCategory(String category) {
-    state = state.copyWith(selectedCategory: category, subcategory: ''); // Reset subcategory when category changes
+    if (_isDisposed) return;
+    state = state.copyWith(selectedCategory: category, subcategory: '');
     fetchSubcategorySuggestions(category);
   }
 
   Future<void> fetchSubcategorySuggestions(String category) async {
-    if (category.isEmpty) { // Don't fetch if no category selected
-      state = state.copyWith(subcategorySuggestions: []);
+    if (_isDisposed || category.isEmpty) {
+      if (!_isDisposed) {
+        state = state.copyWith(subcategorySuggestions: []);
+      }
       return;
     }
+    
     try {
       final productRepository = _ref.read(productRepositoryProvider);
       final suggestions = await productRepository.getSubcategories(category);
-      state = state.copyWith(subcategorySuggestions: suggestions);
+      
+      if (!_isDisposed) {
+        state = state.copyWith(subcategorySuggestions: suggestions);
+      }
     } catch (e) {
-      state = state.copyWith(error: 'サブカテゴリ候補の読み込みに失敗しました: ${e.toString()}');
+      if (!_isDisposed) {
+        state = state.copyWith(error: 'サブカテゴリ候補の読み込みに失敗しました: ${e.toString()}');
+      }
     }
   }
 
   void updateSubcategory(String subcategory) {
+    if (_isDisposed) return;
     state = state.copyWith(subcategory: subcategory);
   }
 
   void updateReviewText(String text) {
+    if (_isDisposed) return;
     state = state.copyWith(reviewText: text);
   }
 
   void updateRating(double rating) {
-    state = state.copyWith(rating: rating);
+    if (_isDisposed) return;
+    final clampedRating = rating.clamp(1.0, 5.0);
+    state = state.copyWith(rating: clampedRating);
   }
 
   Future<void> pickImage() async {
+    if (_isDisposed) return;
+    
     try {
-      final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
+      final pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+      
+      if (pickedFile != null && !_isDisposed) {
         state = state.copyWith(imageFile: File(pickedFile.path));
       }
     } catch (e) {
-      state = state.copyWith(error: '画像の選択に失敗しました: ${e.toString()}');
+      if (!_isDisposed) {
+        state = state.copyWith(error: '画像の選択に失敗しました: ${e.toString()}');
+      }
     }
   }
 
   Future<void> submitReview() async {
+    if (_isDisposed) return;
+    
     state = state.copyWith(isLoading: true, error: null);
+    
     try {
       final authRepository = _ref.read(authRepositoryProvider);
       final productRepository = _ref.read(productRepositoryProvider);
@@ -154,23 +196,22 @@ class AddReviewController extends StateNotifier<AddReviewState> {
 
       String? imageUrl;
       if (state.imageFile != null) {
-        // --- Image Compression Logic ---
-        final imageBytes = await state.imageFile!.readAsBytes();
-        img.Image? originalImage = img.decodeImage(imageBytes);
+        try {
+          final imageBytes = await state.imageFile!.readAsBytes();
+          img.Image? originalImage = img.decodeImage(imageBytes);
 
-        if (originalImage == null) {
-          throw Exception('画像のデコードに失敗しました。');
+          if (originalImage == null) {
+            throw Exception('画像のデコードに失敗しました。');
+          }
+
+          final resizedImage = img.copyResize(originalImage, width: 1024);
+          final compressedBytes = Uint8List.fromList(img.encodeJpg(resizedImage, quality: 85));
+          final fileExtension = state.imageFile!.path.split('.').last;
+          
+          imageUrl = await productRepository.uploadProductImage(user.id, compressedBytes, fileExtension);
+        } catch (imageError) {
+          throw Exception('画像のアップロードに失敗しました: ${imageError.toString()}');
         }
-
-        // Resize the image to a maximum width of 1024px, maintaining aspect ratio
-        final resizedImage = img.copyResize(originalImage, width: 1024);
-        
-        // Encode the image to JPEG format with a quality of 85
-        final compressedBytes = Uint8List.fromList(img.encodeJpg(resizedImage, quality: 85));
-        
-        final fileExtension = state.imageFile!.path.split('.').last;
-        
-        imageUrl = await productRepository.uploadProductImage(user.id, compressedBytes, fileExtension);
       }
 
       final newProduct = Product(
@@ -193,11 +234,17 @@ class AddReviewController extends StateNotifier<AddReviewState> {
 
       await reviewRepository.createReview(newReview);
 
-      state = AddReviewState(categories: state.categories); // Reset form and keep categories
+      if (!_isDisposed) {
+        state = AddReviewState(categories: state.categories);
+      }
     } on AuthException catch (e) {
-      state = state.copyWith(isLoading: false, error: e.message);
+      if (!_isDisposed) {
+        state = state.copyWith(isLoading: false, error: '認証エラー: ${e.message}');
+      }
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      if (!_isDisposed) {
+        state = state.copyWith(isLoading: false, error: e.toString());
+      }
     }
   }
 }

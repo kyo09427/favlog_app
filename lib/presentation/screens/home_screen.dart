@@ -6,9 +6,7 @@ import 'package:favlog_app/presentation/providers/category_providers.dart';
 import 'package:favlog_app/presentation/screens/add_review_screen.dart';
 import 'package:favlog_app/presentation/widgets/review_item.dart';
 import 'package:favlog_app/presentation/screens/review_detail_screen.dart';
-import 'package:favlog_app/presentation/screens/search_screen.dart';
-import 'package:favlog_app/presentation/screens/profile_screen.dart'; // Added for ProfileScreen
-import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
+import 'package:favlog_app/presentation/widgets/common_bottom_nav_bar.dart';
 import 'package:shimmer/shimmer.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -24,7 +22,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // 無限スクロール対応（将来的な拡張用）
     _scrollController.addListener(_onScroll);
   }
 
@@ -69,7 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         width: size,
         height: size,
         fit: BoxFit.cover,
-        memCacheWidth: (size * 2).toInt(), // メモリ効率化
+        memCacheWidth: (size * 2).toInt(),
         memCacheHeight: (size * 2).toInt(),
         placeholder: (context, _) => Shimmer.fromColors(
           baseColor: Colors.grey[300]!,
@@ -160,13 +157,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               builder: (_) => ReviewDetailScreen(productId: product.id),
             ),
           );
-          // 戻ったら最新データを再取得
           if (mounted) {
             final controller = ref.read(homeScreenControllerProvider.notifier);
             final state = ref.read(homeScreenControllerProvider);
             controller.fetchProducts(
               category: state.selectedCategory,
               searchQuery: state.searchQuery,
+              forceUpdate: true,
             );
           }
         },
@@ -255,6 +252,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     controller.fetchProducts(
                       category: state.selectedCategory,
                       searchQuery: state.searchQuery,
+                      forceUpdate: true,
                     );
                   },
                 )
@@ -290,7 +288,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final theme = Theme.of(context);
     final primaryColor = const Color(0xFF4CAF50);
 
-    // エラー監視
     ref.listen<HomeScreenState>(
       homeScreenControllerProvider,
       (previous, next) {
@@ -307,6 +304,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     homeScreenController.fetchProducts(
                       category: next.selectedCategory,
                       searchQuery: next.searchQuery,
+                      forceUpdate: true,
                     );
                   },
                 ),
@@ -330,7 +328,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.white),
             onPressed: () {
-              // TODO: 通知画面実装
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('通知機能は準備中です')),
               );
@@ -411,7 +408,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          // isRefresh: trueを明示的に渡す
           await homeScreenController.fetchProducts(
             category: homeScreenState.selectedCategory,
             searchQuery: homeScreenState.searchQuery,
@@ -445,7 +441,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   )
                 : LayoutBuilder(
                     builder: (context, constraints) {
-                      // レスポンシブ対応: 幅600px以上でグリッド表示
                       if (constraints.maxWidth > 600) {
                         return GridView.builder(
                           controller: _scrollController,
@@ -491,44 +486,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             homeScreenController.fetchProducts(
               category: homeScreenState.selectedCategory,
               searchQuery: homeScreenState.searchQuery,
+              forceUpdate: true,
             );
           }
         },
         child: const Icon(Icons.add),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
+      bottomNavigationBar: CommonBottomNavBar(
         currentIndex: 0,
-        selectedItemColor: theme.colorScheme.primary,
-        unselectedItemColor: Colors.grey[600],
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              // フィード: 現在の画面
-              break;
-            case 1:
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SearchScreen()),
-              );
-              break;
-            case 2:
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              );
-              break;
-            case 3:
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('設定機能は準備中です')),
-              );
-              break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'フィード'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: '検索'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'プロフィール'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: '設定'),
-        ],
+        onTap: (index) => NavigationHelper.navigateToIndex(context, index, 0),
       ),
     );
   }

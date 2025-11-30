@@ -10,6 +10,7 @@ import '../../data/repositories/asset_category_repository.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../domain/models/product.dart';
 import '../../domain/models/review.dart';
+import '../../main.dart'; // supabaseProviderをインポート
 
 class EditReviewState {
   final Product product;
@@ -120,7 +121,10 @@ class EditReviewController extends StateNotifier<EditReviewState> {
         isLoading: false,
       );
       
-      await fetchSubcategorySuggestions(product.category ?? '');
+      // サブカテゴリ候補を初期読み込み
+      if (product.category != null && product.category!.isNotEmpty) {
+        await fetchSubcategorySuggestions(product.category!);
+      }
     } on AuthException catch (e) {
       if (!_isDisposed) {
         state = state.copyWith(isLoading: false, error: '認証エラー: ${e.message}');
@@ -216,9 +220,9 @@ class EditReviewController extends StateNotifier<EditReviewState> {
     try {
       final pickedFile = await _picker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 1920, // 最大幅を制限
-        maxHeight: 1920, // 最大高さを制限
-        imageQuality: 85, // 初期品質
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
       );
       
       if (pickedFile != null && !_isDisposed) {
@@ -277,6 +281,18 @@ class EditReviewController extends StateNotifier<EditReviewState> {
 
       // 新しい画像がある場合
       if (state.imageFile != null) {
+        // 古い画像のクリーンアップ（オプション）
+        if (state.currentImageUrl != null) {
+          try {
+            final oldFileName = state.currentImageUrl!.split('/product_images/').last;
+            await _ref.read(supabaseProvider).storage
+                .from('product_images')
+                .remove([oldFileName]);
+          } catch (e) {
+            // 古い画像の削除失敗は無視
+          }
+        }
+
         final imageBytes = await state.imageFile!.readAsBytes();
         img.Image? originalImage = img.decodeImage(imageBytes);
 
@@ -311,7 +327,10 @@ class EditReviewController extends StateNotifier<EditReviewState> {
       await reviewRepository.updateReview(updatedReview);
 
       if (!_isDisposed) {
-        state = state.copyWith(isLoading: false);
+        state = state.copyWith(
+          isLoading: false,
+          product: updatedProduct,
+        );
       }
     } on AuthException catch (e) {
       if (!_isDisposed) {
@@ -322,5 +341,9 @@ class EditReviewController extends StateNotifier<EditReviewState> {
         state = state.copyWith(isLoading: false, error: e.toString());
       }
     }
+  }
+
+  Future<void> refresh() async {
+    await _loadData();
   }
 }
