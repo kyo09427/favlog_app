@@ -186,9 +186,6 @@ class ReviewDetailScreen extends ConsumerWidget {
                                         ReviewItem(
                                           product: displayedProduct,
                                           review: review,
-                                          onReviewEdited: () {
-                                            reviewDetailController.refreshAll();
-                                          },
                                         ),
                                         if (isOwner)
                                           Padding(

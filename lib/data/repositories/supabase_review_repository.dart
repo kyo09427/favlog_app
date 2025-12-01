@@ -77,15 +77,6 @@ class SupabaseReviewRepository implements ReviewRepository {
 
 
   @override
-  Future<void> updateReview(Review review) async {
-    try {
-      await _supabaseClient.from('reviews').update(review.toJson()).eq('id', review.id);
-    } catch (e) {
-      throw Exception('Failed to update review: $e');
-    }
-  }
-
-  @override
   Future<void> deleteReview(String reviewId) async {
     try {
       await _supabaseClient.from('reviews').delete().eq('id', reviewId);

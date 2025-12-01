@@ -264,15 +264,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                 ReviewItem(
                   product: product,
                   review: latestReview,
-                  onReviewEdited: () {
-                    final controller = ref.read(homeScreenControllerProvider.notifier);
-                    final state = ref.read(homeScreenControllerProvider);
-                    controller.fetchProducts(
-                      category: state.selectedCategory,
-                      searchQuery: state.searchQuery,
-                      forceUpdate: true,
-                    );
-                  },
                 )
               else
                 const Text(
