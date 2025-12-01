@@ -11,6 +11,7 @@ import '../../data/repositories/supabase_auth_repository.dart';
 import '../../domain/models/product.dart';
 import '../../domain/models/review.dart';
 
+/// レビュー追加画面の状態
 class AddReviewState {
   final String productUrl;
   final String productName;
@@ -67,11 +68,13 @@ class AddReviewState {
   }
 }
 
+/// レビュー追加コントローラーのプロバイダー
 final addReviewControllerProvider =
     StateNotifierProvider<AddReviewController, AddReviewState>((ref) {
   return AddReviewController(ref);
 });
 
+/// レビュー追加コントローラー
 class AddReviewController extends StateNotifier<AddReviewState> {
   final Ref _ref;
   final ImagePicker _picker = ImagePicker();
@@ -87,6 +90,7 @@ class AddReviewController extends StateNotifier<AddReviewState> {
     super.dispose();
   }
 
+  /// カテゴリ一覧を読み込む
   Future<void> _loadCategories() async {
     if (_isDisposed) return;
     
@@ -104,22 +108,37 @@ class AddReviewController extends StateNotifier<AddReviewState> {
     }
   }
 
+  /// 商品名を更新
   void updateProductName(String name) {
     if (_isDisposed) return;
     state = state.copyWith(productName: name);
   }
 
+  /// 商品URLを更新
   void updateProductUrl(String url) {
     if (_isDisposed) return;
     state = state.copyWith(productUrl: url);
   }
 
+  /// 選択されたカテゴリを更新し、サブカテゴリ候補を取得
   void updateSelectedCategory(String category) {
     if (_isDisposed) return;
+    
+    // カテゴリ変更時はサブカテゴリをクリア
     state = state.copyWith(selectedCategory: category, subcategory: '');
-    fetchSubcategorySuggestions(category);
+    
+    // カテゴリが選択されている場合のみサブカテゴリ候補を取得
+    if (category.isNotEmpty) {
+      fetchSubcategorySuggestions(category);
+    } else {
+      // カテゴリが空の場合はサブカテゴリ候補をクリア
+      if (!_isDisposed) {
+        state = state.copyWith(subcategorySuggestions: []);
+      }
+    }
   }
 
+  /// サブカテゴリの候補を取得
   Future<void> fetchSubcategorySuggestions(String category) async {
     if (_isDisposed || category.isEmpty) {
       if (!_isDisposed) {
@@ -136,28 +155,34 @@ class AddReviewController extends StateNotifier<AddReviewState> {
         state = state.copyWith(subcategorySuggestions: suggestions);
       }
     } catch (e) {
+      // サブカテゴリ候補の取得失敗は致命的エラーではないので、
+      // エラーを表示せず候補リストを空にするだけ
       if (!_isDisposed) {
-        state = state.copyWith(error: 'サブカテゴリ候補の読み込みに失敗しました: ${e.toString()}');
+        state = state.copyWith(subcategorySuggestions: []);
       }
     }
   }
 
+  /// サブカテゴリを更新
   void updateSubcategory(String subcategory) {
     if (_isDisposed) return;
     state = state.copyWith(subcategory: subcategory);
   }
 
+  /// レビューテキストを更新
   void updateReviewText(String text) {
     if (_isDisposed) return;
     state = state.copyWith(reviewText: text);
   }
 
+  /// 評価を更新（1.0〜5.0の範囲に制限）
   void updateRating(double rating) {
     if (_isDisposed) return;
     final clampedRating = rating.clamp(1.0, 5.0);
     state = state.copyWith(rating: clampedRating);
   }
 
+  /// ギャラリーから画像を選択
   Future<void> pickImage() async {
     if (_isDisposed) return;
     
@@ -179,6 +204,7 @@ class AddReviewController extends StateNotifier<AddReviewState> {
     }
   }
 
+  /// レビューを投稿
   Future<void> submitReview() async {
     if (_isDisposed) return;
     
@@ -189,14 +215,17 @@ class AddReviewController extends StateNotifier<AddReviewState> {
       final productRepository = _ref.read(productRepositoryProvider);
       final reviewRepository = _ref.read(reviewRepositoryProvider);
 
+      // ユーザー認証チェック
       final user = authRepository.getCurrentUser();
       if (user == null) {
         throw Exception('ユーザーがログインしていません。');
       }
 
+      // 画像のアップロード処理
       String? imageUrl;
       if (state.imageFile != null) {
         try {
+          // 画像を読み込み
           final imageBytes = await state.imageFile!.readAsBytes();
           img.Image? originalImage = img.decodeImage(imageBytes);
 
@@ -204,16 +233,26 @@ class AddReviewController extends StateNotifier<AddReviewState> {
             throw Exception('画像のデコードに失敗しました。');
           }
 
+          // 画像をリサイズして圧縮
           final resizedImage = img.copyResize(originalImage, width: 1024);
-          final compressedBytes = Uint8List.fromList(img.encodeJpg(resizedImage, quality: 85));
+          final compressedBytes = Uint8List.fromList(
+            img.encodeJpg(resizedImage, quality: 85),
+          );
+          
           final fileExtension = state.imageFile!.path.split('.').last;
           
-          imageUrl = await productRepository.uploadProductImage(user.id, compressedBytes, fileExtension);
+          // Supabase Storageにアップロード
+          imageUrl = await productRepository.uploadProductImage(
+            user.id,
+            compressedBytes,
+            fileExtension,
+          );
         } catch (imageError) {
           throw Exception('画像のアップロードに失敗しました: ${imageError.toString()}');
         }
       }
 
+      // 商品情報を作成
       final newProduct = Product(
         userId: user.id,
         url: state.productUrl.isEmpty ? null : state.productUrl,
@@ -223,8 +262,10 @@ class AddReviewController extends StateNotifier<AddReviewState> {
         imageUrl: imageUrl,
       );
 
+      // 商品を登録
       await productRepository.createProduct(newProduct);
 
+      // レビュー情報を作成
       final newReview = Review(
         userId: user.id,
         productId: newProduct.id,
@@ -232,18 +273,28 @@ class AddReviewController extends StateNotifier<AddReviewState> {
         rating: state.rating,
       );
 
+      // レビューを登録
       await reviewRepository.createReview(newReview);
 
+      // 成功したら状態をリセット（カテゴリリストは保持）
       if (!_isDisposed) {
         state = AddReviewState(categories: state.categories);
       }
     } on AuthException catch (e) {
+      // 認証エラー
       if (!_isDisposed) {
-        state = state.copyWith(isLoading: false, error: '認証エラー: ${e.message}');
+        state = state.copyWith(
+          isLoading: false,
+          error: '認証エラー: ${e.message}',
+        );
       }
     } catch (e) {
+      // その他のエラー
       if (!_isDisposed) {
-        state = state.copyWith(isLoading: false, error: e.toString());
+        state = state.copyWith(
+          isLoading: false,
+          error: e.toString(),
+        );
       }
     }
   }

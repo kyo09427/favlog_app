@@ -4,10 +4,12 @@ import 'package:favlog_app/domain/models/product.dart';
 import 'package:favlog_app/domain/models/review.dart';
 import 'package:favlog_app/presentation/providers/edit_review_controller.dart';
 import 'package:favlog_app/presentation/widgets/error_dialog.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 
 /// レビュー編集画面
-/// - 編集できるのは「評価」と「レビュー本文」だけ
-/// - 商品名などは state.product から読んで表示に使うだけ
+/// - 編集可能: 星評価、レビュー本文のみ
+/// - 表示のみ: 商品情報（名前、画像、カテゴリなど）
 class EditReviewScreen extends ConsumerStatefulWidget {
   final String productId;
   final String reviewId;
@@ -23,7 +25,6 @@ class EditReviewScreen extends ConsumerStatefulWidget {
 }
 
 class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
-  // デザイン共通カラー（home_screen.dartに合わせた落ち着いた色）
   static const Color primaryColor = Color(0xFF4CAF50);
   static const Color backgroundLight = Color(0xFFF6F8F6);
   static const Color backgroundDark = Color(0xFF102216);
@@ -45,7 +46,6 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ★ provider 呼び出し
     final editReviewState = ref.watch(
       editReviewControllerProvider({
         'productId': widget.productId,
@@ -72,7 +72,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
       },
     );
 
-    // 初期ロード中（product がまだ empty）のときはローディング表示
+    // 初期ロード中の表示
     if (editReviewState.isLoading &&
         editReviewState.product.id == Product.empty().id) {
       return Scaffold(
@@ -81,11 +81,10 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
       );
     }
 
-    // state から product / review を取得
     final Product currentProduct = editReviewState.product;
     final Review currentReview = editReviewState.review;
 
-    // TextEditingControllerにテキストをセット（初回のみ）
+    // レビュー本文の初期値をセット（一度だけ）
     if (_reviewTextController.text.isEmpty && currentReview.reviewText.isNotEmpty) {
       _reviewTextController.text = currentReview.reviewText;
     }
@@ -94,6 +93,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
     final bgColor =
         theme.brightness == Brightness.dark ? backgroundDark : backgroundLight;
 
+    // 保存処理
     Future<void> handleSubmit() async {
       if (!formKey.currentState!.validate()) return;
 
@@ -107,32 +107,30 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
           'reviewId': widget.reviewId,
         }),
       );
-      if (latestState.error == null) {
+      
+      if (latestState.error == null && !latestState.isLoading) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('レビューを更新しました!')),
         );
-        Navigator.of(context).pop(true); // trueを返して更新を通知
+        Navigator.of(context).pop(true);
       }
     }
 
-    // ⭐ 0.5刻み対応のスター UI
+    // 星アイコン構築（0.5刻み）
     Widget buildStar(int index) {
-      final double rating = currentReview.rating.toDouble();
-      final int starPos = index + 1; // 1〜5
+      final double rating = currentReview.rating;
+      final int starPos = index + 1;
 
       IconData icon;
       Color color;
 
       if (rating >= starPos) {
-        // 完全に塗りつぶし
         icon = Icons.star;
         color = primaryColor;
       } else if (rating >= starPos - 0.5) {
-        // 0.5 の位置
         icon = Icons.star_half;
         color = primaryColor;
       } else {
-        // 枠のみ
         icon = Icons.star_border;
         color = theme.brightness == Brightness.dark
             ? Colors.grey[600]!
@@ -145,20 +143,16 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
         onPressed: editReviewState.isLoading
             ? null
             : () {
-                // 1.0 ↔ 0.5 をトグルするイメージで更新
                 double newRating;
                 final double full = starPos.toDouble();
                 final double half = starPos - 0.5;
 
                 if (rating == full) {
-                  // ★ → ☆0.5
                   newRating = half;
                 } else if (rating == half) {
-                  // ☆0.5 → ひとつ前の整数（最低 1.0）
                   newRating = starPos - 1.0;
                   if (newRating < 1.0) newRating = 1.0;
                 } else {
-                  // その他 → この星を整数でセット
                   newRating = full;
                 }
 
@@ -170,46 +164,19 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
       );
     }
 
-    InputDecoration buildTextDecoration({String? hint}) {
-      return InputDecoration(
-        hintText: hint,
-        filled: true,
-        fillColor: theme.brightness == Brightness.dark
-            ? Colors.white10
-            : Colors.grey.shade100,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: theme.brightness == Brightness.dark
-                ? Colors.white24
-                : Colors.grey.shade300,
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: const BorderRadius.all(Radius.circular(12)),
-          borderSide: BorderSide(
-            color: primaryColor,
-            width: 1.5,
-          ),
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-      );
-    }
-
     return Scaffold(
       backgroundColor: bgColor,
       body: SafeArea(
         child: Stack(
           children: [
-            // メインコンテンツ（スクロール）
+            // メインコンテンツ
             Positioned.fill(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.only(bottom: 96),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 上部ヘッダー（× + タイトル + 更新）
+                    // ヘッダー
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -271,7 +238,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                       ),
                     ),
 
-                    // 本文:商品名表示 + 評価 + 本文
+                    // フォーム本体
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: Form(
@@ -279,25 +246,13 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // 商品名表示（編集不可）
-                            Text(
-                              '商品名',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: theme.brightness == Brightness.dark
-                                    ? Colors.grey[400]
-                                    : Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
+                            // 商品情報表示（編集不可）
                             Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(15),
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: theme.brightness == Brightness.dark
                                     ? Colors.white.withOpacity(0.05)
-                                    : Colors.grey.shade50,
+                                    : Colors.grey.shade100,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: theme.brightness == Brightness.dark
@@ -305,15 +260,144 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                                       : Colors.grey.shade300,
                                 ),
                               ),
-                              child: Text(
-                                currentProduct.name,
-                                style: theme.textTheme.bodyLarge,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '商品情報',
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.brightness == Brightness.dark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // 商品画像
+                                      if (currentProduct.imageUrl != null)
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: CachedNetworkImage(
+                                            imageUrl: currentProduct.imageUrl!,
+                                            width: 80,
+                                            height: 80,
+                                            fit: BoxFit.cover,
+                                            placeholder: (context, url) =>
+                                                Shimmer.fromColors(
+                                              baseColor: Colors.grey[300]!,
+                                              highlightColor: Colors.grey[100]!,
+                                              child: Container(
+                                                width: 80,
+                                                height: 80,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            errorWidget: (context, url, error) =>
+                                                Container(
+                                              width: 80,
+                                              height: 80,
+                                              color: Colors.grey[300],
+                                              child: const Icon(Icons.broken_image),
+                                            ),
+                                          ),
+                                        )
+                                      else
+                                        Container(
+                                          width: 80,
+                                          height: 80,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[300],
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: const Icon(
+                                            Icons.image_not_supported,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      const SizedBox(width: 12),
+                                      // 商品情報テキスト
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              currentProduct.name,
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            if (currentProduct.category != null ||
+                                                currentProduct.subcategory != null)
+                                              ...[
+                                              const SizedBox(height: 8),
+                                              Wrap(
+                                                spacing: 4,
+                                                runSpacing: 4,
+                                                children: [
+                                                  if (currentProduct.category !=
+                                                      null)
+                                                    Chip(
+                                                      label: Text(
+                                                        currentProduct.category!,
+                                                        style: theme
+                                                            .textTheme.bodySmall
+                                                            ?.copyWith(
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                      backgroundColor:
+                                                          primaryColor,
+                                                      materialTapTargetSize:
+                                                          MaterialTapTargetSize
+                                                              .shrinkWrap,
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 4),
+                                                    ),
+                                                  if (currentProduct
+                                                          .subcategory !=
+                                                      null)
+                                                    Chip(
+                                                      label: Text(
+                                                        currentProduct
+                                                            .subcategory!,
+                                                        style: theme
+                                                            .textTheme.bodySmall,
+                                                      ),
+                                                      backgroundColor: theme
+                                                                  .brightness ==
+                                                              Brightness.dark
+                                                          ? Colors.white12
+                                                          : Colors.grey.shade200,
+                                                      materialTapTargetSize:
+                                                          MaterialTapTargetSize
+                                                              .shrinkWrap,
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 4),
+                                                    ),
+                                                ],
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
 
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 32),
 
-                            // ⭐ 評価
+                            // 評価（編集可能）
                             const Text(
                               '評価',
                               style: TextStyle(
@@ -325,10 +409,19 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                             Row(
                               children: List.generate(5, buildStar),
                             ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '現在の評価: ${currentReview.rating.toStringAsFixed(1)}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.brightness == Brightness.dark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
+                            ),
 
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 32),
 
-                            // 📝 レビュー本文
+                            // レビュー本文（編集可能）
                             const Text(
                               'レビュー本文',
                               style: TextStyle(
@@ -339,18 +432,49 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _reviewTextController,
-                              maxLines: 6,
-                              decoration: buildTextDecoration(
-                                hint:
-                                    '商品の感想や良かった点・気になった点など、自由に書いてください。',
+                              maxLines: 8,
+                              decoration: InputDecoration(
+                                hintText: '商品の感想を書いてください',
+                                filled: true,
+                                fillColor: theme.brightness == Brightness.dark
+                                    ? Colors.white10
+                                    : Colors.grey.shade100,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: theme.brightness == Brightness.dark
+                                        ? Colors.white24
+                                        : Colors.grey.shade300,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: primaryColor,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.all(15),
                               ),
                               onChanged: editReviewController.updateReviewText,
                               validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'レビューを入力してください。';
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'レビューを入力してください';
+                                }
+                                if (value.trim().length < 10) {
+                                  return 'レビューは10文字以上で入力してください';
                                 }
                                 return null;
                               },
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '${_reviewTextController.text.length} 文字',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.brightness == Brightness.dark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
                             ),
                           ],
                         ),
@@ -361,7 +485,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
               ),
             ),
 
-            // 下部「レビューを更新する」ボタン
+            // 下部の更新ボタン
             Positioned(
               left: 0,
               right: 0,

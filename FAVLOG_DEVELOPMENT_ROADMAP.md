@@ -144,7 +144,7 @@
 - **2025年11月11日**：Supabase Databaseに `reviews` テーブルを作成し、行レベルセキュリティ (RLS) を設定完了。
 - **2025年11月26日**：Supabase Storageに `product_images` バケットを作成完了。
 - **2025年11月26日**：`image_picker` パッケージをプロジェクトに追加完了。
-- **2025年11月26日**：`add_review_screen.dart` を作成し、画像選択、Supabase Storageへの画像アップロード、商品情報およびレビューのSupabaseへの登録ロジックを実装。`home_screen.dart` に `AddReviewScreen` へのナビゲーションを追加完了。
+- **2025年11月26日**：`add_review_screen.dart` を作成し、画像選択、Supabase Storageへの画像アップロード、商品情報およびレビューのSupabaseへの登録ロジックを実装。`home_screen.dart` に `AddReviewScreen` へへのナビゲーションを追加完了。
 - **2025年11月26日**：`home_screen.dart` にSupabaseから商品とレビューを取得し、リスト形式で表示する機能を実装完了。
 - **2025年11月26日**：フェーズ2のテスト実装完了。`add_review_screen_test.dart` が正常にパスすることを確認。`home_screen_test.dart` および `widget_test.dart` は、テストランナーのエントリポイントの問題を回避するため、テストロジックをコメントアウトする形で対応。`home_screen_test.dart` の本格的なテストは複雑なSupabaseモック化の課題のため、今後のフェーズで再検討。
 - **2025年11月26日**：Supabase StorageのRLSポリシーを設定完了。
@@ -332,7 +332,7 @@
 
 ### ユーザー追加機能
 
-本セッション中にユーザーが追加した機能および改善点は以下の通りです。
+本セッション中にユーザーが追加した機能および改善点（以前のコミットから現在の変更まで）は以下の通りです。
 
 *   **堅牢性の向上**:
     *   `add_review_controller.dart`, `edit_review_controller.dart`, `profile_screen_controller.dart` の各コントローラーに `_isDisposed` フラグと `dispose()` メソッドを追加し、コントローラー破棄後の状態更新によるエラーを防止。各メソッドの冒頭に `if (_isDisposed) return;` チェックを追加。
@@ -373,3 +373,19 @@
     *   `pubspec.yaml` に `intl` パッケージ (`^0.19.0`) を追加。日付/時刻のフォーマットなど、ロケールを意識した表示の基盤を導入。
 *   **コードのクリーンアップ**:
     *   `pubspec.yaml` から不要なコメントを削除。
+
+## 実装ログ - 2025年12月1日
+
+### ユーザーによる追加変更点
+
+*   **`lib/presentation/providers/edit_review_controller.dart`**:
+    *   レビュー更新ロジックを簡素化し、`reviewText` の更新に特化しました。
+    *   製品画像の処理および製品情報の更新ロジックがこのコントローラーから削除されました。
+*   **`lib/presentation/screens/edit_review_screen.dart`**:
+    *   `CachedNetworkImage` および `Shimmer` パッケージをインポートしました。
+    *   製品表示UIを大幅に再設計し、画像表示やカテゴリ/サブカテゴリのチップ表示を追加しました。
+    *   フォームのバリデーションを改善し、レビューテキストの最小文字数（10文字）チェックと文字数表示を追加しました。
+*   **`lib/presentation/screens/review_detail_screen.dart`**:
+    *   レビューの削除機能 (`_deleteReview` 関数) を追加しました。
+    *   レビュー所有者のみに削除ボタンが表示されるよう実装しました。
+    *   プルツーリフレッシュ機能 (`RefreshIndicator`) を追加しました。
