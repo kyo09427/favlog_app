@@ -389,3 +389,30 @@
     *   レビューの削除機能 (`_deleteReview` 関数) を追加しました。
     *   レビュー所有者のみに削除ボタンが表示されるよう実装しました。
     *   プルツーリフレッシュ機能 (`RefreshIndicator`) を追加しました。
+## 実装ログ - 2025年12月2日
+
+### レビュー編集機能
+
+*   **`lib/presentation/widgets/review_item.dart`**:
+    *   レビューの所有者のみが編集可能な機能を実装。
+    *   長押しまたは編集アイコンのタップで `EditReviewScreen` へ遷移。
+    *   編集成功時に `onReviewUpdated` コールバックを実行し、親ウィジェットにデータ更新を通知。
+*   **`lib/presentation/screens/review_detail_screen.dart`**:
+    *   `ReviewItem` の `onReviewUpdated` コールバックを受け取り、`reviewDetailController.refreshAll()` を呼び出してレビューリストを更新。
+*   **`lib/presentation/screens/edit_review_screen.dart`**:
+    *   既存のレビューテキストで `TextEditingController` を初期化。
+    *   星評価とレビューテキストの編集UIを提供し、`editReviewController` と連携して状態を更新。
+    *   フォームバリデーションと更新ボタンのローディング状態を実装。
+    *   更新成功時に `SnackBar` を表示し、`true` を返して画面をポップ。
+*   **`lib/presentation/providers/edit_review_controller.dart`**:
+    *   `EditReviewState` でレビューテキスト、評価、ローディング状態、エラー、元のレビューを管理。
+    *   `StateNotifierProvider.family` を使用して `EditReviewController` を提供。
+    *   `updateReviewText` と `updateRating` で状態を更新し、`updateReview` で実際にレビューを永続化。
+    *   クライアントサイドでのユーザー認証とレビュー所有者チェックを実施。
+    *   `AuthException` および汎用的なエラーハンドリングを実装し、コントローラーのライフサイクル管理 (`_isDisposed`) に対応。
+*   **`lib/domain/repositories/review_repository.dart`**:
+    *   `updateReview(Review review)` メソッドを抽象インターフェースに定義。
+*   **`lib/data/repositories/supabase_review_repository.dart`**:
+    *   `ReviewRepository` インターフェースの `updateReview` メソッドを実装。
+    *   Supabaseクライアントの `.update().eq()` メソッドを使用してレビューを更新。
+    *   エラーハンドリングも実装済み。
