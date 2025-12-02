@@ -2,15 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:favlog_app/domain/models/product.dart';
 import 'package:favlog_app/domain/models/review.dart';
+import 'package:favlog_app/presentation/screens/edit_review_screen.dart';
+import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
 
 class ReviewItem extends ConsumerStatefulWidget {
   final Product product;
   final Review review;
+  final VoidCallback? onReviewUpdated;
 
   const ReviewItem({
     super.key,
     required this.product,
     required this.review,
+    this.onReviewUpdated,
   });
 
   @override
@@ -19,13 +23,12 @@ class ReviewItem extends ConsumerStatefulWidget {
 
 class _ReviewItemState extends ConsumerState<ReviewItem>
     with SingleTickerProviderStateMixin {
+  bool _isLongPressed = false;
 
   @override
   void initState() {
     super.initState();
   }
-
-
 
   Widget _buildRatingStars() {
     final theme = Theme.of(context);
@@ -84,27 +87,63 @@ class _ReviewItemState extends ConsumerState<ReviewItem>
     }
   }
 
-  // テキストの切り詰め（改善版）
   String _truncateText(String text, int maxLength) {
     if (text.length <= maxLength) return text;
     return '${text.substring(0, maxLength)}...';
+  }
+
+  Future<void> _handleEdit() async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => EditReviewScreen(
+          review: widget.review,
+          product: widget.product,
+        ),
+      ),
+    );
+
+    // 編集が成功した場合、コールバックを実行
+    if (result == true && widget.onReviewUpdated != null) {
+      widget.onReviewUpdated!();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final reviewText = widget.review.reviewText.trim();
+    final currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id;
+    final isOwner = currentUserId != null && currentUserId == widget.review.userId;
 
     return GestureDetector(
+      onLongPressStart: isOwner
+          ? (_) {
+              setState(() {
+                _isLongPressed = true;
+              });
+            }
+          : null,
+      onLongPressEnd: isOwner
+          ? (_) {
+              setState(() {
+                _isLongPressed = false;
+              });
+            }
+          : null,
+      onLongPress: isOwner ? _handleEdit : null,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
+          color: _isLongPressed
+              ? (theme.brightness == Brightness.dark
+                  ? Colors.white10
+                  : Colors.grey.shade200)
+              : Colors.transparent,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 星評価と日時を横並びに
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -127,19 +166,39 @@ class _ReviewItemState extends ConsumerState<ReviewItem>
                             : Colors.grey[600],
                       ),
                     ),
+                    if (isOwner) ...[
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: _handleEdit,
+                        child: Icon(
+                          Icons.edit,
+                          size: 16,
+                          color: Colors.greenAccent[400] ?? Colors.green,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],
             ),
             const SizedBox(height: 6),
-
-            // レビュー本文（最大200文字）
             Text(
               _truncateText(reviewText, 200),
               style: theme.textTheme.bodyMedium,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
+            if (isOwner && _isLongPressed)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  '長押しして編集',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.greenAccent[400] ?? Colors.green,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
           ],
         ),
       ),

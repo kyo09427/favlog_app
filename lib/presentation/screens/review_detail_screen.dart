@@ -24,7 +24,7 @@ class ReviewDetailScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('レビューの削除'),
-        content: const Text('このレビューを削除してもよろしいですか？\nこの操作は取り消せません。'),
+        content: const Text('このレビューを削除してもよろしいですか?\nこの操作は取り消せません。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -51,9 +51,9 @@ class ReviewDetailScreen extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('レビューを削除しました')),
         );
-        
-        // レビューリストを更新
-        final controller = ref.read(reviewDetailControllerProvider(productId).notifier);
+
+        final controller =
+            ref.read(reviewDetailControllerProvider(productId).notifier);
         await controller.refreshAll();
       }
     } catch (e) {
@@ -70,9 +70,12 @@ class ReviewDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final reviewDetailState = ref.watch(reviewDetailControllerProvider(productId));
-    final reviewDetailController = ref.read(reviewDetailControllerProvider(productId).notifier);
-    final currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id;
+    final reviewDetailState =
+        ref.watch(reviewDetailControllerProvider(productId));
+    final reviewDetailController =
+        ref.read(reviewDetailControllerProvider(productId).notifier);
+    final currentUserId =
+        ref.read(authRepositoryProvider).getCurrentUser()?.id;
 
     final displayedProduct = reviewDetailState.currentProduct;
 
@@ -82,7 +85,8 @@ class ReviewDetailScreen extends ConsumerWidget {
         body: Center(
           child: reviewDetailState.isLoading
               ? const CircularProgressIndicator()
-              : Text('製品の読み込みエラー: ${reviewDetailState.error ?? "不明なエラー"}'),
+              : Text(
+                  '製品の読み込みエラー: ${reviewDetailState.error ?? "不明なエラー"}'),
         ),
       );
     }
@@ -173,7 +177,9 @@ class ReviewDetailScreen extends ConsumerWidget {
                               children: [
                                 Text(
                                   'レビュー (${reviewDetailState.reviews.length}件):',
-                                  style: Theme.of(context).textTheme.headlineSmall,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall,
                                 ),
                                 const SizedBox(height: 10),
                                 ...reviewDetailState.reviews.map((review) {
@@ -186,10 +192,16 @@ class ReviewDetailScreen extends ConsumerWidget {
                                         ReviewItem(
                                           product: displayedProduct,
                                           review: review,
+                                          onReviewUpdated: () {
+                                            // 編集後にレビューリストを更新
+                                            reviewDetailController
+                                                .refreshAll();
+                                          },
                                         ),
                                         if (isOwner)
                                           Padding(
-                                            padding: const EdgeInsets.symmetric(
+                                            padding:
+                                                const EdgeInsets.symmetric(
                                               horizontal: 8.0,
                                               vertical: 4.0,
                                             ),
@@ -198,7 +210,8 @@ class ReviewDetailScreen extends ConsumerWidget {
                                                   MainAxisAlignment.end,
                                               children: [
                                                 TextButton.icon(
-                                                  onPressed: () => _deleteReview(
+                                                  onPressed: () =>
+                                                      _deleteReview(
                                                     context,
                                                     ref,
                                                     review,
@@ -208,8 +221,10 @@ class ReviewDetailScreen extends ConsumerWidget {
                                                     size: 18,
                                                   ),
                                                   label: const Text('削除'),
-                                                  style: TextButton.styleFrom(
-                                                    foregroundColor: Colors.red,
+                                                  style:
+                                                      TextButton.styleFrom(
+                                                    foregroundColor:
+                                                        Colors.red,
                                                   ),
                                                 ),
                                               ],
