@@ -1,9 +1,12 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:favlog_app/domain/models/product.dart';
 import 'package:favlog_app/domain/models/review.dart';
+import 'package:favlog_app/domain/models/profile.dart';
 import 'package:favlog_app/presentation/screens/edit_review_screen.dart';
 import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
+import 'package:favlog_app/core/providers/profile_providers.dart';
 
 class ReviewItem extends ConsumerStatefulWidget {
   final Product product;
@@ -23,11 +26,38 @@ class ReviewItem extends ConsumerStatefulWidget {
 
 class _ReviewItemState extends ConsumerState<ReviewItem> {
   bool _isLongPressed = false;
+  Profile? _userProfile;
+  bool _isLoadingProfile = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    try {
+      final profileRepository = ref.read(profileRepositoryProvider);
+      final profile = await profileRepository.fetchProfile(widget.review.userId);
+      if (mounted) {
+        setState(() {
+          _userProfile = profile;
+          _isLoadingProfile = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingProfile = false;
+        });
+      }
+    }
+  }
 
   Widget _buildRatingStars() {
     final theme = Theme.of(context);
     final rating = widget.review.rating;
-    const calmGreen = Color(0xFF22A06B); // 落ち着いた緑
+    const calmGreen = Color(0xFF22A06B);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -102,15 +132,61 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
     }
   }
 
+  Widget _buildUserAvatar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    if (_isLoadingProfile) {
+      return CircleAvatar(
+        radius: 20,
+        backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
+        child: const SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
+
+    if (_userProfile?.avatarUrl != null && _userProfile!.avatarUrl!.isNotEmpty) {
+      return CircleAvatar(
+        radius: 20,
+        backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
+        backgroundImage: CachedNetworkImageProvider(_userProfile!.avatarUrl!),
+      );
+    }
+
+    return CircleAvatar(
+      radius: 20,
+      backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
+      child: Icon(
+        Icons.person,
+        size: 20,
+        color: isDark ? Colors.white : Colors.grey[800],
+      ),
+    );
+  }
+
+  String _getDisplayName() {
+    final currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id;
+    final isOwner = currentUserId != null && currentUserId == widget.review.userId;
+    
+    if (isOwner) {
+      return 'あなた';
+    }
+    
+    if (_isLoadingProfile) {
+      return '読み込み中...';
+    }
+    
+    return _userProfile?.username ?? 'レビュアー';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final reviewText = widget.review.reviewText.trim();
-    final currentUserId =
-        ref.read(authRepositoryProvider).getCurrentUser()?.id;
-    final isOwner =
-        currentUserId != null && currentUserId == widget.review.userId;
-
+    final currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id;
+    final isOwner = currentUserId != null && currentUserId == widget.review.userId;
     final isDark = theme.brightness == Brightness.dark;
 
     return GestureDetector(
@@ -140,26 +216,17 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 上部：アバター + 「あなた」/「レビュアー」 + 相対時間
+            // 上部: アバター + ユーザー名 + 相対時間
             Row(
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor:
-                      isDark ? Colors.grey[700] : Colors.grey[300],
-                  child: Icon(
-                    Icons.person,
-                    size: 20,
-                    color: isDark ? Colors.white : Colors.grey[800],
-                  ),
-                ),
+                _buildUserAvatar(),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isOwner ? 'あなた' : 'レビュアー',
+                        _getDisplayName(),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: isDark ? Colors.white : Colors.black,
@@ -169,14 +236,22 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
                       Text(
                         _formatDate(widget.review.createdAt.toLocal()),
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: isDark
-                              ? Colors.grey[400]
-                              : Colors.grey[600],
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
                         ),
                       ),
                     ],
                   ),
                 ),
+                if (isOwner)
+                  IconButton(
+                    icon: Icon(
+                      Icons.edit_outlined,
+                      size: 20,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                    onPressed: _handleEdit,
+                    tooltip: '編集',
+                  ),
               ],
             ),
             const SizedBox(height: 8),
@@ -206,7 +281,7 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 8),
-            // アクション（いいね / コメント）※数値は現状ダミー
+            // アクション (いいね / コメント) ※数値は現状ダミー
             Row(
               children: [
                 InkWell(
@@ -231,8 +306,7 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
                           '0',
                           style: theme.textTheme.bodySmall?.copyWith(
                             fontWeight: FontWeight.w500,
-                            color:
-                                isDark ? Colors.white : Colors.black,
+                            color: isDark ? Colors.white : Colors.black,
                           ),
                         ),
                       ],
@@ -262,8 +336,7 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
                           '0',
                           style: theme.textTheme.bodySmall?.copyWith(
                             fontWeight: FontWeight.w500,
-                            color:
-                                isDark ? Colors.white : Colors.black,
+                            color: isDark ? Colors.white : Colors.black,
                           ),
                         ),
                       ],
@@ -276,7 +349,7 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
-                  '長押しして編集',
+                  '長押しまたは編集ボタンで編集',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: const Color(0xFF22A06B),
                     fontStyle: FontStyle.italic,
