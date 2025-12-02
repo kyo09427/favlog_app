@@ -15,6 +15,11 @@ class ReviewDetailScreen extends ConsumerWidget {
 
   const ReviewDetailScreen({super.key, required this.productId});
 
+  static const Color _backgroundLight = Color(0xFFF6F8F6);
+  static const Color _backgroundDark = Color(0xFF102216);
+  // 落ち着いた緑
+  static const Color _primary = Color(0xFF22A06B);
+
   Future<void> _deleteReview(
     BuildContext context,
     WidgetRef ref,
@@ -24,7 +29,9 @@ class ReviewDetailScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('レビューの削除'),
-        content: const Text('このレビューを削除してもよろしいですか?\nこの操作は取り消せません。'),
+        content: const Text(
+          'このレビューを削除してもよろしいですか?\nこの操作は取り消せません。',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -79,168 +86,397 @@ class ReviewDetailScreen extends ConsumerWidget {
 
     final displayedProduct = reviewDetailState.currentProduct;
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final backgroundColor = isDark ? _backgroundDark : _backgroundLight;
+
     if (displayedProduct.id == Product.empty().id) {
       return Scaffold(
-        appBar: AppBar(title: const Text('詳細')),
+        backgroundColor: backgroundColor,
         body: Center(
           child: reviewDetailState.isLoading
               ? const CircularProgressIndicator()
               : Text(
-                  '製品の読み込みエラー: ${reviewDetailState.error ?? "不明なエラー"}'),
+                  '製品の読み込みエラー: ${reviewDetailState.error ?? "不明なエラー"}',
+                ),
         ),
       );
     }
 
+    final reviews = reviewDetailState.reviews;
+    final reviewCount = reviews.length;
+    final averageRating = reviewCount == 0
+        ? 0.0
+        : reviews
+                .map((r) => r.rating)
+                .fold<double>(0, (sum, r) => sum + r) /
+            reviewCount;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(displayedProduct.name),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => reviewDetailController.refreshAll(),
-            tooltip: '更新',
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () => reviewDetailController.refreshAll(),
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16.0),
+      backgroundColor: backgroundColor,
+      body: SafeArea(
+        child: Container(
+          color: backgroundColor,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (displayedProduct.imageUrl != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: CachedNetworkImage(
-                    imageUrl: displayedProduct.imageUrl!,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Shimmer.fromColors(
-                      baseColor: Colors.grey[300]!,
-                      highlightColor: Colors.grey[100]!,
-                      child: Container(
-                        height: 200,
-                        width: double.infinity,
-                        color: Colors.white,
+              // ヘッダー
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  border: Border(
+                    bottom:
+                        BorderSide(color: Colors.white.withOpacity(0.1)),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: IconButton(
+                        onPressed: () => Navigator.of(context).maybePop(),
+                        icon: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          size: 20,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                       ),
                     ),
-                    errorWidget: (context, url, error) =>
-                        const Icon(Icons.broken_image, size: 200),
-                  ),
+                    Expanded(
+                      child: Text(
+                        displayedProduct.name,
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: IconButton(
+                        onPressed: () {
+                          // TODO: メニューアクション
+                        },
+                        icon: Icon(
+                          Icons.more_horiz,
+                          size: 22,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              Text(
-                displayedProduct.name,
-                style: Theme.of(context).textTheme.headlineMedium,
               ),
-              if (displayedProduct.url != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                  child: Text(
-                    'URL: ${displayedProduct.url}',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: Colors.blue),
-                  ),
-                ),
-              if (displayedProduct.category != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                  child: Text(
-                    'カテゴリ: ${displayedProduct.category}',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-              if (displayedProduct.subcategory != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                  child: Text(
-                    'サブカテゴリ: ${displayedProduct.subcategory}',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-              const SizedBox(height: 20),
-              reviewDetailState.isLoading &&
-                      displayedProduct.id != Product.empty().id
-                  ? const Center(child: CircularProgressIndicator())
-                  : reviewDetailState.error != null
-                      ? Center(
-                          child: Text(
-                              'レビューの読み込みエラー: ${reviewDetailState.error}'))
-                      : reviewDetailState.reviews.isEmpty
-                          ? const Text('まだレビューがありません。')
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'レビュー (${reviewDetailState.reviews.length}件):',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineSmall,
-                                ),
-                                const SizedBox(height: 10),
-                                ...reviewDetailState.reviews.map((review) {
-                                  final isOwner = currentUserId != null &&
-                                      currentUserId == review.userId;
-                                  return Card(
-                                    margin: const EdgeInsets.only(bottom: 8),
-                                    child: Column(
-                                      children: [
-                                        ReviewItem(
-                                          product: displayedProduct,
-                                          review: review,
-                                          onReviewUpdated: () {
-                                            // 編集後にレビューリストを更新
-                                            reviewDetailController
-                                                .refreshAll();
-                                          },
-                                        ),
-                                        if (isOwner)
-                                          Padding(
-                                            padding:
-                                                const EdgeInsets.symmetric(
-                                              horizontal: 8.0,
-                                              vertical: 4.0,
-                                            ),
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.end,
-                                              children: [
-                                                TextButton.icon(
-                                                  onPressed: () =>
-                                                      _deleteReview(
-                                                    context,
-                                                    ref,
-                                                    review,
-                                                  ),
-                                                  icon: const Icon(
-                                                    Icons.delete_outline,
-                                                    size: 18,
-                                                  ),
-                                                  label: const Text('削除'),
-                                                  style:
-                                                      TextButton.styleFrom(
-                                                    foregroundColor:
-                                                        Colors.red,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+
+              // 本文
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () => reviewDetailController.refreshAll(),
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      // 店舗情報
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: SizedBox(
+                                width: 64,
+                                height: 64,
+                                child: displayedProduct.imageUrl != null &&
+                                        displayedProduct.imageUrl!.isNotEmpty
+                                    ? CachedNetworkImage(
+                                        imageUrl: displayedProduct.imageUrl!,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) =>
+                                            Shimmer.fromColors(
+                                          baseColor: Colors.grey[300]!,
+                                          highlightColor: Colors.grey[100]!,
+                                          child: Container(
+                                            color: Colors.white,
                                           ),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                              ],
+                                        ),
+                                        errorWidget:
+                                            (context, url, error) =>
+                                                Container(
+                                          color: Colors.grey[300],
+                                          child: const Icon(
+                                            Icons.broken_image,
+                                            size: 24,
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
+                                        color: Colors.grey[300],
+                                        child: const Icon(
+                                          Icons.image,
+                                          size: 24,
+                                        ),
+                                      ),
+                              ),
                             ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    displayedProduct.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.star,
+                                        size: 16,
+                                        color: _primary,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        reviewCount == 0
+                                            ? '-'
+                                            : averageRating
+                                                .toStringAsFixed(1),
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: isDark
+                                              ? Colors.white
+                                              : Colors.black,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '($reviewCount)',
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                          color: isDark
+                                              ? Colors.grey[400]
+                                              : Colors.grey[600],
+                                        ),
+                                      ),
+                                      Container(
+                                        width: 1,
+                                        height: 12,
+                                        margin: const EdgeInsets.symmetric(
+                                            horizontal: 8),
+                                        color: isDark
+                                            ? Colors.grey[600]
+                                            : Colors.grey[300],
+                                      ),
+                                      Text(
+                                        displayedProduct.category ?? '',
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                          color: isDark
+                                              ? Colors.grey[400]
+                                              : Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Row(
+                                          children: [
+                                            if (displayedProduct.category !=
+                                                null)
+                                              Flexible(
+                                                child: Text(
+                                                  '#${displayedProduct.category}',
+                                                  style: theme.textTheme
+                                                      .bodySmall
+                                                      ?.copyWith(
+                                                    color: _primary,
+                                                    fontWeight:
+                                                        FontWeight.w500,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            if (displayedProduct
+                                                        .subcategory !=
+                                                    null &&
+                                                displayedProduct.subcategory!
+                                                    .isNotEmpty) ...[
+                                              const SizedBox(width: 6),
+                                              Flexible(
+                                                child: Text(
+                                                  '#${displayedProduct.subcategory}',
+                                                  style: theme.textTheme
+                                                      .bodySmall
+                                                      ?.copyWith(
+                                                    color: _primary,
+                                                    fontWeight:
+                                                        FontWeight.w500,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                      if (displayedProduct.url != null &&
+                                          displayedProduct.url!.isNotEmpty)
+                                        IconButton(
+                                          onPressed: () {
+                                            // TODO: URLを開く処理
+                                          },
+                                          icon: Icon(
+                                            Icons.link,
+                                            size: 18,
+                                            color: isDark
+                                                ? Colors.grey[400]
+                                                : Colors.grey[600],
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // タブ
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Colors.white.withOpacity(0.1),
+                            ),
+                          ),
+                        ),
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: [
+                            _SortTab(
+                              label: 'すべて',
+                              isActive: true,
+                              isDark: isDark,
+                            ),
+                            _SortTab(
+                              label: '新しい順',
+                              isActive: false,
+                              isDark: isDark,
+                            ),
+                            _SortTab(
+                              label: '高評価順',
+                              isActive: false,
+                              isDark: isDark,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // レビュー一覧
+                      if (reviewDetailState.isLoading)
+                        const Padding(
+                          padding: EdgeInsets.all(24.0),
+                          child:
+                              Center(child: CircularProgressIndicator()),
+                        )
+                      else if (reviewDetailState.error != null)
+                        Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Center(
+                            child: Text(
+                              'レビューの読み込みエラー: ${reviewDetailState.error}',
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        )
+                      else if (reviews.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.all(24.0),
+                          child: Text('まだレビューがありません。'),
+                        )
+                      else
+                        Column(
+                          children: reviews.map((review) {
+                            final isOwner = currentUserId != null &&
+                                currentUserId == review.userId;
+
+                            return Container(
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: Colors.white.withOpacity(0.1),
+                                  ),
+                                ),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
+                              child: Column(
+                                children: [
+                                  ReviewItem(
+                                    product: displayedProduct,
+                                    review: review,
+                                    onReviewUpdated: () {
+                                      reviewDetailController.refreshAll();
+                                    },
+                                  ),
+                                  if (isOwner)
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: TextButton.icon(
+                                        onPressed: () => _deleteReview(
+                                          context,
+                                          ref,
+                                          review,
+                                        ),
+                                        icon: const Icon(
+                                          Icons.delete_outline,
+                                          size: 18,
+                                        ),
+                                        label: const Text('削除'),
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: Colors.red,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: _primary,
         onPressed: () async {
           await Navigator.of(context).push(
             MaterialPageRoute(
@@ -251,6 +487,61 @@ class ReviewDetailScreen extends ConsumerWidget {
           reviewDetailController.refreshAll();
         },
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class _SortTab extends StatelessWidget {
+  const _SortTab({
+    required this.label,
+    required this.isActive,
+    required this.isDark,
+  });
+
+  final String label;
+  final bool isActive;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final baseColor =
+        isDark ? Colors.grey[400]! : Colors.grey[600]!;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: 12,
+              horizontal: 4,
+            ),
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight:
+                    isActive ? FontWeight.bold : FontWeight.w500,
+                color: isActive
+                    ? const Color(0xFF22A06B)
+                    : baseColor,
+              ),
+            ),
+          ),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: 2,
+            width: 36,
+            decoration: BoxDecoration(
+              color: isActive
+                  ? const Color(0xFF22A06B)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+        ],
       ),
     );
   }

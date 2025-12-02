@@ -312,7 +312,7 @@
 *   **UI/状態管理層**:
     *   `ProfileScreenController` (`lib/presentation/providers/profile_screen_controller.dart`) を実装。
         *   ユーザープロフィールの取得、ユーザー名の更新、アバター画像の選択とSupabaseストレージへのアップロードロジックを管理。
-        *   `ImagePicker` をプロバイダー経由で注入するようにリファクタリングし、テスト容易性を向上。
+        *   `ImagePicker` をプロバイダー経経由で注入するようにリファクタリングし、テスト容易性を向上。
         *   `createInitialProfile` メソッドを追加し、プロフィールが存在しない場合に初期プロフィールを作成するロジックを実装。
     *   `ProfileScreen` (`lib/presentation/screens/profile_screen.dart`) を実装。
         *   ユーザー名とアバター画像を表示・編集できるUIを提供。
@@ -416,3 +416,14 @@
     *   `ReviewRepository` インターフェースの `updateReview` メソッドを実装。
     *   Supabaseクライアントの `.update().eq()` メソッドを使用してレビューを更新。
     *   エラーハンドリングも実装済み。
+
+## 実装ログ - 2025年12月2日
+
+### レビュー詳細画面のUI/UX改善
+
+*   **UI/UXの全面的な再設計**:
+    *   `lib/presentation/screens/review_detail_screen.dart` のレイアウトを刷新。カスタムヘッダー、平均評価とレビュー数を表示する集約情報エリア、タグ形式のカテゴリ表示を導入。
+    *   レビューのソート機能のためのタブUI（「すべて」「新しい順」「高評価順」）を追加（ソートロジックは未実装）。
+    *   `lib/presentation/widgets/review_item.dart` のデザインを改善。ユーザーアバター、数値評価表示、いいね・コメント数のプレースホルダーを追加し、よりモダンな外観に。
+*   **コントローラーのリファクタリング**:
+    *   `lib/presentation/providers/review_detail_controller.dart` をリファクタリングし、初期化ロジックを簡素化。製品とレビューの読み込みを `refreshAll` に集約し、冗長なコードを削除。

@@ -2,19 +2,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/review.dart';
 import '../../domain/models/product.dart';
 import '../../data/repositories/supabase_review_repository.dart';
-import '../../data/repositories/supabase_product_repository.dart'; // Import product repository
+import '../../data/repositories/supabase_product_repository.dart';
 
 class ReviewDetailState {
   final List<Review> reviews;
   final bool isLoading;
   final String? error;
-  final Product currentProduct; // Add currentProduct
+  final Product currentProduct;
 
   ReviewDetailState({
     required this.reviews,
     this.isLoading = false,
     this.error,
-    required this.currentProduct, // Make it required
+    required this.currentProduct,
   });
 
   ReviewDetailState copyWith({
@@ -32,32 +32,45 @@ class ReviewDetailState {
   }
 }
 
-final reviewDetailControllerProvider = StateNotifierProvider.family<ReviewDetailController, ReviewDetailState, String>((ref, productId) {
-  return ReviewDetailController(ref, productId);
-});
+final reviewDetailControllerProvider =
+    StateNotifierProvider.family<ReviewDetailController, ReviewDetailState, String>(
+  (ref, productId) => ReviewDetailController(ref, productId),
+);
 
 class ReviewDetailController extends StateNotifier<ReviewDetailState> {
   final Ref _ref;
-  final String _productId; // Changed to productId
-  final _productRepository = productRepositoryProvider; // Access product repository
+  final String _productId;
+  // productRepositoryProvider は既存の SupabaseProductRepository の Provider を利用
+  final _productRepository = productRepositoryProvider;
 
-  ReviewDetailController(this._ref, this._productId) // Changed to productId
-      : super(ReviewDetailState(reviews: [], currentProduct: Product.empty())) { // Use empty product as initial
-    _init(); // Call init method
+  ReviewDetailController(this._ref, this._productId)
+      : super(
+          ReviewDetailState(
+            reviews: const [],
+            currentProduct: Product.empty(),
+            isLoading: true,
+          ),
+        ) {
+    _init();
   }
 
   Future<void> _init() async {
-    await refreshAll(); // Fetch product and reviews on init
+    await refreshAll();
   }
 
+  /// 商品情報とレビューをまとめて再取得
   Future<void> refreshAll() async {
     state = state.copyWith(isLoading: true, error: null);
+
     try {
       final productRepository = _ref.read(_productRepository);
       final reviewRepository = _ref.read(reviewRepositoryProvider);
 
-      final fetchedProduct = await productRepository.getProductById(_productId); // Fetch latest product details using productId
-      final productReviews = await reviewRepository.getReviewsByProductId(_productId); // Use productId
+      // 既存の Repository メソッド名をそのまま使用
+      final fetchedProduct =
+          await productRepository.getProductById(_productId);
+      final productReviews =
+          await reviewRepository.getReviewsByProductId(_productId);
 
       state = state.copyWith(
         reviews: productReviews,
@@ -65,15 +78,15 @@ class ReviewDetailController extends StateNotifier<ReviewDetailState> {
         isLoading: false,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
     }
   }
 
-  // No longer needed, as refreshAll handles both
-  // Future<void> fetchReviews() async { ... }
-
-  // This will be called from ReviewItem's onReviewEdited
+  /// レビュー編集後などから呼び出す用のラッパー
   Future<void> refreshReviews() async {
-    await refreshAll(); // Now refreshes both product and reviews
+    await refreshAll();
   }
 }

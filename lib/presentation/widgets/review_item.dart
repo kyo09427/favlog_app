@@ -21,18 +21,13 @@ class ReviewItem extends ConsumerStatefulWidget {
   ConsumerState<ReviewItem> createState() => _ReviewItemState();
 }
 
-class _ReviewItemState extends ConsumerState<ReviewItem>
-    with SingleTickerProviderStateMixin {
+class _ReviewItemState extends ConsumerState<ReviewItem> {
   bool _isLongPressed = false;
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   Widget _buildRatingStars() {
     final theme = Theme.of(context);
     final rating = widget.review.rating;
+    const calmGreen = Color(0xFF22A06B); // 落ち着いた緑
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -44,10 +39,10 @@ class _ReviewItemState extends ConsumerState<ReviewItem>
 
         if (rating >= starPosition) {
           icon = Icons.star;
-          color = Colors.amber;
+          color = calmGreen;
         } else if (rating >= starPosition - 0.5) {
           icon = Icons.star_half;
-          color = Colors.amber;
+          color = calmGreen;
         } else {
           icon = Icons.star_border;
           color = theme.brightness == Brightness.dark
@@ -55,7 +50,7 @@ class _ReviewItemState extends ConsumerState<ReviewItem>
               : Colors.grey[400]!;
         }
 
-        return Icon(icon, color: color, size: 16);
+        return Icon(icon, color: color, size: 18);
       }),
     );
   }
@@ -102,7 +97,6 @@ class _ReviewItemState extends ConsumerState<ReviewItem>
       ),
     );
 
-    // 編集が成功した場合、コールバックを実行
     if (result == true && widget.onReviewUpdated != null) {
       widget.onReviewUpdated!();
     }
@@ -112,8 +106,12 @@ class _ReviewItemState extends ConsumerState<ReviewItem>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final reviewText = widget.review.reviewText.trim();
-    final currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id;
-    final isOwner = currentUserId != null && currentUserId == widget.review.userId;
+    final currentUserId =
+        ref.read(authRepositoryProvider).getCurrentUser()?.id;
+    final isOwner =
+        currentUserId != null && currentUserId == widget.review.userId;
+
+    final isDark = theme.brightness == Brightness.dark;
 
     return GestureDetector(
       onLongPressStart: isOwner
@@ -132,61 +130,147 @@ class _ReviewItemState extends ConsumerState<ReviewItem>
           : null,
       onLongPress: isOwner ? _handleEdit : null,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+        padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 0.0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           color: _isLongPressed
-              ? (theme.brightness == Brightness.dark
-                  ? Colors.white10
-                  : Colors.grey.shade200)
+              ? (isDark ? Colors.white10 : Colors.grey.shade200)
               : Colors.transparent,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 上部：アバター + 「あなた」/「レビュアー」 + 相対時間
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildRatingStars(),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.access_time,
-                      size: 12,
-                      color: theme.brightness == Brightness.dark
-                          ? Colors.grey[400]
-                          : Colors.grey[600],
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      _formatDate(widget.review.createdAt.toLocal()),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.brightness == Brightness.dark
-                            ? Colors.grey[400]
-                            : Colors.grey[600],
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor:
+                      isDark ? Colors.grey[700] : Colors.grey[300],
+                  child: Icon(
+                    Icons.person,
+                    size: 20,
+                    color: isDark ? Colors.white : Colors.grey[800],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isOwner ? 'あなた' : 'レビュアー',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                       ),
-                    ),
-                    if (isOwner) ...[
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: _handleEdit,
-                        child: Icon(
-                          Icons.edit,
-                          size: 16,
-                          color: Colors.greenAccent[400] ?? Colors.green,
+                      const SizedBox(height: 2),
+                      Text(
+                        _formatDate(widget.review.createdAt.toLocal()),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: isDark
+                              ? Colors.grey[400]
+                              : Colors.grey[600],
                         ),
                       ),
                     ],
-                  ],
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
+            // 星評価 + 数値
+            Row(
+              children: [
+                _buildRatingStars(),
+                const SizedBox(width: 6),
+                Text(
+                  widget.review.rating.toStringAsFixed(1),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // 本文
             Text(
-              _truncateText(reviewText, 200),
-              style: theme.textTheme.bodyMedium,
-              maxLines: 3,
+              _truncateText(reviewText, 400),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                height: 1.5,
+                color: isDark ? Colors.grey[200] : Colors.grey[800],
+              ),
+              maxLines: 4,
               overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            // アクション（いいね / コメント）※数値は現状ダミー
+            Row(
+              children: [
+                InkWell(
+                  borderRadius: BorderRadius.circular(999),
+                  onTap: () {
+                    // TODO: いいね機能を実装する場合はここ
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 4,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.favorite_border,
+                          size: 18,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '0',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color:
+                                isDark ? Colors.white : Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 24),
+                InkWell(
+                  borderRadius: BorderRadius.circular(999),
+                  onTap: () {
+                    // TODO: コメント機能を実装する場合はここ
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 4,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 18,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '0',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color:
+                                isDark ? Colors.white : Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
             if (isOwner && _isLongPressed)
               Padding(
@@ -194,7 +278,7 @@ class _ReviewItemState extends ConsumerState<ReviewItem>
                 child: Text(
                   '長押しして編集',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.greenAccent[400] ?? Colors.green,
+                    color: const Color(0xFF22A06B),
                     fontStyle: FontStyle.italic,
                   ),
                 ),
