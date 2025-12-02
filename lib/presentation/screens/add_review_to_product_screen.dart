@@ -42,7 +42,7 @@ class _AddReviewToProductScreenState
     final addReviewToProductController =
         ref.read(addReviewToProductControllerProvider(product).notifier);
 
-    // エラー監視（元ファイルの意図そのまま）
+    // エラー監視
     ref.listen<AddReviewToProductState>(
       addReviewToProductControllerProvider(product),
       (previous, next) {
@@ -54,8 +54,8 @@ class _AddReviewToProductScreenState
 
     final theme = Theme.of(context);
     final bgColor = theme.brightness == Brightness.dark
-        ? const Color(0xFF102216) // background-dark っぽい色
-        : const Color(0xFFF6F8F6); // background-light っぽい色
+        ? const Color(0xFF102216)
+        : const Color(0xFFF6F8F6);
 
     Future<void> handleSubmit() async {
       if (!_formKey.currentState!.validate()) return;
@@ -72,349 +72,300 @@ class _AddReviewToProductScreenState
       }
     }
 
-    // 星アイコン（0.5刻み表現）
-    Widget buildStar(int index) {
+    // 星表示（0.5刻み）
+    List<Widget> buildStars() {
       final rating = addReviewToProductState.rating;
-      final starPosition = index + 1; // 1〜5
+      return List.generate(5, (index) {
+        final starPosition = index + 1;
 
-      IconData icon;
-      Color color;
+        IconData icon;
+        Color color;
 
-      if (rating >= starPosition) {
-        icon = Icons.star;
-        color = Colors.greenAccent[400] ?? Colors.green;
-      } else if (rating >= starPosition - 0.5 && rating < starPosition) {
-        icon = Icons.star_half;
-        color = Colors.greenAccent[400] ?? Colors.green;
-      } else {
-        icon = Icons.star_border;
-        color = theme.brightness == Brightness.dark
-            ? Colors.grey[600]!
-            : Colors.grey[400]!;
-      }
+        if (rating >= starPosition) {
+          icon = Icons.star;
+          color = const Color(0xFF22A06B);
+        } else if (rating >= starPosition - 0.5 &&
+            rating < starPosition) {
+          icon = Icons.star_half;
+          color = const Color(0xFF22A06B);
+        } else {
+          icon = Icons.star_border;
+          color = theme.brightness == Brightness.dark
+              ? Colors.grey[600]!
+              : Colors.grey[400]!;
+        }
 
-      return IconButton(
-        iconSize: 32,
-        padding: EdgeInsets.zero,
-        onPressed: addReviewToProductState.isLoading
-            ? null
-            : () {
-                double newRating;
-                if (rating == starPosition.toDouble()) {
-                  newRating = starPosition - 0.5;
-                } else {
-                  newRating = starPosition.toDouble();
-                }
-                if (newRating < 1) newRating = 1;
-                if (newRating > 5) newRating = 5;
-                addReviewToProductController.updateRating(newRating);
-              },
-        icon: Icon(icon, color: color),
-      );
+        return IconButton(
+          iconSize: 32,
+          padding: EdgeInsets.zero,
+          onPressed: addReviewToProductState.isLoading
+              ? null
+              : () {
+                  double newRating;
+                  if (rating == starPosition.toDouble()) {
+                    newRating = starPosition - 0.5;
+                  } else {
+                    newRating = starPosition.toDouble();
+                  }
+                  if (newRating < 1) newRating = 1;
+                  if (newRating > 5) newRating = 5;
+                  addReviewToProductController.updateRating(newRating);
+                },
+          icon: Icon(icon, color: const Color(0xFF22A06B)),
+        );
+      });
     }
 
     return Scaffold(
       backgroundColor: bgColor,
       body: SafeArea(
-        child: Stack(
+        child: Column(
           children: [
-            // スクロール全体
-            Positioned.fill(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 上部のカスタムヘッダー（close + タイトル + 投稿）
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: bgColor,
-                        border: Border(
-                          bottom: BorderSide(
-                            color: theme.brightness == Brightness.dark
-                                ? Colors.white10
-                                : Colors.grey.shade300,
+            // ヘッダー
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: bgColor,
+                border: Border(
+                  bottom: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.white24
+                        : Colors.grey.shade300,
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.arrow_back_ios_new,
+                      size: 18,
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black87,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'レビューを追加',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            letterSpacing: -0.3,
                           ),
                         ),
+                        const SizedBox(height: 2),
+                        Text(
+                          product.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: theme.brightness == Brightness.dark
+                                ? Colors.grey[300]
+                                : Colors.grey[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 評価
+                      Text(
+                        '評価',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: theme.brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black87,
+                        ),
                       ),
-                      child: Row(
+                      const SizedBox(height: 8),
+                      Row(
                         children: [
-                          // 左：閉じるボタン
-                          SizedBox(
-                            width: 48,
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.close,
-                                color: theme.brightness == Brightness.dark
-                                    ? Colors.white
-                                    : Colors.black87,
-                              ),
-                              onPressed: () => Navigator.of(context).pop(),
+                          ...buildStars(),
+                          const SizedBox(width: 8),
+                          Text(
+                            addReviewToProductState.rating
+                                .toStringAsFixed(1),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: theme.brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black87,
                             ),
                           ),
-                          // 中央：タイトル
-                          const Expanded(
-                            child: Center(
-                              child: Text(
-                                'レビューを書く',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: -0.3,
-                                ),
-                              ),
-                            ),
-                          ),
-                          // 右：投稿ボタン
-                          SizedBox(
-                            width: 48,
-                            child: TextButton(
-                              onPressed: addReviewToProductState.isLoading
-                                  ? null
-                                  : handleSubmit,
-                              child: Text(
-                                '投稿',
-                                style: TextStyle(
-                                  color: Colors.greenAccent[400] ?? Colors.green,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
+                          const Text(' / 5.0'),
                         ],
                       ),
-                    ),
-
-                    // 本文
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 🔹 商品情報（表示のみ：編集機能なし）
-                            Container(
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: theme.brightness == Brightness.dark
-                                    ? Colors.white10
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: theme.brightness == Brightness.dark
-                                      ? Colors.white24
-                                      : Colors.grey.shade300,
-                                ),
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // サムネイル（あれば）
-                                  if (product.imageUrl != null &&
-                                      product.imageUrl!.isNotEmpty)
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Image.network(
-                                        product.imageUrl!,
-                                        width: 64,
-                                        height: 64,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    )
-                                  else
-                                    Container(
-                                      width: 64,
-                                      height: 64,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                        color: theme.brightness ==
-                                                Brightness.dark
-                                            ? Colors.white12
-                                            : Colors.grey.shade200,
-                                      ),
-                                      child: Icon(
-                                        Icons.image_not_supported_outlined,
-                                        color: theme.brightness ==
-                                                Brightness.dark
-                                            ? Colors.white54
-                                            : Colors.grey.shade500,
-                                      ),
-                                    ),
-                                  const SizedBox(width: 12),
-                                  // 商品情報テキスト
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        // 商品名
-                                        Text(
-                                          product.name,
-                                          style: theme
-                                              .textTheme.titleMedium
-                                              ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-
-                                        // カテゴリ / サブカテゴリ
-                                        Wrap(
-                                          spacing: 8,
-                                          runSpacing: 4,
-                                          children: [
-                                            if (product.category != null)
-                                              Chip(
-                                                label: Text(
-                                                  product.category!,
-                                                  style: theme
-                                                      .textTheme.bodySmall
-                                                      ?.copyWith(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                                backgroundColor:
-                                                    Colors.greenAccent[400] ??
-                                                        Colors.green,
-                                                materialTapTargetSize:
-                                                    MaterialTapTargetSize
-                                                        .shrinkWrap,
-                                              ),
-                                            if (product.subcategory != null)
-                                              Chip(
-                                                label: Text(
-                                                  product.subcategory!,
-                                                  style: theme
-                                                      .textTheme.bodySmall
-                                                      ?.copyWith(
-                                                    color: theme.brightness ==
-                                                            Brightness.dark
-                                                        ? Colors.white
-                                                        : Colors.black87,
-                                                  ),
-                                                ),
-                                                backgroundColor:
-                                                    theme.brightness ==
-                                                            Brightness.dark
-                                                        ? Colors.white12
-                                                        : Colors.grey.shade100,
-                                                materialTapTargetSize:
-                                                    MaterialTapTargetSize
-                                                        .shrinkWrap,
-                                              ),
-                                          ],
-                                        ),
-
-                                        // URL（あれば表示だけ）
-                                        if (product.url != null &&
-                                            product.url!.isNotEmpty) ...[
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            product.url!,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: theme.textTheme.bodySmall
-                                                ?.copyWith(
-                                              color: Colors.blueAccent,
-                                              decoration:
-                                                  TextDecoration.underline,
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            const SizedBox(height: 24),
-
-                            // 🔹 評価
-                            const Text(
-                              '評価',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: List.generate(5, buildStar),
-                            ),
-
-                            const SizedBox(height: 24),
-
-                            // 🔹 レビュー本文
-                            const Text(
-                              'レビュー本文',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _reviewTextController,
-                              maxLines: 6,
-                              decoration: InputDecoration(
-                                hintText: '商品の感想を書いてください',
-                                filled: true,
-                                fillColor: theme.brightness == Brightness.dark
-                                    ? Colors.white10
-                                    : Colors.grey.shade100,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: theme.brightness == Brightness.dark
-                                        ? Colors.white24
-                                        : Colors.grey.shade300,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.greenAccent[400] ??
-                                        Colors.green,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                contentPadding: const EdgeInsets.all(15),
-                              ),
-                              onChanged: addReviewToProductController
-                                  .updateReviewText,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'レビューを入力してください。';
-                                }
-                                return null;
-                              },
-                            ),
-
-                            const SizedBox(height: 24),
-
-                            if (addReviewToProductState.isLoading)
-                              const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.only(top: 8.0),
-                                  child: CircularProgressIndicator(),
-                                ),
-                              ),
-                          ],
+                      const SizedBox(height: 8),
+                      Text(
+                        'タップすると0.5刻みで評価を変更できます',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.brightness == Brightness.dark
+                              ? Colors.grey[300]
+                              : Colors.grey[600],
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 24),
+
+                      // レビュー本文
+                      Text(
+                        'レビュー本文',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: theme.brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _reviewTextController,
+                        maxLines: 6,
+                        decoration: InputDecoration(
+                          hintText:
+                              '感じたことや良かったところ、イマイチだったところなどをメモしておきましょう。',
+                          filled: true,
+                          fillColor: theme.brightness == Brightness.dark
+                              ? Colors.white.withOpacity(0.04)
+                              : Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: theme.brightness == Brightness.dark
+                                  ? Colors.white24
+                                  : Colors.grey.shade300,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: theme.brightness == Brightness.dark
+                                  ? Colors.white24
+                                  : Colors.grey.shade300,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: const Color(0xFF22A06B) ??
+                                  Colors.green,
+                              width: 1.5,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 15,
+                            vertical: 14,
+                          ),
+                        ),
+                        onChanged:
+                            addReviewToProductController.updateReviewText,
+                        validator: (value) {
+                          if (value == null ||
+                              value.trim().length < 10) {
+                            return 'レビュー本文は10文字以上で入力してください';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
 
-            // 下部（情報バーがあればここに追加できる）
+            // 下部ボタン
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              decoration: BoxDecoration(
+                color: theme.brightness == Brightness.dark
+                    ? const Color(0xFF050B07)
+                    : Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      addReviewToProductState.isLoading
+                          ? '投稿中...'
+                          : '内容を確認したら、「投稿」ボタンを押してください。',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.grey[300]
+                            : Colors.grey[700],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: addReviewToProductState.isLoading
+                          ? null
+                          : handleSubmit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF22A06B),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 10,
+                        ),
+                      ),
+                      child: addReviewToProductState.isLoading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(),
+                            )
+                          : const Text(
+                              '投稿',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

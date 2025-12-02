@@ -18,7 +18,8 @@ class EditReviewScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<EditReviewScreen> createState() => _EditReviewScreenState();
+  ConsumerState<EditReviewScreen> createState() =>
+      _EditReviewScreenState();
 }
 
 class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
@@ -45,7 +46,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
     final editReviewController =
         ref.read(editReviewControllerProvider(widget.review).notifier);
 
-    // エラー発生時にダイアログ表示
+    // エラー発生時ダイアログ
     ref.listen<EditReviewState>(
       editReviewControllerProvider(widget.review),
       (previous, next) {
@@ -73,7 +74,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('レビューを更新しました！')),
         );
-        Navigator.of(context).pop(true); // 更新成功を通知
+        Navigator.of(context).pop(true);
       }
     }
 
@@ -90,10 +91,10 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
 
         if (isFilled) {
           icon = Icons.star;
-          color = Colors.greenAccent[400] ?? Colors.green;
+          color = const Color(0xFF22A06B);
         } else if (isHalf) {
           icon = Icons.star_half;
-          color = Colors.greenAccent[400] ?? Colors.green;
+          color = const Color(0xFF22A06B);
         } else {
           icon = Icons.star_border;
           color = theme.brightness == Brightness.dark
@@ -117,7 +118,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                   if (newRating > 5) newRating = 5;
                   editReviewController.updateRating(newRating);
                 },
-          icon: Icon(icon, color: color),
+          icon: Icon(icon, color: const Color(0xFF22A06B)),
         );
       });
     }
@@ -126,14 +127,14 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
       backgroundColor: bgColor,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 24),
+          padding: const EdgeInsets.only(bottom: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 上部カスタムヘッダー
+              // ヘッダー
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
+                  horizontal: 12,
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
@@ -141,308 +142,383 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                   border: Border(
                     bottom: BorderSide(
                       color: theme.brightness == Brightness.dark
-                          ? Colors.white10
+                          ? Colors.white24
                           : Colors.grey.shade300,
                     ),
                   ),
                 ),
                 child: Row(
                   children: [
-                    // 左：閉じるボタン
-                    SizedBox(
-                      width: 48,
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.close,
-                          color: theme.brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black87,
-                        ),
-                        onPressed: () => Navigator.of(context).pop(),
+                    IconButton(
+                      icon: Icon(
+                        Icons.arrow_back_ios_new,
+                        size: 18,
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black87,
                       ),
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
-                    // 中央：タイトル
-                    const Expanded(
-                      child: Center(
-                        child: Text(
-                          'レビューを編集',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: -0.3,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'レビューを編集',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              letterSpacing: -0.3,
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
-                    // 右：更新ボタン
-                    SizedBox(
-                      width: 48,
-                      child: TextButton(
-                        onPressed: editReviewState.isLoading
-                            ? null
-                            : handleSubmit,
-                        child: Text(
-                          '更新',
-                          style: TextStyle(
-                            color:
-                                Colors.greenAccent[400] ?? Colors.green,
-                            fontWeight: FontWeight.bold,
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.product.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: theme.brightness == Brightness.dark
+                                  ? Colors.grey[300]
+                                  : Colors.grey[700],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
 
-              // 本文
+              const SizedBox(height: 12),
+
+              // 商品カード
               Padding(
-                padding: const EdgeInsets.all(16),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.brightness == Brightness.dark
+                        ? const Color(0xFF050B07)
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.white24
+                          : Colors.grey.shade300,
+                    ),
+                  ),
+                  child: Row(
                     children: [
-                      // 商品情報（表示のみ）
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: theme.brightness == Brightness.dark
-                              ? Colors.white10
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: theme.brightness == Brightness.dark
-                                ? Colors.white24
-                                : Colors.grey.shade300,
-                          ),
+                      ClipRRect(
+                        borderRadius: const BorderRadius.horizontal(
+                          left: Radius.circular(12),
                         ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // サムネイル
-                            if (widget.product.imageUrl != null &&
-                                widget.product.imageUrl!.isNotEmpty)
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: CachedNetworkImage(
-                                  imageUrl: widget.product.imageUrl!,
-                                  width: 64,
-                                  height: 64,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) =>
-                                      Shimmer.fromColors(
-                                    baseColor: Colors.grey[300]!,
-                                    highlightColor: Colors.grey[100]!,
-                                    child: Container(
-                                      width: 64,
-                                      height: 64,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) =>
-                                      Container(
-                                    width: 64,
-                                    height: 64,
-                                    decoration: BoxDecoration(
-                                      borderRadius:
-                                          BorderRadius.circular(8),
-                                      color: theme.brightness ==
-                                              Brightness.dark
-                                          ? Colors.white12
-                                          : Colors.grey.shade200,
-                                    ),
-                                    child: Icon(
-                                      Icons.image_not_supported_outlined,
-                                      color: theme.brightness ==
-                                              Brightness.dark
-                                          ? Colors.white54
-                                          : Colors.grey.shade500,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            else
-                              Container(
-                                width: 64,
-                                height: 64,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  color: theme.brightness == Brightness.dark
-                                      ? Colors.white12
-                                      : Colors.grey.shade200,
-                                ),
-                                child: Icon(
-                                  Icons.image_not_supported_outlined,
-                                  color: theme.brightness == Brightness.dark
-                                      ? Colors.white54
-                                      : Colors.grey.shade500,
-                                ),
-                              ),
-                            const SizedBox(width: 12),
-                            // 商品情報テキスト
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  // 商品名
-                                  Text(
-                                    widget.product.name,
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-
-                                  // カテゴリ / サブカテゴリ
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 4,
-                                    children: [
-                                      if (widget.product.category != null)
-                                        Chip(
-                                          label: Text(
-                                            widget.product.category!,
-                                            style: theme
-                                                .textTheme.bodySmall
-                                                ?.copyWith(
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                          backgroundColor:
-                                              Colors.greenAccent[400] ??
-                                                  Colors.green,
-                                          materialTapTargetSize:
-                                              MaterialTapTargetSize
-                                                  .shrinkWrap,
-                                        ),
-                                      if (widget.product.subcategory !=
-                                          null)
-                                        Chip(
-                                          label: Text(
-                                            widget.product.subcategory!,
-                                            style: theme
-                                                .textTheme.bodySmall
-                                                ?.copyWith(
-                                              color: theme.brightness ==
-                                                      Brightness.dark
-                                                  ? Colors.white
-                                                  : Colors.black87,
-                                            ),
-                                          ),
-                                          backgroundColor:
-                                              theme.brightness ==
-                                                      Brightness.dark
-                                                  ? Colors.white12
-                                                  : Colors.grey.shade100,
-                                          materialTapTargetSize:
-                                              MaterialTapTargetSize
-                                                  .shrinkWrap,
-                                        ),
-                                    ],
-                                  ),
-
-                                  // URL
-                                  if (widget.product.url != null &&
-                                      widget.product.url!.isNotEmpty) ...[
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      widget.product.url!,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: theme.textTheme.bodySmall
-                                          ?.copyWith(
-                                        color: Colors.blueAccent,
-                                        decoration:
-                                            TextDecoration.underline,
-                                      ),
-                                    ),
-                                  ],
-                                ],
+                        child: SizedBox(
+                          width: 96,
+                          height: 96,
+                          child: CachedNetworkImage(
+                            imageUrl: widget.product.imageUrl ?? '',
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) =>
+                                Shimmer.fromColors(
+                              baseColor: theme.brightness == Brightness.dark
+                                  ? Colors.grey[800]!
+                                  : Colors.grey[300]!,
+                              highlightColor:
+                                  theme.brightness == Brightness.dark
+                                      ? Colors.grey[700]!
+                                      : Colors.grey[100]!,
+                              child: Container(
+                                color: Colors.grey[300],
                               ),
                             ),
-                          ],
+                            errorWidget: (context, url, error) =>
+                                Container(
+                              color: theme.brightness == Brightness.dark
+                                  ? Colors.grey[900]
+                                  : Colors.grey[200],
+                              child: Icon(
+                                Icons.image_not_supported_outlined,
+                                color: theme.brightness == Brightness.dark
+                                    ? Colors.grey[700]
+                                    : Colors.grey[500],
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-
-                      const SizedBox(height: 24),
-
-                      // 評価
-                      const Text(
-                        '評価',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 4,
+                          ),
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.product.name,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.brightness ==
+                                          Brightness.dark
+                                      ? Colors.white
+                                      : Colors.black,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              if (widget.product.category != null)
+                                Text(
+                                  widget.product.category!,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: theme.brightness ==
+                                            Brightness.dark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[700],
+                                  ),
+                                ),
+                              if (widget.product.subcategory != null &&
+                                  widget.product.subcategory!
+                                      .isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      top: 4.0),
+                                  child: Text(
+                                    widget.product.subcategory!,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: theme.brightness ==
+                                              Brightness.dark
+                                          ? Colors.grey[500]
+                                          : Colors.grey[600],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: buildStars(),
+                      const SizedBox(width: 8),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // 評価
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '評価',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black87,
                       ),
-
-                      const SizedBox(height: 24),
-
-                      // レビュー本文
-                      const Text(
-                        'レビュー本文',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        ...buildStars(),
+                        const SizedBox(width: 8),
+                        Text(
+                          editReviewState.rating.toStringAsFixed(1),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: theme.brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black87,
+                          ),
                         ),
+                        const Text(' / 5.0'),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'タップすると0.5刻みで評価を変更できます',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.grey[300]
+                            : Colors.grey[600],
                       ),
-                      const SizedBox(height: 8),
-                      TextFormField(
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // レビュー本文
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'レビュー本文',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Form(
+                      key: _formKey,
+                      child: TextFormField(
                         controller: _reviewTextController,
                         maxLines: 6,
                         decoration: InputDecoration(
-                          hintText: '商品の感想を書いてください',
+                          hintText:
+                              '感じたことや良かったところ、イマイチだったところなどをメモしておきましょう。',
                           filled: true,
                           fillColor: theme.brightness == Brightness.dark
-                              ? Colors.white10
-                              : Colors.grey.shade100,
+                              ? Colors.white.withOpacity(0.04)
+                              : Colors.white,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius:
+                                BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: theme.brightness == Brightness.dark
+                              color: theme.brightness ==
+                                      Brightness.dark
+                                  ? Colors.white24
+                                  : Colors.grey.shade300,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: theme.brightness ==
+                                      Brightness.dark
                                   ? Colors.white24
                                   : Colors.grey.shade300,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius:
+                                BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: Colors.greenAccent[400] ??
+                              color: const Color(0xFF22A06B) ??
                                   Colors.green,
                               width: 1.5,
                             ),
                           ),
-                          contentPadding: const EdgeInsets.all(15),
-                          counterText:
-                              '${editReviewState.reviewText.length}文字',
+                          contentPadding:
+                              const EdgeInsets.symmetric(
+                            horizontal: 15,
+                            vertical: 14,
+                          ),
                         ),
-                        onChanged: editReviewController.updateReviewText,
+                        onChanged:
+                            editReviewController.updateReviewText,
                         validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'レビューを入力してください。';
-                          }
-                          if (value.trim().length < 10) {
-                            return 'レビューは10文字以上入力してください。';
+                          if (value == null ||
+                              value.trim().length < 10) {
+                            return 'レビュー本文は10文字以上で入力してください';
                           }
                           return null;
                         },
                       ),
+                    ),
+                  ],
+                ),
+              ),
 
-                      const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-                      if (editReviewState.isLoading)
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.only(top: 8.0),
-                            child: CircularProgressIndicator(),
+              // 下部ボタン
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.brightness == Brightness.dark
+                        ? const Color(0xFF050B07)
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.white24
+                          : Colors.grey.shade300,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          editReviewState.isLoading
+                              ? '更新中...'
+                              : '内容を確認したら、「更新」ボタンを押してください。',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.brightness ==
+                                    Brightness.dark
+                                ? Colors.grey[300]
+                                : Colors.grey[700],
                           ),
                         ),
+                      ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        height: 44,
+                        child: ElevatedButton(
+                          onPressed: editReviewState.isLoading
+                              ? null
+                              : handleSubmit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color(0xFF22A06B),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(999),
+                            ),
+                            padding:
+                                const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 10,
+                            ),
+                          ),
+                          child: editReviewState.isLoading
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child:
+                                      CircularProgressIndicator(),
+                                )
+                              : const Text(
+                                  '更新',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
