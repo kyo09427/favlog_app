@@ -142,12 +142,18 @@ class SearchController extends StateNotifier<SearchScreenState> {
         }
       }
 
-      // 各商品の最新レビューを取得
+      // 各商品の最新レビューを一括で取得
       List<SearchResult> results = [];
-      for (var product in products) {
-        final reviews = await reviewRepository.getReviewsByProductId(product.id);
-        final latestReview = reviews.isNotEmpty ? reviews.first : null;
-        results.add(SearchResult(product: product, latestReview: latestReview));
+      if (products.isNotEmpty) {
+        final productIds = products.map((p) => p.id).toList();
+        final latestReviews = await reviewRepository.getLatestReviewsByProductIds(productIds);
+
+        results = products.map((product) {
+          return SearchResult(
+            product: product,
+            latestReview: latestReviews[product.id],
+          );
+        }).toList();
       }
 
       state = state.copyWith(
