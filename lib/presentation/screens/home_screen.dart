@@ -32,11 +32,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     super.dispose();
   }
 
-  // 画面が表示されるたびにデータを更新
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 初回ロード時とルート変更時にデータを更新
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         final controller = ref.read(homeScreenControllerProvider.notifier);
@@ -58,54 +56,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   }
 
   Widget _buildThumbnail(dynamic imageUrl, {double size = 96}) {
-    final String? url =
-        (imageUrl is String && imageUrl.isNotEmpty) ? imageUrl : null;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final String? url = (imageUrl is String && imageUrl.isNotEmpty) ? imageUrl : null;
 
     if (url == null) {
       return Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: Colors.grey[300],
+          color: isDark ? Colors.grey[800] : Colors.grey[300],
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
           Icons.image_not_supported,
           size: size * 0.4,
-          color: Colors.grey,
+          color: isDark ? Colors.grey[600] : Colors.grey[500],
         ),
       );
     }
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
-      child: CachedNetworkImage(
-        imageUrl: url,
+      child: Container(
         width: size,
         height: size,
-        fit: BoxFit.contain,
-        memCacheWidth: (size * 2).toInt(),
-        memCacheHeight: (size * 2).toInt(),
-        placeholder: (context, _) => Shimmer.fromColors(
-          baseColor: Colors.grey[300]!,
-          highlightColor: Colors.grey[100]!,
-          child: Container(
+        color: isDark ? Colors.grey[850] : Colors.grey[200],
+        child: CachedNetworkImage(
+          imageUrl: url,
+          fit: BoxFit.contain, // 画像を変形せずに収める
+          alignment: Alignment.center,
+          placeholder: (context, _) => Shimmer.fromColors(
+            baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+            highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+            child: Container(
+              width: size,
+              height: size,
+              color: isDark ? Colors.grey[800] : Colors.white,
+            ),
+          ),
+          errorWidget: (context, _, __) => Container(
             width: size,
             height: size,
-            color: Colors.white,
-          ),
-        ),
-        errorWidget: (context, _, __) => Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: Colors.grey[300],
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            Icons.broken_image,
-            size: size * 0.4,
-            color: Colors.grey,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[850] : Colors.grey[300],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.broken_image,
+              size: size * 0.4,
+              color: isDark ? Colors.grey[600] : Colors.grey[500],
+            ),
           ),
         ),
       ),
@@ -113,9 +114,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   }
 
   Widget _buildLoadingShimmer() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
+      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
       child: ListView.builder(
         controller: _scrollController,
         itemCount: 5,
@@ -130,19 +134,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   Container(
                     width: double.infinity,
                     height: 20.0,
-                    color: Colors.white,
+                    color: isDark ? Colors.grey[800] : Colors.white,
                   ),
                   const SizedBox(height: 8.0),
                   Container(
                     width: double.infinity,
                     height: 150.0,
-                    color: Colors.white,
+                    color: isDark ? Colors.grey[800] : Colors.white,
                   ),
                   const SizedBox(height: 8.0),
                   Container(
                     width: 120.0,
                     height: 20.0,
-                    color: Colors.white,
+                    color: isDark ? Colors.grey[800] : Colors.white,
                   ),
                 ],
               ),
@@ -188,7 +192,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
           }
         },
         child: Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.all(16.0), // パディングを増やして余裕を持たせる
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -196,7 +200,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildThumbnail(product.imageUrl),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 16), // 余白を増やす
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,11 +213,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 8), // 余白を増やす
                         if (product.category != null || product.subcategory != null)
                           Wrap(
-                            spacing: 4,
-                            runSpacing: 4,
+                            spacing: 6, // チップ間の余白を増やす
+                            runSpacing: 6,
                             children: [
                               if (product.category != null)
                                 _buildChip(
@@ -240,7 +244,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                                 rating: stats.averageRating,
                                 color: const Color(0xFF4CAF50),
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 6), // 余白を増やす
                               Text(
                                 '${stats.averageRating.toStringAsFixed(1)} (${stats.reviewCount})',
                                 style: theme.textTheme.bodySmall?.copyWith(
@@ -255,13 +259,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12), // 余白を増やす
               const Divider(),
+              const SizedBox(height: 4),
               const Text(
                 '最新のレビュー',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8), // 余白を増やす
               if (latestReview != null)
                 ReviewItem(
                   product: product,
@@ -287,7 +292,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       ),
       backgroundColor: bgColor,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6), // パディングを増やす
     );
   }
 
@@ -367,6 +372,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
               if (shouldLogout == true && mounted) {
                 await homeScreenController.signOut();
+                if (mounted) {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    '/auth',
+                    (Route<dynamic> route) => false,
+                  );
+                }
               }
             },
           ),
@@ -406,11 +417,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   },
                 );
               },
-              loading: () => Shimmer.fromColors(
-                baseColor: Colors.grey[300]!,
-                highlightColor: Colors.grey[100]!,
-                child: Container(height: 48.0, color: Colors.white),
-              ),
+              loading: () {
+                final isDark = theme.brightness == Brightness.dark;
+                return Shimmer.fromColors(
+                  baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                  highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                  child: Container(
+                    height: 48.0,
+                    color: isDark ? Colors.grey[800] : Colors.white,
+                  ),
+                );
+              },
               error: (error, stack) => Container(
                 height: 48,
                 alignment: Alignment.center,
