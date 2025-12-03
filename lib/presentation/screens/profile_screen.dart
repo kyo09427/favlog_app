@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../domain/models/profile.dart';
 import '../providers/profile_screen_controller.dart';
 import '../widgets/common_bottom_nav_bar.dart';
+import '../widgets/error_dialog.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -37,13 +38,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (next.hasValue && next.value != null && next.value!.username != _usernameController.text) {
         _usernameController.text = next.value!.username;
       }
-      if (next.hasError && previous?.hasError == false) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('エラー: ${next.error}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+      // when loading is finished and there is an error
+      if (!next.isLoading && next.hasError) {
+        ErrorDialog.show(context, 'プロフィールの更新に失敗しました: ${next.error}');
       }
     });
 

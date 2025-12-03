@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 import '../../domain/models/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
@@ -12,6 +13,7 @@ import 'package:favlog_app/core/providers/profile_providers.dart';
 import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
 import 'package:favlog_app/main.dart';
 import 'package:favlog_app/core/providers/common_providers.dart';
+import 'package:favlog_app/core/services/image_compressor.dart';
 
 class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
   final ProfileRepository _profileRepository;
@@ -19,6 +21,7 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
   final AuthRepository _authRepository;
   final Ref _ref;
   final ImagePicker _imagePicker;
+  final ImageCompressor _imageCompressor;
   bool _isDisposed = false;
   bool _isInitializing = false;
 
@@ -28,6 +31,7 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
     this._authRepository,
     this._ref,
     this._imagePicker,
+    this._imageCompressor,
   ) : super(const AsyncValue.loading()) {
     _loadProfile();
   }
@@ -144,9 +148,21 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
 
       state = const AsyncValue.loading();
 
-      final file = File(image.path);
-      final fileExtension = image.path.split('.').last;
-      final fileName = '${const Uuid().v4()}.$fileExtension';
+      final imagePath = image.path;
+      // 画像をWebPに圧縮
+      final webpBytes = await _imageCompressor.compressWithFile(
+        imagePath,
+        minWidth: 512,
+        minHeight: 512,
+        quality: 80,
+        format: CompressFormat.webp,
+      );
+
+      if (webpBytes == null) {
+        throw Exception('画像の圧縮に失敗しました。');
+      }
+
+      final fileName = '${const Uuid().v4()}.webp';
       final path = '${currentUser.id}/$fileName';
 
       // 古いアバターのクリーンアップ（オプション）
@@ -160,12 +176,13 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
         }
       }
 
-      // 新しい画像をアップロード
-      await _supabaseClient.storage.from('avatars').upload(
-        path,
-        file,
-        fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
-      );
+      // 新しい画像をアップロード (uploadBinaryを使用)
+      await _supabaseClient.storage.from('avatars').uploadBinary(
+            path,
+            webpBytes,
+            fileOptions: const FileOptions(
+                cacheControl: '3600', upsert: true, contentType: 'image/webp'),
+          );
 
       final publicUrl = _supabaseClient.storage.from('avatars').getPublicUrl(path);
 
@@ -203,11 +220,13 @@ final profileScreenControllerProvider =
   final supabaseClient = ref.watch(supabaseProvider);
   final authRepository = ref.watch(authRepositoryProvider);
   final imagePicker = ref.watch(imagePickerProvider);
+  final imageCompressor = ref.watch(imageCompressorProvider);
   return ProfileScreenController(
     profileRepository,
     supabaseClient,
     authRepository,
     ref,
     imagePicker,
+    imageCompressor,
   );
 });
