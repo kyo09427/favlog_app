@@ -487,3 +487,12 @@
 *   **`lib/presentation/screens/home_screen.dart`**:
     *   ホーム画面の商品サムネイル画像の表示方法を `BoxFit.cover` から `BoxFit.contain` に変更。
     *   これにより、画像がコンテナに合わせて切り取られることがなくなり、アスペクト比を維持したまま全体が表示されるようになった。ユーザーが報告していた「画像が潰れている」という印象を解消し、より自然な表示を実現。
+
+### 機能改善 - ホーム画面での平均評価表示とパフォーマンス向上
+
+*   **評価表示の正確性向上**:
+    *   `lib/presentation/screens/home_screen.dart`: ホーム画面の商品カードに表示される評価を、これまでの最新レビュー1件の評価から、その商品に紐づく**全レビューの平均評価**に変更。評価の横にレビュー総数も表示するようにし、情報の正確性と網羅性を向上。
+*   **パフォーマンス改善 (N+1問題の解消)**:
+    *   `README.md`: Supabaseのセットアップ手順に、商品ごとの平均評価とレビュー数を一括で計算する新しいRPC関数 `get_product_rating_stats` を追加。
+    *   **データ層**: `lib/domain/models/product_stats.dart` (平均評価とレビュー数を保持するモデル) を新規作成。`ReviewRepository` (`lib/domain/repositories/review_repository.dart`) とその実装 (`lib/data/repositories/supabase_review_repository.dart`) に、新しいRPCを呼び出す `getProductStats` メソッドを追加。
+    *   **コントローラー層**: `lib/presentation/providers/home_screen_controller.dart` のデータ取得ロジックをリファクタリング。`getLatestReviewsByProductIds` と `getProductStats` を並行して呼び出すことで、これまで商品ごとに行っていた問い合わせを撲滅し、N+1問題を解消。
