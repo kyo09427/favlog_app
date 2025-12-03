@@ -1,3 +1,4 @@
+import 'package:favlog_app/domain/models/product_stats.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/review.dart';
@@ -110,4 +111,23 @@ class SupabaseReviewRepository implements ReviewRepository {
       throw Exception('Failed to delete review: $e');
     }
   }
+
+  @override
+  Future<List<ProductStats>> getProductStats(List<String> productIds) async {
+    if (productIds.isEmpty) {
+      return [];
+    }
+    try {
+      final response = await _supabaseClient.rpc(
+        'get_product_rating_stats',
+        params: {'p_product_ids': productIds},
+      );
+      return (response as List)
+          .map((json) => ProductStats.fromMap(json))
+          .toList();
+    } catch (e) {
+      throw Exception('Failed to get product stats: $e');
+    }
+  }
 }
+

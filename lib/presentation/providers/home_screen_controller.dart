@@ -5,28 +5,36 @@ import '../../data/repositories/supabase_auth_repository.dart';
 import '../../data/repositories/supabase_product_repository.dart';
 import '../../data/repositories/supabase_review_repository.dart';
 import '../../domain/models/product.dart';
+import '../../domain/models/product_stats.dart';
 import '../../domain/models/review.dart';
 
-class ProductWithLatestReview {
+class ProductWithReviewAndStats {
   final Product product;
   final Review? latestReview;
+  final ProductStats stats;
 
-  ProductWithLatestReview({required this.product, this.latestReview});
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ProductWithLatestReview &&
-          runtimeType == other.runtimeType &&
-          product.id == other.product.id &&
-          latestReview?.id == other.latestReview?.id;
+  ProductWithReviewAndStats({
+    required this.product,
+    this.latestReview,
+    required this.stats,
+  });
 
   @override
-  int get hashCode => product.id.hashCode ^ (latestReview?.id.hashCode ?? 0);
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is ProductWithReviewAndStats &&
+        other.product == product &&
+        other.latestReview == latestReview &&
+        other.stats == stats;
+  }
+
+  @override
+  int get hashCode => product.hashCode ^ latestReview.hashCode ^ stats.hashCode;
 }
 
 class HomeScreenState {
-  final List<ProductWithLatestReview> products;
+  final List<ProductWithReviewAndStats> products;
   final bool isLoading;
   final bool isRefreshing; // 追加: プルリフレッシュ用
   final String? error;
@@ -45,7 +53,7 @@ class HomeScreenState {
   });
 
   HomeScreenState copyWith({
-    List<ProductWithLatestReview>? products,
+    List<ProductWithReviewAndStats>? products,
     bool? isLoading,
     bool? isRefreshing,
     String? error,
@@ -169,28 +177,45 @@ class HomeScreenController extends StateNotifier<HomeScreenState> {
 
       if (_isDisposed) return;
 
-      // 並行処理でレビューを取得（パフォーマンス改善）
-      final productsWithReviews = await Future.wait(
-        products.map((product) async {
-          try {
-            final productReviews =
-                await reviewRepository.getReviewsByProductId(product.id);
-            final latestReview =
-                productReviews.isNotEmpty ? productReviews.first : null;
-            return ProductWithLatestReview(
-                product: product, latestReview: latestReview);
-          } catch (e) {
-            // 個別のレビュー取得失敗は無視
-            return ProductWithLatestReview(product: product, latestReview: null);
-          }
-        }),
-        eagerError: false, // 一部の失敗を許容
-      );
+      if (products.isEmpty) {
+        state = state.copyWith(
+          products: [],
+          isLoading: false,
+          isRefreshing: false,
+          selectedCategory: category ?? 'すべて',
+          searchQuery: searchQuery ?? '',
+          lastFetchTime: DateTime.now(),
+        );
+        return;
+      }
+
+      final productIds = products.map((p) => p.id).toList();
+
+      // Get latest reviews and stats in parallel
+      final results = await Future.wait([
+        reviewRepository.getLatestReviewsByProductIds(productIds),
+        reviewRepository.getProductStats(productIds),
+      ]);
+
+      final latestReviewsMap = results[0] as Map<String, Review>;
+      final productStatsList = results[1] as List<ProductStats>;
+      final productStatsMap = {
+        for (var stat in productStatsList) stat.productId: stat
+      };
+
+      final productsWithData = products.map((product) {
+        return ProductWithReviewAndStats(
+          product: product,
+          latestReview: latestReviewsMap[product.id],
+          stats:
+              productStatsMap[product.id] ?? ProductStats.empty(),
+        );
+      }).toList();
 
       if (_isDisposed) return;
 
       state = state.copyWith(
-        products: productsWithReviews,
+        products: productsWithData,
         isLoading: false,
         isRefreshing: false,
         selectedCategory: category ?? 'すべて',
