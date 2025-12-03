@@ -456,3 +456,26 @@
     *   `lib/presentation/providers/search_controller.dart`: 検索実行ロジックをリファクタリングし、ループ処理を廃止。新しく実装した `getLatestReviewsByProductIds` メソッドを一度だけ呼び出すように修正し、N+1問題を解消。
 *   **ドキュメント更新**:
     *   `README.md`: アプリケーションを正しく動作させるために開発者が手動でセットアップする必要があるRPC関数のSQLコードと、その必要性について「Supabase セットアップ」セクションに追記。
+
+## 実装ログ - 2025年12月2日
+
+### 画像アップロード機能のWebP形式への変換とテスト容易性の向上
+
+*   **WebPによる画像圧縮機能の実装**:
+    *   当初、`image` パッケージの `encodeWebP` を利用しようとしたが、調査の結果、同パッケージにはWebPのエンコード機能が存在しないことが判明。
+    *   代替として `flutter_image_compress` パッケージを導入。`pubspec.yaml` に依存関係を追加。
+    *   `profile_screen_controller.dart` (プロフィールアバター) および `add_review_controller.dart` (レビュー画像) を修正し、画像アップロード時に `flutter_image_compress` を利用して画像をWebP形式に変換・圧縮するロジックを実装。
+    *   Supabase Storageへのアップロード時に、ファイル拡張子を `.webp` に、Content-Typeを `image/webp` に設定するよう、関連するリポジトリ層 (`product_repository.dart`, `supabase_product_repository.dart`) も併せて修正。
+*   **テスト容易性向上のためのリファクタリング**:
+    *   `flutter_image_compress` が提供する静的メソッドはユニットテストでのモック化が困難であるため、コードのテスト容易性を向上させるリファクタリングを実施。
+    *   画像圧縮処理をラップする抽象クラス `ImageCompressor` (`lib/core/services/image_compressor.dart`) を作成。
+    *   Riverpodを用いて `ImageCompressor` の実装をDIするための `imageCompressorProvider` (`lib/core/providers/common_providers.dart`) を定義。
+    *   `profile_screen_controller.dart` および `add_review_controller.dart` を修正し、`ImageCompressor` サービスをコンストラクタ経由で注入して利用するように変更。
+*   **ウィジェットテストの修正と改善**:
+    *   上記のリファクタリングに伴い、`test/screens/profile_screen_test.dart` および `test/screens/add_review_screen_test.dart` を修正。
+    *   `mocktail` を使用して `ImageCompressor` サービスをモック化し、ネイティブコードに依存しないテストを実行できるようにした。
+    *   テスト実行過程で発覚した複数の問題を修正：
+        *   `add_review_screen_test.dart` でアサーションしていたヘッダーテキストのタイポを修正 ("レビュー投稿" → "レビューを追加")。
+        *   `profile_screen_test.dart` で `Uint8List` 型に対する `registerFallbackValue` が不足していた問題を追加登録して解消。
+        *   `profile_screen_test.dart` で `ErrorDialog` の表示をテストする際に、非同期処理とUIの更新タイミングのずれによりテストが失敗していた問題を、`ErrorDialog` を表示するようUIコードを修正し、テストのアサーションを合わせることで解決。
+    *   最終的に `flutter test` コマンドを実行し、すべてのテストが成功することを確認。
