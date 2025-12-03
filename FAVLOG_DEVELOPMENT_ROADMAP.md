@@ -479,3 +479,11 @@
         *   `profile_screen_test.dart` で `Uint8List` 型に対する `registerFallbackValue` が不足していた問題を追加登録して解消。
         *   `profile_screen_test.dart` で `ErrorDialog` の表示をテストする際に、非同期処理とUIの更新タイミングのずれによりテストが失敗していた問題を、`ErrorDialog` を表示するようUIコードを修正し、テストのアサーションを合わせることで解決。
     *   最終的に `flutter test` コマンドを実行し、すべてのテストが成功することを確認。
+
+## 実装ログ - 2025年12月3日
+
+### UI/UXの改善 - ホーム画面の画像表示
+
+*   **`lib/presentation/screens/home_screen.dart`**:
+    *   ホーム画面の商品サムネイル画像の表示方法を `BoxFit.cover` から `BoxFit.contain` に変更。
+    *   これにより、画像がコンテナに合わせて切り取られることがなくなり、アスペクト比を維持したまま全体が表示されるようになった。ユーザーが報告していた「画像が潰れている」という印象を解消し、より自然な表示を実現。

@@ -18,7 +18,7 @@ FavLogは、クローズドなコミュニティ（友人、家族、同僚な�
 
 *   **カテゴリフィルタリング**: ホーム画面でカテゴリを選択してレビューを絞り込み表示（**「すべて」のフィルタリングロジック改善**）。
 *   **検索機能**: 専用の検索画面で商品、サービス、タグ、ユーザー名を横断した検索が可能。**検索画面のUI/UX改善**（0.5単位の星評価、Riverpodによる状態管理の堅牢化、**エラー時および結果なし時の表示改善**）。
-*   **画像表示の最適化**: **画像キャッシュ（CachedNetworkImage）**、読み込み中の**プレースホルダー**、エラー時の**画像表示**。
+*   **画像表示の最適化**: **画像キャッシュ（CachedNetworkImage）**、読み込み中の**プレースホルダー**、エラー時の**画像表示**に加え、**画像の縦横比を維持して表示**することで、不自然な引き伸ばしや切り取られ方を防ぎます。
 *   **レスポンシブデザイン**: モバイル・タブレット・Webなど、デバイスの画面幅に応じた最適なレイアウトを提供。**特にホーム画面では、画面幅に応じてレビューの一覧表示が `ListView` と `GridView` で切り替わる。**
 *   **統一されたエラーハンドリング**: ネットワークエラー、認証エラーなど、エラーの種類に応じた適切なメッセージを統一的なダイアログで表示。
 
@@ -205,6 +205,27 @@ BEGIN
     ) t
     WHERE t.rn = 1
   );
+END;
+$$ LANGUAGE plpgsql;
+```
+
+ホーム画面での平均評価表示を効率化するため、以下の関数も追加します。
+
+```sql
+CREATE OR REPLACE FUNCTION get_product_rating_stats(p_product_ids UUID[])
+RETURNS TABLE(product_id UUID, average_rating DOUBLE PRECISION, review_count BIGINT) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    r.product_id,
+    AVG(r.rating)::DOUBLE PRECISION AS average_rating,
+    COUNT(r.id)::BIGINT AS review_count
+  FROM
+    reviews r
+  WHERE
+    r.product_id = ANY(p_product_ids)
+  GROUP BY
+    r.product_id;
 END;
 $$ LANGUAGE plpgsql;
 ```
