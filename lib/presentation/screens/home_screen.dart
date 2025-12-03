@@ -7,6 +7,7 @@ import 'package:favlog_app/presentation/screens/add_review_screen.dart';
 import 'package:favlog_app/presentation/widgets/review_item.dart';
 import 'package:favlog_app/presentation/screens/review_detail_screen.dart';
 import 'package:favlog_app/presentation/widgets/common_bottom_nav_bar.dart';
+import 'package:favlog_app/presentation/screens/auth_screen.dart';
 import 'package:shimmer/shimmer.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -370,7 +371,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                 // ログアウトが成功したらログイン画面に遷移し、それまでのスタックをクリアする
                 if (mounted) {
                   Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => const AuthScreen()),
+                    MaterialPageRoute(builder: (context) => AuthScreen()),
                     (Route<dynamic> route) => false,
                   );
                 }
