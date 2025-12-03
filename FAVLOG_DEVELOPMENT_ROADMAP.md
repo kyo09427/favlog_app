@@ -440,19 +440,3 @@
     *   `lib/presentation/widgets/review_item.dart` のUIを調整し、レビュー所有者に対してユーザー名の横に編集アイコン (`Icons.edit_outlined`) を再配置。
     *   長押しジェスチャーに加え、このアイコンのタップでも編集画面へ遷移するように改善し、編集機能の discoverability を向上。
     *   長押し時のヒントテキストを「長押しもしくは編集アイコンで編集」に更新。
-
-## 実装ログ - 2025年12月2日
-
-### 検索機能のパフォーマンス改善 (N+1問題の解消)
-
-*   **N+1クエリ問題の特定**:
-    *   検索機能において、取得した商品リスト（N件）をループ処理し、商品ごとに最新レビューを取得するために都度データベースに問い合わせていたため、パフォーマンス上のボトルネック（N+1問題）があることを特定。
-*   **RPC (Remote Procedure Call) による解決**:
-    *   当初、Supabaseの `.in_()` フィルタを利用した解決を試みたが、プロジェクトが使用している `supabase_flutter` パッケージのバージョンと互換性がなく、コンパイルエラーが発生。
-    *   この問題を回避し、かつパフォーマンスを向上させるため、SupabaseのRPC（データベース関数）を導入するアプローチに切り替え。
-*   **実装**:
-    *   `lib/domain/repositories/review_repository.dart`: 複数の商品IDに対応するレビューを一括で取得するための `getLatestReviewsByProductIds` メソッドをインターフェースに定義。
-    *   `lib/data/repositories/supabase_review_repository.dart`: `getLatestReviewsByProductIds` の実装を、`.in_()` フィルタの呼び出しから、`get_latest_reviews_by_product_ids` という名前のRPCを呼び出すように変更。
-    *   `lib/presentation/providers/search_controller.dart`: 検索実行ロジックをリファクタリングし、ループ処理を廃止。新しく実装した `getLatestReviewsByProductIds` メソッドを一度だけ呼び出すように修正し、N+1問題を解消。
-*   **ドキュメント更新**:
-    *   `README.md`: アプリケーションを正しく動作させるために開発者が手動でセットアップする必要があるRPC関数のSQLコードと、その必要性について「Supabase セットアップ」セクションに追記。
