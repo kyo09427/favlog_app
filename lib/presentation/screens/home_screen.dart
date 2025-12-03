@@ -367,6 +367,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
               if (shouldLogout == true && mounted) {
                 await homeScreenController.signOut();
+                // ログアウトが成功したらログイン画面に遷移し、それまでのスタックをクリアする
+                if (mounted) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (context) => const AuthScreen()),
+                    (Route<dynamic> route) => false,
+                  );
+                }
               }
             },
           ),

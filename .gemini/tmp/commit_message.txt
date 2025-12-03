@@ -1,16 +1,13 @@
-feat: Implement various feature enhancements and UI improvements
+fix(reapply): 意図せず失われた変更の再適用
 
-This commit includes several enhancements and bug fixes across the application,
-primarily focusing on robustness, UI/UX, and code structure:
+以前のマージ作業の不手際により、以下のコミットによる変更が意図せず失われておりました。大変申し訳ありません。
 
-- **Robustness**: Introduced _isDisposed pattern in controllers (add_review_controller.dart, edit_review_controller.dart, profile_screen_controller.dart) to prevent state updates after disposal.
-- **Image Handling**:
-    - Added image optimization options (maxWidth, maxHeight, imageQuality) to ImagePicker calls in add_review_controller.dart and edit_review_controller.dart.
-    - Implemented logic to remove old images from Supabase Storage upon new image upload in edit_review_controller.dart and profile_screen_controller.dart.
-- **Navigation**: Extracted bottom navigation into a reusable CommonBottomNavBar widget (lib/presentation/widgets/common_bottom_nav_bar.dart), now integrated into home_screen.dart, profile_screen.dart, and search_screen.dart.
-- **UI/UX Improvements**:
-    - **ProfileScreen**: Enhanced initial loading UI, added username validation, and implemented a manual refresh button.
-    - **SearchScreen**: Refactored star rating display into a reusable widget and improved error/no results display.
-    - **General**: Updated error messages and other UI texts to be localized (Japanese).
-- **Data Freshness**: Added forceUpdate parameter to fetchProducts calls in home_screen.dart to ensure data is fresh.
-- **Code Cleanup**: Removed numerous Japanese comments from various files.
+- c586d44: feat: release-please を導入
+- d9f13bc: feat: ホーム画面のUI改善とパフォーマンス向上
+
+本コミットでは、上記の変更内容を改めてコードベースに適用しました。
+
+主な再適用内容は以下の通りです。
+- release-please のGitHub Actionsワークフローを追加
+- ホーム画面のN+1問題を解消し、パフォーマンスを改善
+- ホーム画面で最新レビューの評価ではなく、製品の平均評価とレビュー数を表示するようにUIを更新
