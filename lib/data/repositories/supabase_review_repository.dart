@@ -43,6 +43,32 @@ class SupabaseReviewRepository implements ReviewRepository {
   }
 
   @override
+  Future<Map<String, Review>> getLatestReviewsByProductIds(List<String> productIds) async {
+    if (productIds.isEmpty) {
+      return {};
+    }
+    try {
+      final response = await _supabaseClient
+          .from('reviews')
+          .select()
+          .in_('product_id', productIds)
+          .order('created_at', ascending: false);
+
+      final reviews = (response as List).map((json) => Review.fromJson(json)).toList();
+
+      final latestReviews = <String, Review>{};
+      for (final review in reviews) {
+        if (!latestReviews.containsKey(review.productId)) {
+          latestReviews[review.productId] = review;
+        }
+      }
+      return latestReviews;
+    } catch (e) {
+      throw Exception('Failed to get latest reviews by product IDs: $e');
+    }
+  }
+
+  @override
   Future<Review> getReviewById(String reviewId) async {
     try {
       final response = await _supabaseClient
