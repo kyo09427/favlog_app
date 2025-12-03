@@ -83,7 +83,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
         imageUrl: url,
         width: size,
         height: size,
-        fit: BoxFit.cover,
+        fit: BoxFit.contain,
         memCacheWidth: (size * 2).toInt(),
         memCacheHeight: (size * 2).toInt(),
         placeholder: (context, _) => Shimmer.fromColors(
