@@ -185,6 +185,30 @@ CREATE POLICY "Users can delete their own reviews" ON reviews
   USING (auth.uid() = user_id);
 ```
 
+#### RPC (Remote Procedure Call) 関数の作成
+
+検索機能のパフォーマンスを最適化するため、以下のSQLを「SQL Editor」で実行し、関連するレビューを一括で取得するためのデータベース関数を作成します。
+
+```sql
+CREATE OR REPLACE FUNCTION get_latest_reviews_by_product_ids(p_product_ids UUID[])
+RETURNS SETOF reviews AS $$
+BEGIN
+  RETURN QUERY
+  SELECT r.*
+  FROM reviews r
+  WHERE r.id IN (
+    SELECT id
+    FROM (
+      SELECT id, ROW_NUMBER() OVER(PARTITION BY product_id ORDER BY created_at DESC) as rn
+      FROM reviews
+      WHERE product_id = ANY(p_product_ids)
+    ) t
+    WHERE t.rn = 1
+  );
+END;
+$$ LANGUAGE plpgsql;
+```
+
 ### 4. Storage (ストレージ) の設定
 
 Supabaseダッシュボードの「Storage」セクションで、画像アップロード用のバケットを作成し、RLSポリシーを設定します。
