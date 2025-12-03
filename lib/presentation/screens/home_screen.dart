@@ -153,12 +153,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     );
   }
 
-  Widget _buildProductCard(
-      BuildContext context, ProductWithReviewAndStats item) {
+  Widget _buildProductCard(BuildContext context, ProductWithLatestReview item) {
     final theme = Theme.of(context);
     final product = item.product;
     final latestReview = item.latestReview;
-    final stats = item.stats;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
@@ -243,23 +241,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ],
-                        if (stats.reviewCount > 0) ...[
+                        if (latestReview != null) ...[
                           const SizedBox(height: 8),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              RatingStars(
-                                rating: stats.averageRating,
-                                color: const Color(0xFF4CAF50),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${stats.averageRating.toStringAsFixed(1)} (${stats.reviewCount})',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
+                          RatingStars(
+                            rating: latestReview.rating.toDouble(),
+                            color: const Color(0xFF4CAF50),
                           ),
                         ],
                       ],
