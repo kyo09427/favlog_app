@@ -46,9 +46,18 @@ class MyApp extends ConsumerWidget {
           brightness: Brightness.light,
         ),
         useMaterial3: true,
+        fontFamily: 'KosugiMaru',
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 0,
+        ),
+        textTheme: const TextTheme(
+          headlineSmall: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold), // 投稿タイトル
+          titleLarge: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),    // ユーザー名など
+          titleMedium: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
+          bodyMedium: TextStyle(fontSize: 14.0, height: 1.5),                    // コメント文
+          bodySmall: TextStyle(fontSize: 12.0, height: 1.5),
+          labelLarge: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold),     // UI文字（ボタンなど）
         ),
       ),
       darkTheme: ThemeData(
@@ -57,9 +66,18 @@ class MyApp extends ConsumerWidget {
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
+        fontFamily: 'KosugiMaru',
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 0,
+        ),
+        textTheme: const TextTheme(
+          headlineSmall: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold), // 投稿タイトル
+          titleLarge: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),    // ユーザー名など
+          titleMedium: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
+          bodyMedium: TextStyle(fontSize: 14.0, height: 1.5),                    // コメント文
+          bodySmall: TextStyle(fontSize: 12.0, height: 1.5),
+          labelLarge: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold),     // UI文字（ボタンなど）
         ),
       ),
       themeMode: ThemeMode.system,

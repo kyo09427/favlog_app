@@ -9,6 +9,7 @@ import 'package:favlog_app/domain/models/review.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
 import 'package:favlog_app/data/repositories/supabase_review_repository.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ReviewDetailScreen extends ConsumerWidget {
   final String productId;
@@ -230,15 +231,17 @@ class ReviewDetailScreen extends ConsumerWidget {
                                 children: [
                                   Text(
                                     displayedProduct.name,
-                                    maxLines: 1,
+                                    maxLines: 2, // 2行まで表示可能に
                                     overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.titleSmall?.copyWith(
+                                    style: theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: isDark
                                           ? Colors.white
                                           : Colors.black,
                                     ),
                                   ),
+                                  const SizedBox(height: 4),
+                                  _UrlLink(url: displayedProduct.url), // URL表示ウィジェット
                                   const SizedBox(height: 6),
                                   Row(
                                     crossAxisAlignment:
@@ -339,20 +342,6 @@ class ReviewDetailScreen extends ConsumerWidget {
                                           ],
                                         ),
                                       ),
-                                      if (displayedProduct.url != null &&
-                                          displayedProduct.url!.isNotEmpty)
-                                        IconButton(
-                                          onPressed: () {
-                                            // TODO: URLを開く処理
-                                          },
-                                          icon: Icon(
-                                            Icons.link,
-                                            size: 18,
-                                            color: isDark
-                                                ? Colors.grey[400]
-                                                : Colors.grey[600],
-                                          ),
-                                        ),
                                     ],
                                   ),
                                 ],
@@ -491,6 +480,63 @@ class ReviewDetailScreen extends ConsumerWidget {
     );
   }
 }
+
+class _UrlLink extends StatelessWidget {
+  final String? url;
+
+  const _UrlLink({this.url});
+
+  Future<void> _launchUrl(BuildContext context, String urlString) async {
+    final uri = Uri.tryParse(urlString);
+    if (uri == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('無効なURLです: $urlString')),
+      );
+      return;
+    }
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('このURLを開けませんでした: $urlString')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (url == null || url!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return InkWell(
+      onTap: () => _launchUrl(context, url!),
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.link, size: 16, color: Colors.blue),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                url!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.blue,
+                      decoration: TextDecoration.underline,
+                      decorationColor: Colors.blue.withOpacity(0.7),
+                    ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 
 class _SortTab extends StatelessWidget {
   const _SortTab({

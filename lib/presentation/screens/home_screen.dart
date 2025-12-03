@@ -229,18 +229,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                                 ),
                             ],
                           ),
-                        if (product.url != null && product.url!.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            product.url!,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.blue,
-                              decoration: TextDecoration.underline,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
                         if (latestReview != null) ...[
                           const SizedBox(height: 8),
                           RatingStars(
@@ -375,16 +363,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
             padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
             child: categoriesAsyncValue.when(
               data: (categories) {
+                final isDark = theme.brightness == Brightness.dark;
                 return DropdownButtonFormField<String>(
                   value: homeScreenState.selectedCategory,
                   decoration: InputDecoration(
                     labelText: 'カテゴリで絞り込み',
+                    labelStyle: TextStyle(
+                      color: isDark ? Colors.white70 : Colors.black54,
+                    ),
                     border: const OutlineInputBorder(),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12.0),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.9),
+                    fillColor: isDark
+                        ? Colors.black.withOpacity(0.3)
+                        : Colors.white.withOpacity(0.9),
                   ),
-                  dropdownColor: Colors.white,
+                  dropdownColor: isDark ? Colors.grey[850] : Colors.white,
                   items: categories.map<DropdownMenuItem<String>>((String category) {
                     return DropdownMenuItem<String>(
                       value: category,

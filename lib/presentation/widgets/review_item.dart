@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:favlog_app/domain/models/product.dart';
 import 'package:favlog_app/domain/models/review.dart';
-import 'package:favlog_app/domain/models/profile.dart';
 import 'package:favlog_app/presentation/screens/edit_review_screen.dart';
 import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
 import 'package:favlog_app/core/providers/profile_providers.dart';
 
-class ReviewItem extends ConsumerStatefulWidget {
+class ReviewItem extends ConsumerWidget {
   final Product product;
   final Review review;
   final VoidCallback? onReviewUpdated;
@@ -20,43 +19,8 @@ class ReviewItem extends ConsumerStatefulWidget {
     this.onReviewUpdated,
   });
 
-  @override
-  ConsumerState<ReviewItem> createState() => _ReviewItemState();
-}
-
-class _ReviewItemState extends ConsumerState<ReviewItem> {
-  bool _isLongPressed = false;
-  Profile? _userProfile;
-  bool _isLoadingProfile = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUserProfile();
-  }
-
-  Future<void> _loadUserProfile() async {
-    try {
-      final profileRepository = ref.read(profileRepositoryProvider);
-      final profile = await profileRepository.fetchProfile(widget.review.userId);
-      if (mounted) {
-        setState(() {
-          _userProfile = profile;
-          _isLoadingProfile = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoadingProfile = false;
-        });
-      }
-    }
-  }
-
-  Widget _buildRatingStars() {
+  Widget _buildRatingStars(BuildContext context) {
     final theme = Theme.of(context);
-    final rating = widget.review.rating;
     const calmGreen = Color(0xFF22A06B);
 
     return Row(
@@ -67,10 +31,10 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
         IconData icon;
         Color color;
 
-        if (rating >= starPosition) {
+        if (review.rating >= starPosition) {
           icon = Icons.star;
           color = calmGreen;
-        } else if (rating >= starPosition - 0.5) {
+        } else if (review.rating >= starPosition - 0.5) {
           icon = Icons.star_half;
           color = calmGreen;
         } else {
@@ -117,248 +81,204 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
     return '${text.substring(0, maxLength)}...';
   }
 
-  Future<void> _handleEdit() async {
+  Future<void> _handleEdit(BuildContext context) async {
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => EditReviewScreen(
-          review: widget.review,
-          product: widget.product,
+          review: review,
+          product: product,
         ),
       ),
     );
 
-    if (result == true && widget.onReviewUpdated != null) {
-      widget.onReviewUpdated!();
+    if (result == true && onReviewUpdated != null) {
+      onReviewUpdated!();
     }
-  }
-
-  Widget _buildUserAvatar() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    if (_isLoadingProfile) {
-      return CircleAvatar(
-        radius: 20,
-        backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
-        child: const SizedBox(
-          width: 16,
-          height: 16,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      );
-    }
-
-    if (_userProfile?.avatarUrl != null && _userProfile!.avatarUrl!.isNotEmpty) {
-      return CircleAvatar(
-        radius: 20,
-        backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
-        backgroundImage: CachedNetworkImageProvider(_userProfile!.avatarUrl!),
-      );
-    }
-
-    return CircleAvatar(
-      radius: 20,
-      backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
-      child: Icon(
-        Icons.person,
-        size: 20,
-        color: isDark ? Colors.white : Colors.grey[800],
-      ),
-    );
-  }
-
-  String _getDisplayName() {
-    final currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id;
-    final isOwner = currentUserId != null && currentUserId == widget.review.userId;
-    
-    if (isOwner) {
-      return 'あなた';
-    }
-    
-    if (_isLoadingProfile) {
-      return '読み込み中...';
-    }
-    
-    return _userProfile?.username ?? 'レビュアー';
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final reviewText = widget.review.reviewText.trim();
-    final currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id;
-    final isOwner = currentUserId != null && currentUserId == widget.review.userId;
     final isDark = theme.brightness == Brightness.dark;
+    final reviewText = review.reviewText.trim();
+    final currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id;
+    final isOwner = currentUserId != null && currentUserId == review.userId;
 
-    return GestureDetector(
-      onLongPressStart: isOwner
-          ? (_) {
-              setState(() {
-                _isLongPressed = true;
-              });
-            }
-          : null,
-      onLongPressEnd: isOwner
-          ? (_) {
-              setState(() {
-                _isLongPressed = false;
-              });
-            }
-          : null,
-      onLongPress: isOwner ? _handleEdit : null,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 0.0),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: _isLongPressed
-              ? (isDark ? Colors.white10 : Colors.grey.shade200)
-              : Colors.transparent,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final userProfileAsync = ref.watch(userProfileProvider(review.userId));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 上部: アバター + ユーザー名 + 相対時間
+        Row(
           children: [
-            // 上部: アバター + ユーザー名 + 相対時間
-            Row(
-              children: [
-                _buildUserAvatar(),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _getDisplayName(),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _formatDate(widget.review.createdAt.toLocal()),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
-                        ),
-                      ),
-                    ],
+            userProfileAsync.when(
+              data: (profile) {
+                final avatarUrl = profile?.avatarUrl;
+                if (avatarUrl != null && avatarUrl.isNotEmpty) {
+                  return CircleAvatar(
+                    radius: 20,
+                    backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
+                    backgroundImage: CachedNetworkImageProvider(avatarUrl),
+                  );
+                }
+                return CircleAvatar(
+                  radius: 20,
+                  backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
+                  child: Icon(
+                    Icons.person,
+                    size: 20,
+                    color: isDark ? Colors.white : Colors.grey[800],
                   ),
+                );
+              },
+              loading: () => CircleAvatar(
+                radius: 20,
+                backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
+                child: const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-                if (isOwner)
-                  IconButton(
-                    icon: Icon(
-                      Icons.edit_outlined,
-                      size: 20,
+              ),
+              error: (err, stack) => CircleAvatar(
+                radius: 20,
+                backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
+                child: const Icon(Icons.error_outline, size: 20),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isOwner
+                        ? 'あなた'
+                        : userProfileAsync.when(
+                            data: (profile) => profile?.username ?? 'レビュアー',
+                            loading: () => '読み込み中...',
+                            error: (e, st) => '取得失敗',
+                          ),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _formatDate(review.createdAt.toLocal()),
+                    style: theme.textTheme.bodySmall?.copyWith(
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
                     ),
-                    onPressed: _handleEdit,
-                    tooltip: '編集',
                   ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            // 星評価 + 数値
-            Row(
-              children: [
-                _buildRatingStars(),
-                const SizedBox(width: 6),
-                Text(
-                  widget.review.rating.toStringAsFixed(1),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            // 本文
-            Text(
-              _truncateText(reviewText, 400),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                height: 1.5,
-                color: isDark ? Colors.grey[200] : Colors.grey[800],
+                ],
               ),
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 8),
-            // アクション (いいね / コメント) ※数値は現状ダミー
-            Row(
-              children: [
-                InkWell(
-                  borderRadius: BorderRadius.circular(999),
-                  onTap: () {
-                    // TODO: いいね機能を実装する場合はここ
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 4,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.favorite_border,
-                          size: 18,
-                          color: isDark ? Colors.white : Colors.black,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '0',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: isDark ? Colors.white : Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+            if (isOwner)
+              IconButton(
+                icon: Icon(
+                  Icons.edit_outlined,
+                  size: 20,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
-                const SizedBox(width: 24),
-                InkWell(
-                  borderRadius: BorderRadius.circular(999),
-                  onTap: () {
-                    // TODO: コメント機能を実装する場合はここ
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 4,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          size: 18,
-                          color: isDark ? Colors.white : Colors.black,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '0',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: isDark ? Colors.white : Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            if (isOwner && _isLongPressed)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Text(
-                  '長押しまたは編集ボタンで編集',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF22A06B),
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
+                onPressed: () => _handleEdit(context),
+                tooltip: '編集',
               ),
           ],
         ),
-      ),
+        const SizedBox(height: 8),
+        // 星評価 + 数値
+        Row(
+          children: [
+            _buildRatingStars(context),
+            const SizedBox(width: 6),
+            Text(
+              review.rating.toStringAsFixed(1),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // 本文
+        Text(
+          _truncateText(reviewText, 400),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            height: 1.5,
+            color: isDark ? Colors.grey[200] : Colors.grey[800],
+          ),
+          maxLines: 4,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 8),
+        // アクション (いいね / コメント) ※数値は現状ダミー
+        Row(
+          children: [
+            InkWell(
+              borderRadius: BorderRadius.circular(999),
+              onTap: () {
+                // TODO: いいね機能を実装する場合はここ
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 4,
+                  vertical: 4,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.favorite_border,
+                      size: 18,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '0',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 24),
+            InkWell(
+              borderRadius: BorderRadius.circular(999),
+              onTap: () {
+                // TODO: コメント機能を実装する場合はここ
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 4,
+                  vertical: 4,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.chat_bubble_outline,
+                      size: 18,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '0',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
