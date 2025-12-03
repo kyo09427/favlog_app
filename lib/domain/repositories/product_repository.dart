@@ -7,6 +7,6 @@ abstract class ProductRepository {
   Future<void> createProduct(Product product);
   Future<void> updateProduct(Product product);
   Future<void> deleteProduct(String productId);
-  Future<String> uploadProductImage(String userId, Uint8List imageData, String fileExtension);
+  Future<String> uploadProductImage(String userId, Uint8List imageData, String fileExtension, {String contentType});
   Future<List<String>> getSubcategories(String category);
 }

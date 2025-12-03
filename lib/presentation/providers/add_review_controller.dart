@@ -4,12 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image/image.dart' as img;
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import '../../data/repositories/supabase_product_repository.dart';
 import '../../data/repositories/supabase_review_repository.dart';
 import '../../data/repositories/asset_category_repository.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../domain/models/product.dart';
 import '../../domain/models/review.dart';
+import '../../core/providers/common_providers.dart';
+import '../../core/services/image_compressor.dart';
 
 /// レビュー追加画面の状態
 class AddReviewState {
@@ -71,16 +74,18 @@ class AddReviewState {
 /// レビュー追加コントローラーのプロバイダー
 final addReviewControllerProvider =
     StateNotifierProvider<AddReviewController, AddReviewState>((ref) {
-  return AddReviewController(ref);
+  final imageCompressor = ref.watch(imageCompressorProvider);
+  return AddReviewController(ref, imageCompressor);
 });
 
 /// レビュー追加コントローラー
 class AddReviewController extends StateNotifier<AddReviewState> {
   final Ref _ref;
+  final ImageCompressor _imageCompressor;
   final ImagePicker _picker = ImagePicker();
   bool _isDisposed = false;
 
-  AddReviewController(this._ref) : super(AddReviewState()) {
+  AddReviewController(this._ref, this._imageCompressor) : super(AddReviewState()) {
     _loadCategories();
   }
 
@@ -225,27 +230,26 @@ class AddReviewController extends StateNotifier<AddReviewState> {
       String? imageUrl;
       if (state.imageFile != null) {
         try {
-          // 画像を読み込み
-          final imageBytes = await state.imageFile!.readAsBytes();
-          img.Image? originalImage = img.decodeImage(imageBytes);
-
-          if (originalImage == null) {
-            throw Exception('画像のデコードに失敗しました。');
-          }
-
-          // 画像をリサイズして圧縮
-          final resizedImage = img.copyResize(originalImage, width: 1024);
-          final compressedBytes = Uint8List.fromList(
-            img.encodeJpg(resizedImage, quality: 85),
+          // 画像をWebPに圧縮
+          final webpBytes = await _imageCompressor.compressWithFile(
+            state.imageFile!.absolute.path,
+            minWidth: 1024,
+            quality: 80,
+            format: CompressFormat.webp,
           );
+
+          if (webpBytes == null) {
+            throw Exception('画像の圧縮に失敗しました。');
+          }
           
-          final fileExtension = state.imageFile!.path.split('.').last;
+          const fileExtension = 'webp';
           
           // Supabase Storageにアップロード
           imageUrl = await productRepository.uploadProductImage(
             user.id,
-            compressedBytes,
+            webpBytes,
             fileExtension,
+            contentType: 'image/webp',
           );
         } catch (imageError) {
           throw Exception('画像のアップロードに失敗しました: ${imageError.toString()}');
