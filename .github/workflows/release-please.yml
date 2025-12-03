@@ -33,18 +33,14 @@ jobs:
           channel: 'stable'
       - run: flutter pub get
         if: ${{ steps.release.outputs.release_created }}
-      - run: |
+      - name: Update version in pubspec.yaml and push
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
           # pubspec.yamlのversionをrelease-pleaseが作成したタグバージョンに更新する
           # https://zenn.dev/shunsuke0302/articles/03-20230206-release-please-flutter
-          sed -i -E 's/^version: \S+/version: ${{ steps.release.outputs.tag_name }}/' pubspec.yaml
-        if: ${{ steps.release.outputs.release_created }}
-      - run: git config user.name "release-please[bot]"
-        if: ${{ steps.release.outputs.release_created }}
-      - run: git config user.email "41898282+release-please[bot]@users.noreply.github.com"
-        if: ${{ steps.release.outputs.release_created }}
-      - run: git add pubspec.yaml
-        if: ${{ steps.release.outputs.release_created }}
-      - run: git commit -m "chore: release ${{ steps.release.outputs.tag_name }}"
-        if: ${{ steps.release.outputs.release_created }}
-      - run: git push
-        if: ${{ steps.release.outputs.release_created }}
+          sed -i -E "s/^version: \S+/version: ${{ steps.release.outputs.tag_name }}/" pubspec.yaml
+          git config user.name "release-please[bot]"
+          git config user.email "41898282+release-please[bot]@users.noreply.github.com"
+          git add pubspec.yaml
+          git commit -m "chore: release ${{ steps.release.outputs.tag_name }}"
+          git push
