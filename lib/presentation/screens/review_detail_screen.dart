@@ -7,19 +7,35 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../domain/models/product.dart';
 import '../widgets/review_item.dart';
 import 'add_review_to_product_screen.dart';
-import 'comment_screen.dart';
+
 import '../providers/review_detail_controller.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../data/repositories/supabase_review_repository.dart';
 
-class ReviewDetailScreen extends ConsumerWidget {
+class ReviewDetailScreen extends ConsumerStatefulWidget {
   final String productId;
 
   const ReviewDetailScreen({super.key, required this.productId});
 
+  @override
+  ConsumerState<ReviewDetailScreen> createState() => _ReviewDetailScreenState();
+}
+
+class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
   static const Color _backgroundLight = Color(0xFFF6F8F6);
   static const Color _backgroundDark = Color(0xFF102216);
   static const Color _primary = Color(0xFF22A06B);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 画面に戻ってきたときにデータをリフレッシュ
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(reviewDetailControllerProvider(widget.productId).notifier).refreshAll();
+      }
+    });
+  }
 
   Future<void> _deleteReview(
     BuildContext context,
@@ -55,7 +71,7 @@ class ReviewDetailScreen extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('レビューを削除しました')),
         );
-        final controller = ref.read(reviewDetailControllerProvider(productId).notifier);
+        final controller = ref.read(reviewDetailControllerProvider(widget.productId).notifier);
         await controller.refreshAll();
       }
     } catch (e) {
@@ -71,9 +87,9 @@ class ReviewDetailScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final reviewDetailState = ref.watch(reviewDetailControllerProvider(productId));
-    final reviewDetailController = ref.read(reviewDetailControllerProvider(productId).notifier);
+  Widget build(BuildContext context) {
+    final reviewDetailState = ref.watch(reviewDetailControllerProvider(widget.productId));
+    final reviewDetailController = ref.read(reviewDetailControllerProvider(widget.productId).notifier);
     final currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id;
 
     final displayedProduct = reviewDetailState.currentProduct;
@@ -123,7 +139,13 @@ class ReviewDetailScreen extends ConsumerWidget {
                       width: 40,
                       height: 40,
                       child: IconButton(
-                        onPressed: () => context.pop(),
+                        onPressed: () {
+                          if (context.canPop()) {
+                            context.pop();
+                          } else {
+                            context.go('/');
+                          }
+                        },
                         icon: Icon(
                           Icons.arrow_back_ios_new_rounded,
                           size: 20,
@@ -359,13 +381,8 @@ class ReviewDetailScreen extends ConsumerWidget {
                                     isLiked: isLiked,
                                     onLikeToggle: () => reviewDetailController.toggleLike(review.id),
                                     onCommentTap: () {
-                                      context.push(
-                                        '/comment', // 新しいパスを定義する必要がある
-                                        extra: {
-                                          'reviewId': review.id,
-                                          'productName': displayedProduct.name,
-                                        },
-                                      ).then((_) => reviewDetailController.refreshAll());
+                                      // context.push()ではなくcontext.go()を使用してURLを更新
+                                      context.go('/review/${review.id}');
                                     },
                                     onReviewUpdated: () => reviewDetailController.refreshAll(),
                                   ),
@@ -396,8 +413,8 @@ class ReviewDetailScreen extends ConsumerWidget {
         backgroundColor: _primary,
         onPressed: () async {
           await context.push(
-            '/add-review-to-product', // 新しいパスを定義する必要がある
-            extra: displayedProduct, // Productオブジェクトをextraとして渡す
+            '/add-review-to-product',
+            extra: displayedProduct,
           );
           reviewDetailController.refreshAll();
         },
@@ -425,91 +442,4 @@ class _UrlLink extends StatelessWidget {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('このURLを開けませんでした: $urlString')),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (url == null || url!.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return InkWell(
-      onTap: () => _launchUrl(context, url!),
-      borderRadius: BorderRadius.circular(4),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(Icons.link, size: 16, color: Colors.blue),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                url!,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.blue,
-                      decoration: TextDecoration.underline,
-                      decorationColor: Colors.blue.withOpacity(0.7),
-                    ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SortTab extends StatelessWidget {
-  const _SortTab({
-    required this.label,
-    required this.isActive,
-    required this.isDark,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool isActive;
-  final bool isDark;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final baseColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
-
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.only(right: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-              child: Text(
-                label,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                  color: isActive ? const Color(0xFF22A06B) : baseColor,
-                ),
-              ),
-            ),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              height: 2,
-              width: 36,
-              decoration: BoxDecoration(
-                color: isActive ? const Color(0xFF22A06B) : Colors.transparent,
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+        SnackBar(content: Text('こ
