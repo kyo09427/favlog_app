@@ -54,6 +54,7 @@ class AddReviewState {
     String? error,
     List<String>? categories,
     List<String>? subcategorySuggestions,
+    bool clearImageFile = false,
   }) {
     return AddReviewState(
       productUrl: productUrl ?? this.productUrl,
@@ -62,7 +63,7 @@ class AddReviewState {
       selectedCategory: selectedCategory ?? this.selectedCategory,
       reviewText: reviewText ?? this.reviewText,
       rating: rating ?? this.rating,
-      imageFile: imageFile ?? this.imageFile,
+      imageFile: clearImageFile ? null : imageFile ?? this.imageFile,
       isLoading: isLoading ?? this.isLoading,
       error: error,
       categories: categories ?? this.categories,
@@ -188,17 +189,17 @@ class AddReviewController extends StateNotifier<AddReviewState> {
   }
 
   /// ギャラリーから画像を選択
-  Future<void> pickImage() async {
+  Future<void> pickImage(ImageSource source) async {
     if (_isDisposed) return;
-    
+
     try {
       final pickedFile = await _picker.pickImage(
-        source: ImageSource.gallery,
+        source: source,
         maxWidth: 1920,
         maxHeight: 1920,
         imageQuality: 85,
       );
-      
+
       if (pickedFile != null && !_isDisposed) {
         state = state.copyWith(imageFile: File(pickedFile.path));
       }
@@ -207,6 +208,12 @@ class AddReviewController extends StateNotifier<AddReviewState> {
         state = state.copyWith(error: '画像の選択に失敗しました: ${e.toString()}');
       }
     }
+  }
+
+  /// 選択した画像をクリア
+  void clearImage() {
+    if (_isDisposed) return;
+    state = state.copyWith(clearImageFile: true);
   }
 
   /// レビューを投稿

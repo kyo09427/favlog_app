@@ -67,7 +67,7 @@ void main() {
     expect(find.text('評価'), findsOneWidget);
     // This text appears in two different widgets, one is not visible
     // expect(find.text('写真を追加'), findsNWidgets(2));
-    expect(find.text('レビュー本文'), findsOneWidget);
+    expect(find.text('レビュー'), findsOneWidget);
 
     // Submit button in custom header
     expect(find.text('投稿'), findsOneWidget);

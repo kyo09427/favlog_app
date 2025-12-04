@@ -277,13 +277,13 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                                   : Colors.grey.shade300,
                             ),
                           ),
-                          child: addReviewState.selectedImagePath != null
+                          child: addReviewState.imageFile != null
                               ? Stack(
                                   children: [
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(12),
                                       child: Image.file(
-                                        File(addReviewState.selectedImagePath!),
+                                        addReviewState.imageFile!,
                                         width: double.infinity,
                                         height: double.infinity,
                                         fit: BoxFit.cover,
