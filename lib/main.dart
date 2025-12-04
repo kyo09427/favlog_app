@@ -17,15 +17,34 @@ final supabaseProvider = Provider<SupabaseClient>((ref) {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  try {
-    await dotenv.load(fileName: ".env");
-  } catch (e) {
-    debugPrint('Error loading .env file: $e');
+  String? supabaseUrl;
+  String? supabaseAnonKey;
+
+  // Attempt to get environment variables passed via --dart-define (used in CI/CD)
+  const String dartDefineSupabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  const String dartDefineSupabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+
+  if (dartDefineSupabaseUrl.isNotEmpty && dartDefineSupabaseAnonKey.isNotEmpty) {
+    supabaseUrl = dartDefineSupabaseUrl;
+    supabaseAnonKey = dartDefineSupabaseAnonKey;
+  } else {
+    // Fallback to .env file for local development
+    try {
+      await dotenv.load(fileName: ".env");
+      supabaseUrl = dotenv.env['SUPABASE_URL'];
+      supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'];
+    } catch (e) {
+      debugPrint('Error loading .env file: $e');
+    }
+  }
+
+  if (supabaseUrl == null || supabaseAnonKey == null) {
+    throw Exception('Supabase URL or Anon Key is not provided. Please ensure it\'s set via --dart-define or in .env file.');
   }
 
   await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
   );
   
   runApp(const ProviderScope(child: MyApp()));

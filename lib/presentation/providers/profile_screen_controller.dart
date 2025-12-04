@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+
 
 import '../../domain/models/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
@@ -148,21 +148,16 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
 
       state = const AsyncValue.loading();
 
-      final imagePath = image.path;
-      // 画像をWebPに圧縮
-      final webpBytes = await _imageCompressor.compressWithFile(
-        imagePath,
-        minWidth: 512,
-        minHeight: 512,
+      final imageBytes = await image.readAsBytes();
+      // 画像を圧縮
+      final compressedBytes = await _imageCompressor.compressImage(
+        imageBytes,
+        maxWidth: 512,
+        maxHeight: 512,
         quality: 80,
-        format: CompressFormat.webp,
       );
 
-      if (webpBytes == null) {
-        throw Exception('画像の圧縮に失敗しました。');
-      }
-
-      final fileName = '${const Uuid().v4()}.webp';
+      final fileName = '${const Uuid().v4()}.jpg';
       final path = '${currentUser.id}/$fileName';
 
       // 古いアバターのクリーンアップ（オプション）
@@ -179,9 +174,9 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
       // 新しい画像をアップロード (uploadBinaryを使用)
       await _supabaseClient.storage.from('avatars').uploadBinary(
             path,
-            webpBytes,
+            compressedBytes,
             fileOptions: const FileOptions(
-                cacheControl: '3600', upsert: true, contentType: 'image/webp'),
+                cacheControl: '3600', upsert: true, contentType: 'image/jpeg'),
           );
 
       final publicUrl = _supabaseClient.storage.from('avatars').getPublicUrl(path);

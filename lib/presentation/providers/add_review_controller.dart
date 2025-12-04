@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image/image.dart' as img;
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+
 import '../../data/repositories/supabase_product_repository.dart';
 import '../../data/repositories/supabase_review_repository.dart';
 import '../../data/repositories/asset_category_repository.dart';
@@ -237,26 +237,22 @@ class AddReviewController extends StateNotifier<AddReviewState> {
       String? imageUrl;
       if (state.imageFile != null) {
         try {
-          // 画像をWebPに圧縮
-          final webpBytes = await _imageCompressor.compressWithFile(
-            state.imageFile!.absolute.path,
-            minWidth: 1024,
+          final imageBytes = await state.imageFile!.readAsBytes();
+          // 画像を圧縮
+          final compressedBytes = await _imageCompressor.compressImage(
+            imageBytes,
+            maxWidth: 1024,
             quality: 80,
-            format: CompressFormat.webp,
           );
-
-          if (webpBytes == null) {
-            throw Exception('画像の圧縮に失敗しました。');
-          }
           
-          const fileExtension = 'webp';
+          const fileExtension = 'jpg';
           
           // Supabase Storageにアップロード
           imageUrl = await productRepository.uploadProductImage(
             user.id,
-            webpBytes,
+            compressedBytes,
             fileExtension,
-            contentType: 'image/webp',
+            contentType: 'image/jpeg',
           );
         } catch (imageError) {
           throw Exception('画像のアップロードに失敗しました: ${imageError.toString()}');

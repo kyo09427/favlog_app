@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shimmer/shimmer.dart';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+
 
 import 'package:favlog_app/domain/models/profile.dart';
 import 'package:favlog_app/core/services/image_compressor.dart';
@@ -84,6 +84,7 @@ void main() {
       when(() => mockSupabaseStorageClient.from(any())).thenReturn(mockStorageFileApi);
 
       when(() => mockXFile.path).thenReturn('/test/path/to/image.jpg');
+      when(() => mockXFile.readAsBytes()).thenAnswer((_) async => Uint8List.fromList([10, 20, 30]));
     });
 
     Widget createProfileScreen() {
@@ -181,8 +182,11 @@ void main() {
       when(() => mockImagePicker.pickImage(source: ImageSource.gallery, maxWidth: 1024, maxHeight: 1024, imageQuality: 85))
           .thenAnswer((_) async => mockXFile);
       
-      when(() => mockImageCompressor.compressWithFile(
-        any(), minWidth: 512, minHeight: 512, quality: 80, format: CompressFormat.webp,
+      when(() => mockImageCompressor.compressImage(
+        any(named: 'imageBytes'),
+        maxWidth: 512,
+        maxHeight: 512,
+        quality: 80,
       )).thenAnswer((_) async => compressedBytes);
       
       when(() => mockStorageFileApi.uploadBinary(any(), any(), fileOptions: any(named: 'fileOptions')))
@@ -199,12 +203,12 @@ void main() {
       verify(() => mockImagePicker.pickImage(source: ImageSource.gallery, maxWidth: 1024, maxHeight: 1024, imageQuality: 85)).called(1);
 
       verify(() => mockStorageFileApi.uploadBinary(
-            any(that: contains('.webp')),
+            any(that: contains('.jpg')),
             compressedBytes,
-            fileOptions: any(named: 'fileOptions', that: isA<FileOptions>().having((fo) => fo.contentType, 'contentType', 'image/webp')),
+            fileOptions: any(named: 'fileOptions', that: isA<FileOptions>().having((fo) => fo.contentType, 'contentType', 'image/jpeg')),
           )).called(1);
 
-      verify(() => mockStorageFileApi.getPublicUrl(any(that: contains('.webp')))).called(1);
+      verify(() => mockStorageFileApi.getPublicUrl(any(that: contains('.jpg')))).called(1);
 
       verify(() => mockProfileRepository.updateProfile(
             any(that: isA<Profile>().having((p) => p.avatarUrl, 'avatarUrl', publicUrl)),
