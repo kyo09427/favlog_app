@@ -31,24 +31,38 @@ jobs:
         with:
           channel: 'stable'
 
-      # 4. .envファイルを作成 (GitHub Secretsから読み込み)
+      # 4. Androidリリース署名のためのキーストアファイルを作成
+      - name: Create Keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/release.keystore
+
+      # 5. key.propertiesファイルを作成
+      - name: Create key.properties
+        run: |
+          echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" > android/key.properties
+          echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
+          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
+          echo "storeFile=release.keystore" >> android/key.properties
+        working-directory: android/
+
+      # 6. .envファイルを作成 (GitHub Secretsから読み込み)
       #    注意: 事前にリポジトリで SUPABASE_URL と SUPABASE_ANON_KEY のシークレット設定が必要
       - name: Create .env file
         run: |
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
           echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
 
-      # 5. 依存パッケージをインストール
+      # 7. 依存パッケージをインストール
       - name: Install dependencies
         run: flutter pub get
 
-      # 6. AndroidのリリースAPKをビルд
-      - name: Build Android APK
-        run: flutter build apk --release
+      # 8. AndroidのリリースApp Bundleをビルド
+      - name: Build Android App Bundle
+        run: flutter build appbundle --release
 
-      # 7. ビルドされたAPKをアーティファクトとしてアップロード
-      - name: Upload APK
+      # 9. ビルドされたApp Bundleをアーティファクトとしてアップロード
+      - name: Upload App Bundle
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: app-release.aab
+          path: build/app/outputs/bundle/release/app-release.aab

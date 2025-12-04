@@ -548,6 +548,34 @@ flutter build apk --release
 
 成功すると、`build/app/outputs/bundle/release/app-release.aab` または `build/app/outputs/flutter-apk/app-release.apk` に成果物が生成されます。
 
+## CI/CD (自動ビルド)
+
+このプロジェクトでは、GitHub Actions を使用してAndroidアプリのリリースビルドを自動化しています。
+
+- **ワークフローファイル**: `.github/workflows/android_build.yml`
+- **トリガー**: `workflow_dispatch` により、GitHubのActionsタブから手動で実行できます。
+
+### 必要なシークレット
+
+このワークフローを正しく動作させるには、GitHubリポジトリの `Settings > Secrets and variables > Actions` で以下のシークレットを設定する必要があります。
+
+#### 1. Supabaseの接続情報
+- `SUPABASE_URL`: SupabaseプロジェクトのURL。
+- `SUPABASE_ANON_KEY`: SupabaseプロジェクトのAnon (public) キー。
+
+#### 2. Androidの署名情報
+- `ANDROID_KEYSTORE_BASE64`: 署名に使用するキーストアファイル (`my-release-key.keystore`) をBase64エンコードした文字列。
+- `ANDROID_KEYSTORE_PASSWORD`: キーストアのパスワード。
+- `ANDROID_KEY_PASSWORD`: キーストア内のエイリアスのパスワード。
+- `ANDROID_KEY_ALIAS`: キーストアのエイリアス名。
+
+`ANDROID_KEYSTORE_BASE64` の生成方法は以下の通りです（macOS/Linuxの場合）:
+```bash
+base64 -i my-release-key.keystore
+```
+
+生成された長い文字列をコピーして、`ANDROID_KEYSTORE_BASE64` シークレットの値として貼り付けます。
+
 ## テスト
 
 主要な機能が正しく動作するか、以下の点を確認してください。
