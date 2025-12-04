@@ -17,6 +17,8 @@ import '../../presentation/screens/add_review_screen.dart';
 import '../../presentation/screens/edit_review_screen.dart'; // 追加
 import '../../presentation/screens/comment_screen.dart'; // 追加
 import '../../presentation/screens/add_review_to_product_screen.dart'; // 追加
+import '../../presentation/screens/settings_screen.dart'; // 追加
+import '../../presentation/screens/single_review_screen.dart'; // 追加
 import '../../presentation/widgets/scaffold_with_nav_bar.dart';
 
 // StreamをリッスンしてGoRouterをリフレッシュするためのChangeNotifier
@@ -115,24 +117,37 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+          // Settings タブ (新規追加)
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/settings',
+                builder: (context, state) => const SettingsScreen(),
+              ),
+            ],
+          ),
         ],
       ),
       
       // ボトムナビゲーションバーの外に表示される画面
       GoRoute(
         path: '/auth',
+        parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AuthScreen(),
       ),
       GoRoute(
         path: '/verify-email',
+        parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const EmailVerificationScreen(),
       ),
       GoRoute(
         path: '/add-review',
+        parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AddReviewScreen(),
       ),
       GoRoute(
         path: '/product/:productId',
+        parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final productId = state.pathParameters['productId']!;
           return ReviewDetailScreen(productId: productId);
@@ -141,6 +156,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       // 新規追加ルート
       GoRoute(
         path: '/edit-review',
+        parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>;
           final review = extra['review'] as Review;
@@ -150,6 +166,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/comment',
+        parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>;
           final reviewId = extra['reviewId'] as String;
@@ -159,9 +176,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/add-review-to-product',
+        parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final product = state.extra! as Product;
           return AddReviewToProductScreen(product: product);
+        },
+      ),
+      // 個別レビュー詳細ページ
+      GoRoute(
+        path: '/review/:reviewId',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final reviewId = state.pathParameters['reviewId']!;
+          return SingleReviewScreen(reviewId: reviewId);
         },
       ),
     ],

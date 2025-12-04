@@ -29,6 +29,10 @@ class ScaffoldWithNavBar extends StatelessWidget {
             icon: Icon(Icons.person),
             label: 'プロフィール',
           ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: '設定',
+          ),
         ],
         currentIndex: navigationShell.currentIndex,
         selectedItemColor: const Color(0xFF4CAF50),
