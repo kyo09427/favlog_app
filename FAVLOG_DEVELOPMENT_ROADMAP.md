@@ -128,6 +128,52 @@
 -   AIによるレビュー要約機能
 -   プッシュ通知の実装
 
+## 実装ログ - 2025年12月4日 (続き)
+
+### Web版GitHub Pages公開対応とGoRouterによるURLルーティング実装
+
+*   **GitHub Pages Web版公開対応ロードマップ策定**:
+    *   Flutter Web環境のセットアップ、Webビルド向けのコード修正、GitHub Pages用設定の検討と策定。
+    *   `flutter_web_plugins` パッケージ追加。
+    *   `web/index.html` および `web/manifest.json` をPWA対応とローディング表示用に最適化。
+    *   GitHub Actionsワークフロー `web_deploy.yml` の初期案作成。
+*   **Supabaseキー管理の改善とWebビルドエラー対応**:
+    *   `main.dart` のSupabase初期化ロジックを`--dart-define`優先・`.env`フォールバックのハイブリッド方式に変更。
+    *   `ImageCompressor` のインターフェースをバイトデータ (`Uint8List`) を受け取る形式に変更し、Web (`image`パッケージ) /ネイティブ (`flutter_image_compress`) で異なる実装を単一クラス内で分岐。
+    *   `profile_screen_controller.dart`, `add_review_controller.dart`, `review_item.dart` など、`ImageCompressor` 利用箇所を修正。
+    *   `test/screens/profile_screen_test.dart` を修正し、`ImageCompressor` のモックと `XFile.readAsBytes()` のモックに対応。
+    *   GitHub Actionsビルドで`No file or variants found for asset: .env`エラーが発生したため、`pubspec.yaml` の `assets` セクションに `.env` を**再追加**。
+    *   `web_deploy.yml` の `flutter build web` コマンドで `--dart-define` のシェル解釈エラーが発生したため、`.env` ファイルをSecretsから動的に生成する方式に変更。
+    *   `web_deploy.yml` の `flutter build web` コマンドに `--base-href /favlog_app/` を追加し、Web版でリソースが404エラーになるバグを修正。
+*   **GoRouterによるURLルーティング実装**:
+    *   `go_router` パッケージを追加。
+    *   `lib/core/router/app_router.dart` を作成し、`GoRouter` を設定。
+    *   `StatefulShellRoute.indexedStack` を導入し、ボトムナビゲーションバーとタブごとのナビゲーションスタックを管理。
+    *   `lib/presentation/widgets/scaffold_with_nav_bar.dart` を作成し、ボトムナビゲーションバーを持つ `Scaffold` を提供。
+    *   `main.dart` を `MaterialApp.router` に変更し、`goRouterProvider` を適用。
+    *   認証状態に基づくリダイレクトロジックを `app_router.dart` に実装。
+    *   既存の `Navigator.push/pop` 呼び出しを `context.go/push/pop` に移行（`home_screen.dart`, `review_item.dart`, `error_dialog.dart`, `review_detail_screen.dart`, `edit_review_screen.dart`, `comment_screen.dart`, `add_review_to_product_screen.dart`, `add_review_screen.dart`）。
+    *   `CommonBottomNavBar` および `NavigationHelper` クラスを削除。
+    *   `home_screen.dart`, `search_screen.dart`, `profile_screen.dart` から `bottomNavigationBar` の設定と関連インポートを削除。
+    *   `app_router.dart` に `parentNavigatorKey: _rootNavigatorKey` を追加し、ブラウザのURLが更新されないバグを修正。
+    *   `go_router` 移行時に発生した構文エラー（インポート位置、`InkWell`の構文、`GoRouterState.extra`の型キャストなど）を修正。
+*   **機能追加: 「設定」タブの復活**:
+    *   `lib/presentation/screens/settings_screen.dart` を作成（プレースホルダー）。
+    *   `ScaffoldWithNavBar` に「設定」タブ (`BottomNavigationBarItem`) を追加。
+    *   `app_router.dart` の `StatefulShellRoute` に `/settings` ブランチを追加。
+*   **機能追加: 個別投稿詳細URLの実装**:
+    *   `lib/presentation/screens/single_review_screen.dart` を作成（プレースホルダー）。
+    *   `app_router.dart` に `/review/:reviewId` トップレベルルートを追加。
+*   **App Links (Android) の実装**:
+    *   `AndroidManifest.xml` に `intent-filter` を追加し、`https://kyo09427.github.io` をアプリで開くよう設定。
+    *   `web/.well-known/assetlinks.json` ファイルをテンプレートで作成し、GitHub Pagesでホストする準備。
+    *   SHA-256フィンガープリント取得用のGitHub Actionsワークフロー (`get_fingerprint.yml`) を作成。
+    *   ワークフロー (`get_fingerprint.yml` および `android-build.yml`) のパス解決エラーを修正。
+    *   `web/.well-known/assetlinks.json` を実際のSHA-256フィンガープリントで更新。
+*   **Web版の警告対応**:
+    *   `web/index.html` の非推奨metaタグ `<meta name="apple-mobile-web-app-capable">` を `<meta name="mobile-web-app-capable">` に修正。
+    *   Web版フォントエラー (`Intl.v8BreakIterator is deprecated`) はFlutterフレームワークの内部警告であり、アプリ動作に影響しないため対応不要と判断。
+
 ----
 以上でフェーズ2のタスクはすべて完了しました。
 ## プロジェクトドキュメント
