@@ -442,4 +442,68 @@ class _UrlLink extends StatelessWidget {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('こ
+        const SnackBar(content: Text('このURLを開けませんでした')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (url == null || url!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return InkWell(
+      onTap: () => _launchUrl(context, url!),
+      child: Text(
+        url!,
+        style: const TextStyle(
+          color: Colors.blue,
+          decoration: TextDecoration.underline,
+        ),
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
+
+class _SortTab extends StatelessWidget {
+  final String label;
+  final bool isActive;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _SortTab({
+    required this.label,
+    required this.isActive,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final activeColor = isDark ? Colors.white : Colors.black;
+    final inactiveColor = isDark ? Colors.grey[400] : Colors.grey[600];
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: isActive ? const Color(0xFF22A06B) : Colors.transparent,
+              width: 2,
+            ),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? activeColor : inactiveColor,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+}
