@@ -188,12 +188,12 @@ class AddReviewController extends StateNotifier<AddReviewState> {
   }
 
   /// ギャラリーから画像を選択
-  Future<void> pickImage() async {
+  Future<void> pickImage(ImageSource source) async {
     if (_isDisposed) return;
-    
+
     try {
       final pickedFile = await _picker.pickImage(
-        source: ImageSource.gallery,
+        source: source,
         maxWidth: 1920,
         maxHeight: 1920,
         imageQuality: 85,
@@ -209,12 +209,23 @@ class AddReviewController extends StateNotifier<AddReviewState> {
     }
   }
 
-  /// レビューを投稿
-  Future<void> submitReview() async {
+  /// 選択された画像をクリア
+  void clearImage() {
     if (_isDisposed) return;
-    
+    state = state.copyWith(imageFile: null);
+  }
+
+  /// レビューを投稿
+  Future<bool> submitReview({
+    required String name,
+    required String url,
+    required String reviewText,
+    required String subcategory,
+  }) async {
+    if (_isDisposed) return false;
+
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final authRepository = _ref.read(authRepositoryProvider);
       final productRepository = _ref.read(productRepositoryProvider);
@@ -241,9 +252,9 @@ class AddReviewController extends StateNotifier<AddReviewState> {
           if (webpBytes == null) {
             throw Exception('画像の圧縮に失敗しました。');
           }
-          
+
           const fileExtension = 'webp';
-          
+
           // Supabase Storageにアップロード
           imageUrl = await productRepository.uploadProductImage(
             user.id,
@@ -259,10 +270,10 @@ class AddReviewController extends StateNotifier<AddReviewState> {
       // 商品情報を作成
       final newProduct = Product(
         userId: user.id,
-        url: state.productUrl.isEmpty ? null : state.productUrl,
-        name: state.productName,
+        url: url.isEmpty ? null : url,
+        name: name,
         category: state.selectedCategory.isEmpty ? null : state.selectedCategory,
-        subcategory: state.subcategory.isEmpty ? null : state.subcategory,
+        subcategory: subcategory.isEmpty ? null : subcategory,
         imageUrl: imageUrl,
       );
 
@@ -273,7 +284,7 @@ class AddReviewController extends StateNotifier<AddReviewState> {
       final newReview = Review(
         userId: user.id,
         productId: newProduct.id,
-        reviewText: state.reviewText,
+        reviewText: reviewText,
         rating: state.rating,
       );
 
@@ -284,6 +295,7 @@ class AddReviewController extends StateNotifier<AddReviewState> {
       if (!_isDisposed) {
         state = AddReviewState(categories: state.categories);
       }
+      return true;
     } on AuthException catch (e) {
       // 認証エラー
       if (!_isDisposed) {
@@ -292,6 +304,7 @@ class AddReviewController extends StateNotifier<AddReviewState> {
           error: '認証エラー: ${e.message}',
         );
       }
+      return false;
     } catch (e) {
       // その他のエラー
       if (!_isDisposed) {
@@ -300,6 +313,7 @@ class AddReviewController extends StateNotifier<AddReviewState> {
           error: e.toString(),
         );
       }
+      return false;
     }
   }
 }
