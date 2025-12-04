@@ -113,6 +113,8 @@
     *   アプリのアイコン、スクリーンショット、説明文の準備
     *   署名付きAPK/AABファイルの生成
     *   プライバシーポリシーの作成
+5.  **Androidリリース署名設定の完了** (ステータス: 完了)
+    *   署名付きAPK/AABファイルの生成に必要なキーストアの作成、`key.properties`の構成、`build.gradle.kts`への署名設定の追加を完了。
 
 ## 将来的な拡張 (Future Enhancements)
 -   Web版の対応 (GitHub Pages)
@@ -574,3 +576,11 @@
     *   コメント投稿後の自動スクロール（最新コメントへ）
     *   コメント削除時の確認ダイアログ
     *   エラー時の適切なメッセージ表示
+
+### CI/CD (自動ビルド)
+
+*   **GitHub Actionsワークフローの整備**:
+    *   `.github/workflows/android_build.yml` を更新し、Androidのリリースビルドを自動化。
+    *   `workflow_dispatch` トリガーにより、手動でのビルド実行が可能。
+    *   `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSWORD`, `ANDROID_KEY_ALIAS` などのGitHub Secretsを利用して、CI環境で安全に署名付きApp Bundleを生成する仕組みを構築。
+    *   ビルド成果物（`app-release.aab`）をアーティファクトとしてアップロードするステップを追加。
