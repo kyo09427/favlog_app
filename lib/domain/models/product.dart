@@ -20,15 +20,16 @@ class Product {
     this.subcategory,
     this.imageUrl,
   })  : id = id ?? const Uuid().v4(),
-        createdAt = createdAt ?? DateTime.now();
+        // 修正: 明示的にUTCとして保存
+        createdAt = createdAt ?? DateTime.now().toUtc();
 
   factory Product.empty() {
     return Product(
-      id: const Uuid().v4(), // Generate a new ID for empty product
-      createdAt: DateTime.now(),
-      userId: '', // Empty user ID
+      id: const Uuid().v4(),
+      createdAt: DateTime.now().toUtc(), // 修正: UTC指定
+      userId: '',
       url: null,
-      name: '', // Empty name
+      name: '',
       category: null,
       subcategory: null,
       imageUrl: null,
@@ -38,7 +39,8 @@ class Product {
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
       id: json['id'] as String,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      // 修正: parseUtcを使用してUTCとして明示的にパース
+      createdAt: DateTime.parse(json['created_at'] as String).toUtc(),
       userId: json['user_id'] as String,
       url: json['url'] as String?,
       name: json['name'] as String,
@@ -51,7 +53,8 @@ class Product {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'created_at': createdAt.toIso8601String(),
+      // 修正: toUtcを追加してUTCとして保存
+      'created_at': createdAt.toUtc().toIso8601String(),
       'user_id': userId,
       'url': url,
       'name': name,

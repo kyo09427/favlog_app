@@ -630,3 +630,41 @@
     *   `workflow_dispatch` トリガーにより、手動でのビルド実行が可能。
     *   `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSWORD`, `ANDROID_KEY_ALIAS` などのGitHub Secretsを利用して、CI環境で安全に署名付きApp Bundleを生成する仕組みを構築。
     *   ビルド成果物（`app-release.aab`）をアーティファクトとしてアップロードするステップを追加。
+## 実装ログ - 2025年12月5日
+
+fix(datetime): タイムゾーン問題の修正とコード品質の改善
+
+### タイムゾーン問題の修正
+
+レビューとコメントの投稿時間がGMTとして扱われ、JSTとの9時間のずれが発生していた問題を修正しました。
+
+#### 変更内容
+
+1.  **Review モデル** (`lib/domain/models/review.dart`)
+    -   `DateTime.now()` → `DateTime.now().toUtc()` に変更
+    -   `fromJson` で `DateTime.parse().toUtc()` を使用してUTCとして明示的にパース
+    -   `toJson` で `createdAt.toUtc().toIso8601String()` を使用
+
+2.  **Comment モデル** (`lib/domain/models/comment.dart`)
+    -   同様にUTC処理を明示化
+
+3.  **Product モデル** (`lib/domain/models/product.dart`)
+    -   同様にUTC処理を明示化
+
+### 技術的背景
+
+-   Supabaseは内部的に全ての日時をUTCで保存
+-   Dartの`DateTime.now()`はローカルタイムゾーン(JST)を返す
+-   明示的に`.toUtc()`を使用することで、保存時にUTCに変換
+-   表示時に`.toLocal()`を使用してユーザーのローカル時間に変換
+
+### 修正後の動作
+
+-   データベースには全てUTCで保存される
+-   UIでは自動的にユーザーのローカル時間(JST)で表示される
+-   タイムゾーンの不整合が解消される
+
+### その他の改善
+
+-   コード内のコメントを追加して意図を明確化
+-   一貫性のあるタイムゾーン処理パターンを確立
