@@ -113,6 +113,8 @@
     *   アプリのアイコン、スクリーンショット、説明文の準備
     *   署名付きAPK/AABファイルの生成
     *   プライバシーポリシーの作成
+5.  **Androidリリース署名設定の完了** (ステータス: 完了)
+    *   署名付きAPK/AABファイルの生成に必要なキーストアの作成、`key.properties`の構成、`build.gradle.kts`への署名設定の追加を完了。
 
 ## 将来的な拡張 (Future Enhancements)
 -   Web版の対応 (GitHub Pages)

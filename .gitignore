@@ -51,3 +51,6 @@ app.*.map.json
 
 # Gemini related
 .gemini/
+
+# Keystore file
+/android/key.properties
