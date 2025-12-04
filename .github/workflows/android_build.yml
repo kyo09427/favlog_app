@@ -39,11 +39,10 @@ jobs:
       # 5. key.propertiesファイルを作成
       - name: Create key.properties
         run: |
-          echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" > key.properties
-          echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> key.properties
-          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> key.properties
-          echo "storeFile=release.keystore" >> key.properties
-        working-directory: android/
+          echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" > android/key.properties
+          echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
+          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
+          echo "storeFile=release.keystore" >> android/key.properties
 
       # 6. .envファイルを作成 (GitHub Secretsから読み込み)
       #    注意: 事前にリポジトリで SUPABASE_URL と SUPABASE_ANON_KEY のシークレット設定が必要
