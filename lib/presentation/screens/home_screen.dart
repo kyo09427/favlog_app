@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:favlog_app/presentation/providers/home_screen_controller.dart';
 import 'package:favlog_app/presentation/providers/category_providers.dart';
+import 'package:favlog_app/presentation/widgets/review_item.dart';
 import 'package:shimmer/shimmer.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -171,10 +173,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       elevation: 0,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-import 'package:go_router/go_router.dart';
-
-// ... (他のコード)
-
         onTap: () async {
           // go_routerのpushはFutureを返すので、画面がpopされた後に実行される
           await context.push('/product/${product.id}');
@@ -356,11 +354,11 @@ import 'package:go_router/go_router.dart';
                   content: const Text('本当にログアウトしますか?'),
                   actions: [
                     TextButton(
-                      onPressed: () => Navigator.of(context).pop(false),
+                      onPressed: () => context.pop(false),
                       child: const Text('キャンセル'),
                     ),
                     TextButton(
-                      onPressed: () => Navigator.of(context).pop(true),
+                      onPressed: () => context.pop(true),
                       child: const Text('ログアウト'),
                     ),
                   ],

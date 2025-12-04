@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -87,10 +88,6 @@ class ReviewItem extends ConsumerWidget {
     if (text.length <= maxLength) return text;
     return '${text.substring(0, maxLength)}...';
   }
-
-import 'package:go_router/go_router.dart';
-
-// ... (他のコード)
 
   Future<void> _handleEdit(BuildContext context) async {
     final result = await context.push<bool>(

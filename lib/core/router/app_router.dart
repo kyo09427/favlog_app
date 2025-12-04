@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_providers.dart';
+import '../../data/repositories/supabase_auth_repository.dart';
 import '../../domain/models/product.dart'; // 追加
 import '../../domain/models/review.dart'; // 追加
 import '../../presentation/screens/home_screen.dart';
@@ -141,16 +142,18 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/edit-review',
         builder: (context, state) {
-          final review = state.extra!['review'] as Review;
-          final product = state.extra!['product'] as Product;
+          final extra = state.extra as Map<String, dynamic>;
+          final review = extra['review'] as Review;
+          final product = extra['product'] as Product;
           return EditReviewScreen(review: review, product: product);
         },
       ),
       GoRoute(
         path: '/comment',
         builder: (context, state) {
-          final reviewId = state.extra!['reviewId'] as String;
-          final productName = state.extra!['productName'] as String;
+          final extra = state.extra as Map<String, dynamic>;
+          final reviewId = extra['reviewId'] as String;
+          final productName = extra['productName'] as String;
           return CommentScreen(reviewId: reviewId, productName: productName);
         },
       ),

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:favlog_app/core/providers/auth_providers.dart';
+import 'package:favlog_app/core/router/app_router.dart';
 
 // Define a Riverpod provider for SupabaseClient
 final supabaseProvider = Provider<SupabaseClient>((ref) {
@@ -45,8 +45,6 @@ Future<void> main() async {
   
   runApp(const ProviderScope(child: MyApp()));
 }
-
-import 'package:favlog_app/core/router/app_router.dart';
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});

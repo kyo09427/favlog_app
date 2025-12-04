@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 import '../providers/search_controller.dart';
-
-import 'review_detail_screen.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -116,10 +115,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final theme = Theme.of(context);
 
     return InkWell(
-import 'package:go_router/go_router.dart';
-
-// ... (他のコード)
-
       onTap: () {
         context.push('/product/${product.id}');
       },
