@@ -507,3 +507,70 @@
 *   **`lib/presentation/screens/home_screen.dart`**:
     *   ホーム画面の商品サムネイル画像の表示方法を `BoxFit.cover` から `BoxFit.contain` に変更。
     *   これにより、画像がコンテナに合わせて切り取られることがなくなり、アスペクト比を維持したまま全体が表示されるようになった。ユーザーが報告していた「画像が潰れている」という印象を解消し、より自然な表示を実現。
+
+## 実装ログ - 2025年12月4日
+
+### いいね機能とコメント機能の実装
+
+*   **データベース設計**:
+    *   `likes`テーブルを作成: ユーザーがレビューに対していいねを付けられる機能を実装。1ユーザーにつき1レビューに1いいねの制約を設定。
+    *   `comments`テーブルを作成: ユーザーがレビューに対してコメントを投稿できる機能を実装。
+    *   RPC関数`get_like_counts`と`get_comment_counts`を実装: 複数のレビューのいいね数とコメント数を効率的に一括取得。
+
+*   **ドメイン層の拡張**:
+    *   `Like`モデル(`lib/domain/models/like.dart`)を作成。
+    *   `Comment`モデル(`lib/domain/models/comment.dart`)を作成。
+    *   `ReviewStats`モデル(`lib/domain/models/review_stats.dart`)を作成: レビューごとのいいね数とコメント数を保持。
+    *   `LikeRepository`インターフェース(`lib/domain/repositories/like_repository.dart`)を定義。
+    *   `CommentRepository`インターフェース(`lib/domain/repositories/comment_repository.dart`)を定義。
+
+*   **データ層の実装**:
+    *   `SupabaseLikeRepository`(`lib/data/repositories/supabase_like_repository.dart`)を実装:
+        *   いいねの追加・削除機能
+        *   ユーザーのいいね状態の取得
+        *   複数レビューのいいね数一括取得（RPC使用）
+    *   `SupabaseCommentRepository`(`lib/data/repositories/supabase_comment_repository.dart`)を実装:
+        *   コメントのCRUD操作
+        *   複数レビューのコメント数一括取得（RPC使用）
+
+*   **レビュー詳細画面のソート機能実装**:
+    *   `ReviewSortType`列挙型を追加: すべて（デフォルト）、新しい順、高評価順
+    *   `ReviewDetailController`(`lib/presentation/providers/review_detail_controller.dart`)を大幅に拡張:
+        *   `ReviewWithStats`クラスを導入: レビュー、統計情報、いいね状態を統合管理
+        *   `changeSortType`メソッドを実装: ソートタイプ変更時にレビューを再ソート
+        *   `toggleLike`メソッドを実装: いいねのトグル処理
+        *   `refreshAll`メソッドを更新: いいね数、コメント数、ユーザーのいいね状態を並列で取得してパフォーマンスを最適化
+
+*   **コメント画面の新規作成**:
+    *   `CommentScreen`(`lib/presentation/screens/comment_screen.dart`)を実装:
+        *   レビューに対するコメント一覧表示
+        *   コメント投稿機能（リアルタイムでリスト更新）
+        *   自分のコメントの削除機能
+        *   ユーザープロフィール（アバター、ユーザー名）の表示
+        *   相対的な日時表示（「〇分前」「昨日」など）
+    *   `commentListProvider`を追加: レビューIDごとのコメントリストを管理
+
+*   **ReviewItemウィジェットの機能拡張**:
+    *   `lib/presentation/widgets/review_item.dart`を更新:
+        *   いいねボタンの追加（ハートアイコン、いいね数表示）
+        *   コメントボタンの追加（コメント数表示、タップでコメント画面へ遷移）
+        *   いいね状態に応じたアイコンの視覚的変化（塗りつぶし/枠線、赤色/グレー）
+        *   `ReviewStats`、`isLiked`、`onLikeToggle`、`onCommentTap`などのプロパティを追加
+
+*   **レビュー詳細画面のUI改善**:
+    *   `lib/presentation/screens/review_detail_screen.dart`を更新:
+        *   ソートタブ（すべて、新しい順、高評価順）を実装、タブクリックでソート切り替え
+        *   各レビューにいいね・コメント機能を統合
+        *   コメント画面から戻った際の自動リフレッシュ
+        *   いいねトグル時の即座の状態更新
+
+*   **パフォーマンス最適化**:
+    *   RPC関数を活用して、いいね数とコメント数の取得をN+1問題なく効率化
+    *   `Future.wait`を使用して、いいね数・コメント数・ユーザーのいいね状態を並列取得
+    *   レビュー一覧の取得時にすべての必要なデータを一度に取得し、UIの応答性を向上
+
+*   **ユーザーエクスペリエンスの向上**:
+    *   いいねボタンの視覚的フィードバック（アイコンの変化、色の変化）
+    *   コメント投稿後の自動スクロール（最新コメントへ）
+    *   コメント削除時の確認ダイアログ
+    *   エラー時の適切なメッセージ表示

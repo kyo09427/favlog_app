@@ -15,6 +15,10 @@ FavLogは、クローズドなコミュニティ（友人、家族、同僚な�
 *   **詳細画面**: 商品の全情報（平均評価、レビュー数を含む）と、それに対するすべてのレビューを一覧表示。レビューのソートUI、**プルツーリフレッシュによる手動更新**に対応。
 *   **既存商品へのレビュー追加**: 詳細画面から、同一商品に対して別のユーザーがレビューを追加可能。
 *   **強化されたナビゲーション**: アプリ全体のナビゲーションフローを洗練し、`CommonBottomNavBar`による一貫したボトムナビゲーションと、各画面（ホーム、検索、プロフィール）への制御されたスタック管理を実装。
+*   **ソーシャル機能**:
+    *   **いいね機能**: レビューに対していいねを付けることができます。いいね数がリアルタイムで表示され、ハートアイコンで視覚的にフィードバックされます。
+    *   **コメント機能**: レビューに対してコメントを投稿できます。コメント一覧画面では、ユーザーのプロフィール画像と名前が表示され、自分のコメントは削除可能です。
+    *   **レビューのソート**: レビュー詳細画面で「すべて」「新しい順」「高評価順」のソート機能を利用できます。
 
 *   **カテゴリフィルタリング**: ホーム画面でカテゴリを選択してレビューを絞り込み表示（**「すべて」のフィルタリングロジック改善**）。
 *   **検索機能**: 専用の検索画面で商品、サービス、タグ、ユーザー名を横断した検索が可能。**検索画面のUI/UX改善**（0.5単位の星評価、Riverpodによる状態管理の堅牢化、**エラー時および結果なし時の表示改善**）。
@@ -183,6 +187,107 @@ CREATE POLICY "Users can delete their own reviews" ON reviews
   FOR DELETE
   TO authenticated
   USING (auth.uid() = user_id);
+```
+#### `likes` テーブル (いいね機能)
+```sql
+-- いいねテーブル
+CREATE TABLE likes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  review_id UUID REFERENCES reviews(id) ON DELETE CASCADE NOT NULL,
+  UNIQUE(user_id, review_id) -- 1ユーザーは1レビューに1いいねのみ
+);
+
+ALTER TABLE likes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "認証済みユーザーは全てのいいねを閲覧可能" ON likes
+  FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "ユーザーは自分のいいねを追加可能" ON likes
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "ユーザーは自分のいいねを削除可能" ON likes
+  FOR DELETE
+  TO authenticated
+  USING (auth.uid() = user_id);
+```
+
+#### `comments` テーブル (コメント機能)
+```sql
+-- コメントテーブル
+CREATE TABLE comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  review_id UUID REFERENCES reviews(id) ON DELETE CASCADE NOT NULL,
+  comment_text TEXT NOT NULL CHECK (length(comment_text) > 0)
+);
+
+ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "認証済みユーザーは全てのコメントを閲覧可能" ON comments
+  FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "ユーザーは自分のコメントを追加可能" ON comments
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "ユーザーは自分のコメントを更新可能" ON comments
+  FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "ユーザーは自分のコメントを削除可能" ON comments
+  FOR DELETE
+  TO authenticated
+  USING (auth.uid() = user_id);
+```
+
+#### RPC関数 (いいね数・コメント数の効率的な取得)
+
+検索機能やレビュー詳細画面のパフォーマンスを最適化するため、以下のSQLを「SQL Editor」で実行し、いいね数とコメント数を一括で取得するためのデータベース関数を作成します。
+```sql
+-- いいね数を効率的に取得するためのRPC関数
+CREATE OR REPLACE FUNCTION get_like_counts(review_ids UUID[])
+RETURNS TABLE(review_id UUID, like_count BIGINT) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    l.review_id,
+    COUNT(l.id)::BIGINT AS like_count
+  FROM
+    likes l
+  WHERE
+    l.review_id = ANY(review_ids)
+  GROUP BY
+    l.review_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- コメント数を効率的に取得するためのRPC関数
+CREATE OR REPLACE FUNCTION get_comment_counts(review_ids UUID[])
+RETURNS TABLE(review_id UUID, comment_count BIGINT) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    c.review_id,
+    COUNT(c.id)::BIGINT AS comment_count
+  FROM
+    comments c
+  WHERE
+    c.review_id = ANY(review_ids)
+  GROUP BY
+    c.review_id;
+END;
+$$ LANGUAGE plpgsql;
 ```
 
 #### RPC (Remote Procedure Call) 関数の作成
@@ -358,6 +463,12 @@ flutter run
 *   **ホーム画面の表示**: 投稿したレビュー（商品情報と最新のレビュー1件、カテゴリとサブカテゴリを含む）が、リスト形式で表示されることを確認します。
     *   **ローディング時のShimmer効果**: データ読み込み中にShimmer効果が表示されることを確認します。
     *   **画像キャッシュとプレースホルダー/エラー表示**: 画像がスムーズに表示され、読み込み中にはプレースホルダー（Shimmer効果）が、エラー時にはエラーアイコンが表示されることを確認します。
+*   **いいね機能**: レビューのハートアイコンをタップして、いいね/いいね解除ができることを確認します。いいね数が正しく表示されることを確認します。
+*   **コメント機能**: 
+    *   レビューのコメントアイコンをタップして、コメント画面に遷移することを確認します。
+    *   コメントを投稿し、リストに反映されることを確認します。
+    *   自分のコメントを削除できることを確認します。
+*   **ソート機能**: レビュー詳細画面のタブ（すべて、新しい順、高評価順）をタップして、レビューが正しくソートされることを確認します。
 *   **カテゴリ絞り込み**: AppBarのドロップダウンからカテゴリを選択し、レビューが正しく絞り込まれることを確認します。
     *   **「すべて」フィルター**: 「すべて」を選択した際に、すべてのカテゴリのレビューが表示されることを確認します。
 *   **軽量検索機能**:

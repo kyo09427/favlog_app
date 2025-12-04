@@ -1,21 +1,30 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:favlog_app/domain/models/product.dart';
-import 'package:favlog_app/domain/models/review.dart';
-import 'package:favlog_app/presentation/screens/edit_review_screen.dart';
-import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
-import 'package:favlog_app/core/providers/profile_providers.dart';
+import '../../domain/models/product.dart';
+import '../../domain/models/review.dart';
+import '../../domain/models/review_stats.dart';
+import '../screens/edit_review_screen.dart';
+import '../../data/repositories/supabase_auth_repository.dart';
+import '../../core/providers/profile_providers.dart';
 
 class ReviewItem extends ConsumerWidget {
   final Product product;
   final Review review;
+  final ReviewStats? stats;
+  final bool? isLiked;
+  final VoidCallback? onLikeToggle;
+  final VoidCallback? onCommentTap;
   final VoidCallback? onReviewUpdated;
 
   const ReviewItem({
     super.key,
     required this.product,
     required this.review,
+    this.stats,
+    this.isLiked,
+    this.onLikeToggle,
+    this.onCommentTap,
     this.onReviewUpdated,
   });
 
@@ -55,9 +64,7 @@ class ReviewItem extends ConsumerWidget {
 
     if (difference.inDays == 0) {
       if (difference.inHours == 0) {
-        if (difference.inMinutes == 0) {
-          return 'たった今';
-        }
+        if (difference.inMinutes == 0) return 'たった今';
         return '${difference.inMinutes}分前';
       }
       return '${difference.inHours}時間前';
@@ -105,6 +112,10 @@ class ReviewItem extends ConsumerWidget {
     final isOwner = currentUserId != null && currentUserId == review.userId;
 
     final userProfileAsync = ref.watch(userProfileProvider(review.userId));
+
+    final likeCount = stats?.likeCount ?? 0;
+    final commentCount = stats?.commentCount ?? 0;
+    final liked = isLiked ?? false;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,29 +225,26 @@ class ReviewItem extends ConsumerWidget {
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 8),
-        // アクション (いいね / コメント) ※数値は現状ダミー
+        // アクション (いいね / コメント)
         Row(
           children: [
             InkWell(
               borderRadius: BorderRadius.circular(999),
-              onTap: () {
-                // TODO: いいね機能を実装する場合はここ
-              },
+              onTap: onLikeToggle,
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 4,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                 child: Row(
                   children: [
                     Icon(
-                      Icons.favorite_border,
+                      liked ? Icons.favorite : Icons.favorite_border,
                       size: 18,
-                      color: isDark ? Colors.white : Colors.black,
+                      color: liked
+                          ? Colors.red
+                          : (isDark ? Colors.white : Colors.black),
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '0',
+                      '$likeCount',
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w500,
                         color: isDark ? Colors.white : Colors.black,
@@ -249,14 +257,9 @@ class ReviewItem extends ConsumerWidget {
             const SizedBox(width: 24),
             InkWell(
               borderRadius: BorderRadius.circular(999),
-              onTap: () {
-                // TODO: コメント機能を実装する場合はここ
-              },
+              onTap: onCommentTap,
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 4,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                 child: Row(
                   children: [
                     Icon(
@@ -266,7 +269,7 @@ class ReviewItem extends ConsumerWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '0',
+                      '$commentCount',
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w500,
                         color: isDark ? Colors.white : Colors.black,
