@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../domain/models/profile.dart';
 import '../providers/profile_screen_controller.dart';
-import '../widgets/common_bottom_nav_bar.dart';
+
 import '../widgets/error_dialog.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -198,10 +198,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: CommonBottomNavBar(
-        currentIndex: 2,
-        onTap: (index) => NavigationHelper.navigateToIndex(context, index, 2),
-      ),
+
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:favlog_app/presentation/providers/add_review_controller.dart';
@@ -67,7 +68,7 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                 leading: const Icon(Icons.camera_alt, color: Color(0xFF22A06B)),
                 title: const Text('カメラで撮影'),
                 onTap: () {
-                  Navigator.pop(context);
+                  context.pop();
                   _pickImage(ImageSource.camera);
                 },
               ),
@@ -75,7 +76,7 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                 leading: const Icon(Icons.photo_library, color: Color(0xFF22A06B)),
                 title: const Text('ギャラリーから選択'),
                 onTap: () {
-                  Navigator.pop(context);
+                  context.pop();
                   _pickImage(ImageSource.gallery);
                 },
               ),
@@ -119,7 +120,7 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('レビューと商品情報を追加しました!')),
         );
-        Navigator.of(context).pop(true);
+        context.pop(true);
       }
     }
 
@@ -198,7 +199,7 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                           ? Colors.white
                           : Colors.black87,
                     ),
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => context.pop(),
                   ),
                   const SizedBox(width: 8),
                   const Expanded(

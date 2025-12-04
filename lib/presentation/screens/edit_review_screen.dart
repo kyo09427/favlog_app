@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -74,7 +75,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('レビューを更新しました！')),
         );
-        Navigator.of(context).pop(true);
+        context.pop(true);
       }
     }
 
@@ -157,7 +158,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                             ? Colors.white
                             : Colors.black87,
                       ),
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () => context.pop(),
                     ),
                     const SizedBox(width: 8),
                     Expanded(

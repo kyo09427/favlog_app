@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:favlog_app/domain/models/product.dart';
@@ -68,7 +69,7 @@ class _AddReviewToProductScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('レビューを投稿しました！')),
         );
-        Navigator.of(context).pop();
+        context.pop();
       }
     }
 
@@ -144,7 +145,7 @@ class _AddReviewToProductScreenState
                           ? Colors.white
                           : Colors.black87,
                     ),
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => context.pop(),
                   ),
                   const SizedBox(width: 8),
                   Expanded(

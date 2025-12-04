@@ -88,14 +88,17 @@ class ReviewItem extends ConsumerWidget {
     return '${text.substring(0, maxLength)}...';
   }
 
+import 'package:go_router/go_router.dart';
+
+// ... (他のコード)
+
   Future<void> _handleEdit(BuildContext context) async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => EditReviewScreen(
-          review: review,
-          product: product,
-        ),
-      ),
+    final result = await context.push<bool>(
+      '/edit-review', // 新しいパスを定義する必要がある
+      extra: {
+        'review': review,
+        'product': product,
+      },
     );
 
     if (result == true && onReviewUpdated != null) {

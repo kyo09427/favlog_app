@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -96,11 +97,11 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
         content: const Text('このコメントを削除してもよろしいですか?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => context.pop(false),
             child: const Text('キャンセル'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => context.pop(true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('削除'),
           ),

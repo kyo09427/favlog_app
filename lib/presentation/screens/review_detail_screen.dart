@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -32,11 +33,11 @@ class ReviewDetailScreen extends ConsumerWidget {
         content: const Text('このレビューを削除してもよろしいですか?\nこの操作は取り消せません。'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => context.pop(false),
             child: const Text('キャンセル'),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => context.pop(true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('削除'),
           ),
@@ -122,7 +123,7 @@ class ReviewDetailScreen extends ConsumerWidget {
                       width: 40,
                       height: 40,
                       child: IconButton(
-                        onPressed: () => Navigator.of(context).maybePop(),
+                        onPressed: () => context.pop(),
                         icon: Icon(
                           Icons.arrow_back_ios_new_rounded,
                           size: 20,
@@ -358,13 +359,12 @@ class ReviewDetailScreen extends ConsumerWidget {
                                     isLiked: isLiked,
                                     onLikeToggle: () => reviewDetailController.toggleLike(review.id),
                                     onCommentTap: () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (_) => CommentScreen(
-                                            reviewId: review.id,
-                                            productName: displayedProduct.name,
-                                          ),
-                                        ),
+                                      context.push(
+                                        '/comment', // 新しいパスを定義する必要がある
+                                        extra: {
+                                          'reviewId': review.id,
+                                          'productName': displayedProduct.name,
+                                        },
                                       ).then((_) => reviewDetailController.refreshAll());
                                     },
                                     onReviewUpdated: () => reviewDetailController.refreshAll(),
@@ -395,10 +395,9 @@ class ReviewDetailScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         backgroundColor: _primary,
         onPressed: () async {
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => AddReviewToProductScreen(product: displayedProduct),
-            ),
+          await context.push(
+            '/add-review-to-product', // 新しいパスを定義する必要がある
+            extra: displayedProduct, // Productオブジェクトをextraとして渡す
           );
           reviewDetailController.refreshAll();
         },

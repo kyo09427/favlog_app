@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import '../providers/search_controller.dart';
-import '../widgets/common_bottom_nav_bar.dart';
+
 import 'review_detail_screen.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -116,12 +116,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final theme = Theme.of(context);
 
     return InkWell(
+import 'package:go_router/go_router.dart';
+
+// ... (他のコード)
+
       onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => ReviewDetailScreen(productId: product.id),
-          ),
-        );
+        context.push('/product/${product.id}');
       },
       child: Container(
         padding: const EdgeInsets.all(12),
@@ -388,10 +388,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: CommonBottomNavBar(
-        currentIndex: 1,
-        onTap: (index) => NavigationHelper.navigateToIndex(context, index, 1),
-      ),
+
     );
   }
 

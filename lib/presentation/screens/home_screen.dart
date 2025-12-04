@@ -3,11 +3,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:favlog_app/presentation/providers/home_screen_controller.dart';
 import 'package:favlog_app/presentation/providers/category_providers.dart';
-import 'package:favlog_app/presentation/screens/add_review_screen.dart';
-import 'package:favlog_app/presentation/widgets/review_item.dart';
-import 'package:favlog_app/presentation/screens/review_detail_screen.dart';
-import 'package:favlog_app/presentation/widgets/common_bottom_nav_bar.dart';
-import 'package:favlog_app/presentation/screens/auth_screen.dart';
 import 'package:shimmer/shimmer.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -176,12 +171,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       elevation: 0,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
+import 'package:go_router/go_router.dart';
+
+// ... (他のコード)
+
         onTap: () async {
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => ReviewDetailScreen(productId: product.id),
-            ),
-          );
+          // go_routerのpushはFutureを返すので、画面がpopされた後に実行される
+          await context.push('/product/${product.id}');
           if (mounted) {
             final controller = ref.read(homeScreenControllerProvider.notifier);
             final state = ref.read(homeScreenControllerProvider);
@@ -375,10 +371,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                 await homeScreenController.signOut();
                 // ログアウトが成功したらログイン画面に遷移し、それまでのスタックをクリアする
                 if (mounted) {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => AuthScreen()),
-                    (Route<dynamic> route) => false,
-                  );
+                  context.go('/auth');
                 }
               }
             },
@@ -514,9 +507,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         onPressed: () async {
-          final result = await Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const AddReviewScreen()),
-          );
+          final result = await context.push<bool>('/add-review');
 
           if (result == true && mounted) {
             homeScreenController.fetchProducts(
@@ -528,10 +519,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
         },
         child: const Icon(Icons.add),
       ),
-      bottomNavigationBar: CommonBottomNavBar(
-        currentIndex: 0,
-        onTap: (index) => NavigationHelper.navigateToIndex(context, index, 0),
-      ),
+
     );
   }
 }
