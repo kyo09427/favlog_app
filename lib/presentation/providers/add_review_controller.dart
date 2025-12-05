@@ -19,7 +19,7 @@ class AddReviewState {
   final String productUrl;
   final String productName;
   final String subcategory;
-  final String selectedCategory;
+  final String? selectedCategory;
   final String reviewText;
   final double rating;
   final File? imageFile;
@@ -32,7 +32,7 @@ class AddReviewState {
     this.productUrl = '',
     this.productName = '',
     this.subcategory = '',
-    this.selectedCategory = '',
+    this.selectedCategory,
     this.reviewText = '',
     this.rating = 3.0,
     this.imageFile,
@@ -55,12 +55,13 @@ class AddReviewState {
     List<String>? categories,
     List<String>? subcategorySuggestions,
     bool clearImageFile = false,
+    bool clearSelectedCategory = false,
   }) {
     return AddReviewState(
       productUrl: productUrl ?? this.productUrl,
       productName: productName ?? this.productName,
       subcategory: subcategory ?? this.subcategory,
-      selectedCategory: selectedCategory ?? this.selectedCategory,
+      selectedCategory: clearSelectedCategory ? null : selectedCategory ?? this.selectedCategory,
       reviewText: reviewText ?? this.reviewText,
       rating: rating ?? this.rating,
       imageFile: clearImageFile ? null : imageFile ?? this.imageFile,
@@ -130,18 +131,8 @@ class AddReviewController extends StateNotifier<AddReviewState> {
   void updateSelectedCategory(String category) {
     if (_isDisposed) return;
     
-    // カテゴリ変更時はサブカテゴリをクリア
     state = state.copyWith(selectedCategory: category, subcategory: '');
-    
-    // カテゴリが選択されている場合のみサブカテゴリ候補を取得
-    if (category.isNotEmpty) {
-      fetchSubcategorySuggestions(category);
-    } else {
-      // カテゴリが空の場合はサブカテゴリ候補をクリア
-      if (!_isDisposed) {
-        state = state.copyWith(subcategorySuggestions: []);
-      }
-    }
+    fetchSubcategorySuggestions(category);
   }
 
   /// サブカテゴリの候補を取得
@@ -264,18 +255,18 @@ class AddReviewController extends StateNotifier<AddReviewState> {
         userId: user.id,
         url: state.productUrl.isEmpty ? null : state.productUrl,
         name: state.productName,
-        category: state.selectedCategory.isEmpty ? null : state.selectedCategory,
+        category: state.selectedCategory,
         subcategory: state.subcategory.isEmpty ? null : state.subcategory,
         imageUrl: imageUrl,
       );
 
-      // 商品を登録
-      await productRepository.createProduct(newProduct);
+      // 商品を登録し、DBから返された情報を取得
+      final createdProduct = await productRepository.createProduct(newProduct);
 
       // レビュー情報を作成
       final newReview = Review(
         userId: user.id,
-        productId: newProduct.id,
+        productId: createdProduct.id,
         reviewText: state.reviewText,
         rating: state.rating,
       );
@@ -283,9 +274,20 @@ class AddReviewController extends StateNotifier<AddReviewState> {
       // レビューを登録
       await reviewRepository.createReview(newReview);
 
-      // 成功したら状態をリセット（カテゴリリストは保持）
+      // 成功したら状態をリセット
       if (!_isDisposed) {
-        state = AddReviewState(categories: state.categories);
+        state = state.copyWith(
+          productUrl: '',
+          productName: '',
+          subcategory: '',
+          reviewText: '',
+          rating: 3.0,
+          isLoading: false,
+          error: null,
+          clearImageFile: true,
+          clearSelectedCategory: true,
+          subcategorySuggestions: [],
+        );
       }
     } on AuthException catch (e) {
       // 認証エラー

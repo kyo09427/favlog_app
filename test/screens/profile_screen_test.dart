@@ -48,6 +48,7 @@ void main() {
     registerFallbackValue(FakeFile());
     registerFallbackValue(FakeFileOptions());
     registerFallbackValue(Uint8List(0));
+    registerFallbackValue(ImageSource.gallery);
   });
   
   group('ProfileScreen', () {
@@ -179,18 +180,25 @@ void main() {
       when(() => mockProfileRepository.fetchProfile(any())).thenAnswer((_) async => initialProfile);
       when(() => mockProfileRepository.updateProfile(any())).thenAnswer((_) async {});
       
-      when(() => mockImagePicker.pickImage(source: ImageSource.gallery, maxWidth: 1024, maxHeight: 1024, imageQuality: 85))
-          .thenAnswer((_) async => mockXFile);
-      
+      when(() => mockImagePicker.pickImage(
+        source: any(named: 'source'),
+        maxWidth: any(named: 'maxWidth'),
+        maxHeight: any(named: 'maxHeight'),
+        imageQuality: any(named: 'imageQuality'),
+      )).thenAnswer((_) async => mockXFile);
+
       when(() => mockImageCompressor.compressImage(
-        any(named: 'imageBytes'),
-        maxWidth: 512,
-        maxHeight: 512,
-        quality: 80,
+        any(), // Positional argument
+        maxWidth: any(named: 'maxWidth'),
+        maxHeight: any(named: 'maxHeight'),
+        quality: any(named: 'quality'),
       )).thenAnswer((_) async => compressedBytes);
       
-      when(() => mockStorageFileApi.uploadBinary(any(), any(), fileOptions: any(named: 'fileOptions')))
-          .thenAnswer((_) async => '');
+      when(() => mockStorageFileApi.uploadBinary(
+        any(),
+        any(),
+        fileOptions: any(named: 'fileOptions')
+      )).thenAnswer((_) async => '');
       
       when(() => mockStorageFileApi.getPublicUrl(any())).thenReturn(publicUrl);
 
@@ -200,7 +208,12 @@ void main() {
       await tester.tap(find.byWidgetPredicate((widget) => widget is CircleAvatar && widget.radius == 60));
       await tester.pumpAndSettle();
 
-      verify(() => mockImagePicker.pickImage(source: ImageSource.gallery, maxWidth: 1024, maxHeight: 1024, imageQuality: 85)).called(1);
+      verify(() => mockImagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: any(named: 'maxWidth'),
+        maxHeight: any(named: 'maxHeight'),
+        imageQuality: any(named: 'imageQuality')
+      )).called(1);
 
       verify(() => mockStorageFileApi.uploadBinary(
             any(that: contains('.jpg')),

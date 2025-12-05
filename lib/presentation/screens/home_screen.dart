@@ -82,7 +82,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
         color: isDark ? Colors.grey[850] : Colors.grey[200],
         child: CachedNetworkImage(
           imageUrl: url,
-          fit: BoxFit.contain, // 画像を変形せずに収める
+          fit: BoxFit.contain,
           alignment: Alignment.center,
           placeholder: (context, _) => Shimmer.fromColors(
             baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
@@ -173,21 +173,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       elevation: 0,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () async {
-          // go_routerのpushはFutureを返すので、画面がpopされた後に実行される
-          await context.push('/product/${product.id}');
-          if (mounted) {
-            final controller = ref.read(homeScreenControllerProvider.notifier);
-            final state = ref.read(homeScreenControllerProvider);
-            controller.fetchProducts(
-              category: state.selectedCategory,
-              searchQuery: state.searchQuery,
-              forceUpdate: true,
-            );
-          }
+        onTap: () {
+          // context.push()ではなくcontext.go()を使用してURLを更新
+          context.go('/product/${product.id}');
         },
         child: Padding(
-          padding: const EdgeInsets.all(16.0), // パディングを増やして余裕を持たせる
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -195,7 +186,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildThumbnail(product.imageUrl),
-                  const SizedBox(width: 16), // 余白を増やす
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,10 +199,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 8), // 余白を増やす
+                        const SizedBox(height: 8),
                         if (product.category != null || product.subcategory != null)
                           Wrap(
-                            spacing: 6, // チップ間の余白を増やす
+                            spacing: 6,
                             runSpacing: 6,
                             children: [
                               if (product.category != null)
@@ -239,7 +230,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                                 rating: stats.averageRating,
                                 color: const Color(0xFF4CAF50),
                               ),
-                              const SizedBox(width: 6), // 余白を増やす
+                              const SizedBox(width: 6),
                               Text(
                                 '${stats.averageRating.toStringAsFixed(1)} (${stats.reviewCount})',
                                 style: theme.textTheme.bodySmall?.copyWith(
@@ -254,14 +245,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   ),
                 ],
               ),
-              const SizedBox(height: 12), // 余白を増やす
+              const SizedBox(height: 12),
               const Divider(),
               const SizedBox(height: 4),
               const Text(
                 '最新のレビュー',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8), // 余白を増やす
+              const SizedBox(height: 8),
               if (latestReview != null)
                 ReviewItem(
                   product: product,
@@ -287,7 +278,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       ),
       backgroundColor: bgColor,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      padding: const EdgeInsets.symmetric(horizontal: 6), // パディングを増やす
+      padding: const EdgeInsets.symmetric(horizontal: 6),
     );
   }
 
@@ -367,7 +358,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
               if (shouldLogout == true && mounted) {
                 await homeScreenController.signOut();
-                // ログアウトが成功したらログイン画面に遷移し、それまでのスタックをクリアする
                 if (mounted) {
                   context.go('/auth');
                 }
@@ -517,7 +507,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
         },
         child: const Icon(Icons.add),
       ),
-
     );
   }
 }
