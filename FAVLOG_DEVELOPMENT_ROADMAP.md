@@ -668,3 +668,41 @@ fix(datetime): タイムゾーン問題の修正とコード品質の改善
 
 -   コード内のコメントを追加して意図を明確化
 -   一貫性のあるタイムゾーン処理パターンを確立
+
+## 実装ログ - 2025年12月6日
+
+### パスワード・メールアドレス変更機能とGoRouter連携の改善、UI調整
+
+*   **パスワード・メールアドレス変更機能の基本実装**:
+    *   `lib/domain/repositories/auth_repository.dart` を拡張し、パスワード変更およびメールアドレス変更関連のメソッドを追加。
+    *   `lib/data/repositories/supabase_auth_repository.dart` に上記メソッドの実装を追加。
+    *   `lib/presentation/providers/password_reset_controller.dart` を作成し、パスワードリセットメール送信ロジックを実装。
+    *   `lib/presentation/providers/update_password_controller.dart` を作成し、新しいパスワード設定ロジックを実装。
+    *   `lib/presentation/providers/update_email_controller.dart` を作成し、メールアドレス変更リクエストロジックを実装。
+    *   `lib/presentation/screens/password_reset_request_screen.dart` を作成し、パスワードリセットリクエストUIを提供。
+    *   `lib/presentation/screens/password_reset_email_sent_screen.dart` を作成し、パスワードリセットメール送信完了UIを提供。
+    *   `lib/presentation/screens/update_password_screen.dart` を作成し、新しいパスワード設定UIを提供。
+    *   `lib/presentation/screens/update_email_request_screen.dart` を作成し、メールアドレス変更リクエストUIを提供。
+    *   `lib/presentation/screens/update_email_sent_screen.dart` を作成し、メールアドレス変更確認メール送信完了UIを提供。
+    *   `lib/presentation/screens/confirm_email_change_screen.dart` を作成し、メールアドレス変更完了UIを提供。
+*   **GoRouter連携とディープリンク対応**:
+    *   `pubspec.yaml` に `app_links` パッケージを追加。
+    *   `lib/data/repositories/supabase_auth_repository.dart` の `sendPasswordResetEmail` メソッドの `redirectTo` URLを `com.example.favlog_app://reset-password` に変更。
+    *   `lib/core/router/app_router.dart` にパスワード変更およびメールアドレス変更関連の画面へのルーティングを追加し、パスワード設定画面のルートを `/reset-password` に変更。
+    *   `lib/main.dart` を修正し、`MyApp` ウィジェットで `app_links` を使用してディープリンクをリッスンし、Supabase認証状態（`passwordRecovery`, `userUpdated`）に応じてGoRouterで適切な画面に遷移するロジックを実装。
+    *   `lib/core/router/app_router.dart` の `redirect` ロジックを修正し、GoRouterの無限リダイレクト問題を解消。ログイン不要なパスワードリセット・メールアドレス変更関連の画面を適切に扱えるように`publicRoutes`を定義し、ログイン状態やメール認証状態に基づくリダイレクトルールを再構築。
+*   **UI/UXの改善と調整**:
+    *   `lib/presentation/screens/settings_screen.dart` から、サインアウトボタンと通知設定の項目を削除。
+    *   設定画面からのメールアドレス変更画面への遷移を `context.go()` から `context.push()` に変更し、戻るボタンが機能するように修正。
+    *   `lib/presentation/screens/password_reset_request_screen.dart` から「ログイン画面に戻る」ボタンを削除し、AppBarに「戻る」矢印ボタンを設置。
+    *   `lib/presentation/screens/auth_screen.dart` の「パスワードをお忘れですか？」テキストを `TextButton` でラップし、クリック時にパスワードリセット要求画面へ遷移するように修正。
+*   **コード品質の向上とバグ修正**:
+    *   `dart fix --apply` を実行し、多数の`unused_import`、`unnecessary_cast`などを自動修正。
+    *   `dart fix --apply`によって `pubspec.yaml` に誤って追加された `flutter_web_plugins` を削除し、`flutter pub get`のエラーを修正。
+    *   `lib/core/router/app_router.dart` から未使用の `_shellNavigatorKey` を削除。
+    *   `lib/core/router/app_router.dart` の`loggedIn`変数の定義において、`authState.value.session`がnullの可能性があるというエラーを修正するため、`authState.value`を一時変数に格納し、その変数がnullでないことを確認した上で`session`にアクセスするように変更。
+    *   `lib/presentation/providers/password_reset_controller.dart` の構文エラーを修正。
+    *   `lib/presentation/screens/password_reset_request_screen.dart` の文字列リテラルエラーと文字化けを修正。
+    *   `lib/core/router/app_router.dart` に不足していた各画面のインポート文を追加。
+    *   `lib/presentation/screens/settings_screen.dart` の `_buildSettingsItem` メソッド内で `primaryColor` が未定義となる問題を修正するため、`primaryColor`を引数として渡すように変更。
+    *   `lib/presentation/screens/auth_screen.dart` に `import 'package:go_router/go_router.dart';` を追加し、`context.push()`が未定義エラーとなる問題を修正。

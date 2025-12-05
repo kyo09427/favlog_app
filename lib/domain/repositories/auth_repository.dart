@@ -7,4 +7,11 @@ abstract class AuthRepository {
   Future<void> signOut();
   Stream<AuthState> get authStateChanges;
   User? getCurrentUser();
+  
+  // 新規追加: パスワード変更関連
+  Future<void> sendPasswordResetEmail(String email);
+  Future<void> updatePassword(String newPassword);
+  
+  // 新規追加: メールアドレス変更関連
+  Future<void> updateEmail(String newEmail);
 }

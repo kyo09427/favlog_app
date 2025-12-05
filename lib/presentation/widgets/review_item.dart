@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/product.dart';
 import '../../domain/models/review.dart';
 import '../../domain/models/review_stats.dart';
-import '../screens/edit_review_screen.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../core/providers/profile_providers.dart';
 

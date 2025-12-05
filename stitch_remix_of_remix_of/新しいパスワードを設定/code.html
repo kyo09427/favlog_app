@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+
+<html class="" lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>新しいパスワードを設定</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+  </style>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#13ec5b",
+            "background-light": "#f6f8f6",
+            "background-dark": "#102216",
+          },
+          fontFamily: {
+            "display": ["Plus Jakarta Sans", "Noto Sans JP", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-gray-50 font-display text-gray-800">
+<div class="relative flex min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<header class="flex items-center p-4 pb-2 justify-between bg-gray-50 sticky top-0 z-10">
+<div class="flex size-12 shrink-0 items-center justify-start">
+<span class="material-symbols-outlined">arrow_back_ios_new</span>
+</div>
+<h1 class="text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">新しいパスワードを設定</h1>
+<div class="flex size-12 shrink-0 items-center"></div>
+</header>
+<main class="flex-grow px-4 py-3 flex flex-col">
+<div class="flex-grow">
+<div class="h-5"></div>
+<div class="flex max-w-[480px] w-full flex-col gap-1 mx-auto">
+<label class="flex flex-col min-w-40 flex-1" for="new-password">
+<p class="text-base font-medium leading-normal pb-2">新しいパスワード</p>
+<div class="relative flex w-full flex-1 items-center">
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg border-0 bg-white h-14 p-4 pr-12 text-base font-normal leading-normal placeholder:text-gray-400 focus:outline-0 focus:ring-0" id="new-password" placeholder="パスワードを入力" type="password" value=""/>
+<div class="absolute right-4 text-gray-500">
+<span class="material-symbols-outlined cursor-pointer">visibility</span>
+</div>
+</div>
+</label>
+<p class="text-gray-500 text-sm font-normal leading-normal pt-1 pl-4">8文字以上の半角英数字で入力してください</p>
+</div>
+<div class="h-5"></div>
+<div class="flex max-w-[480px] w-full flex-col gap-1 mx-auto">
+<label class="flex flex-col min-w-40 flex-1" for="confirm-password">
+<p class="text-base font-medium leading-normal pb-2">新しいパスワード（確認用）</p>
+<div class="relative flex w-full flex-1 items-center">
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg border-0 bg-white h-14 p-4 pr-12 text-base font-normal leading-normal placeholder:text-gray-400 focus:outline-0 focus:ring-0" id="confirm-password" placeholder="パスワードを再入力" type="password" value=""/>
+<div class="absolute right-4 text-gray-500">
+<span class="material-symbols-outlined cursor-pointer">visibility_off</span>
+</div>
+</div>
+</label>
+</div>
+</div>
+<div class="flex px-4 py-6 w-full max-w-[480px] mx-auto sticky bottom-0 bg-gray-50">
+<button class="flex min-w-[84px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 flex-1 bg-primary text-gray-900 text-base font-bold leading-normal tracking-[0.015em] disabled:bg-primary/50 disabled:cursor-not-allowed">
+<span class="truncate">完了</span>
+</button>
+</div>
+</main>
+</div>
+</body></html>

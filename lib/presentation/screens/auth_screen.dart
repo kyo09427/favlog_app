@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart'; // GoRouterの拡張メソッドのために追加
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../presentation/widgets/error_dialog.dart';
 
@@ -332,13 +333,25 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // フッター文言
-                    const Text(
-                      'パスワードをお忘れですか？',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: mutedTextColor,
-                        fontSize: 12,
+                    // パスワードをお忘れですか？
+                    TextButton(
+                      onPressed: () {
+                        context.push('/password-reset-request');
+                      },
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        alignment: Alignment.center,
+                      ),
+                      child: const Text(
+                        'パスワードをお忘れですか？',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: mutedTextColor,
+                          fontSize: 12,
+                          decoration: TextDecoration.underline,
+                        ),
                       ),
                     ),
                   ],

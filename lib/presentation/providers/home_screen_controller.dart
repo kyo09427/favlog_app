@@ -231,7 +231,7 @@ class HomeScreenController extends StateNotifier<HomeScreenState> {
       } else {
         _setError('データ取得エラー: ${e.message}');
       }
-    } on AuthException catch (e) {
+    } on AuthException {
       if (_isDisposed) return;
       await _handleAuthenticationError();
     } catch (e) {

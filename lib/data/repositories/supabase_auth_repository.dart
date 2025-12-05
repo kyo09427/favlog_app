@@ -39,4 +39,26 @@ class SupabaseAuthRepository implements AuthRepository {
   User? getCurrentUser() {
     return _supabaseClient.auth.currentUser;
   }
+
+  @override
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _supabaseClient.auth.resetPasswordForEmail(
+      email,
+      redirectTo: 'com.example.favlog_app://reset-password',
+    );
+  }
+
+  @override
+  Future<void> updatePassword(String newPassword) async {
+    await _supabaseClient.auth.updateUser(
+      UserAttributes(password: newPassword),
+    );
+  }
+
+  @override
+  Future<void> updateEmail(String newEmail) async {
+    await _supabaseClient.auth.updateUser(
+      UserAttributes(email: newEmail),
+    );
+  }
 }

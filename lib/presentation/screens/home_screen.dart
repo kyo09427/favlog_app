@@ -373,7 +373,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               data: (categories) {
                 final isDark = theme.brightness == Brightness.dark;
                 return DropdownButtonFormField<String>(
-                  value: homeScreenState.selectedCategory,
+                  initialValue: homeScreenState.selectedCategory,
                   decoration: InputDecoration(
                     labelText: 'カテゴリで絞り込み',
                     labelStyle: TextStyle(

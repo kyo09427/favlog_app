@@ -13,7 +13,6 @@ import 'package:favlog_app/domain/models/profile.dart';
 import 'package:favlog_app/core/services/image_compressor.dart';
 import 'package:favlog_app/domain/repositories/profile_repository.dart';
 import 'package:favlog_app/domain/repositories/auth_repository.dart';
-import 'package:favlog_app/presentation/providers/profile_screen_controller.dart';
 import 'package:favlog_app/presentation/screens/profile_screen.dart';
 import 'package:favlog_app/core/providers/profile_providers.dart';
 import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';

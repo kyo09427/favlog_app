@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+
+<html class="" lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>メールアドレス変更</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 48;
+    }
+  </style>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {primary: "#39E079", "background-light": "#f6f8f7", "background-dark": "#122017", "text-dark": "#333333"}, fontFamily: {display: "Plus Jakarta Sans"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}}}};</script>
+<style>
+    body {
+      min-height: 100dvh;
+      min-height: -webkit-fill-available;
+    }
+    html {
+        height: -webkit-fill-available;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light font-display">
+<div class="relative flex h-full min-h-screen w-full flex-col">
+<header class="flex items-center p-4 bg-background-light">
+<button class="flex h-10 w-10 items-center justify-center">
+<span class="material-symbols-outlined text-text-dark">arrow_back_ios_new</span>
+</button>
+<h1 class="flex-1 text-center text-lg font-bold leading-tight tracking-[-0.015em] text-text-dark -ml-10">メールアドレス変更</h1>
+</header>
+<main class="flex w-full flex-1 flex-col justify-between px-4">
+<div class="flex flex-col pt-8">
+<p class="mb-4 text-center text-base font-normal leading-relaxed text-text-dark">新しいメールアドレスを入力してください。</p>
+<div class="space-y-4">
+<div>
+<label class="sr-only" for="email">メールアドレス</label>
+<input class="w-full h-12 rounded-none border border-gray-300 bg-white px-4 py-2 text-text-dark placeholder-gray-400 focus:border-primary focus:ring-primary" id="email" name="email" placeholder="メールアドレス" type="email"/>
+</div>
+</div>
+</div>
+<div class="pb-8">
+<div class="flex py-3">
+<button class="flex min-w-[84px] w-full max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-none h-12 px-5 bg-primary text-background-dark text-base font-bold leading-normal tracking-[0.015em]">
+<span class="truncate">送信</span>
+</button>
+</div>
+</div>
+</main>
+</div>
+</body></html>

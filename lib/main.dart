@@ -1,9 +1,10 @@
+import 'dart:async';
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:favlog_app/core/providers/auth_providers.dart';
 import 'package:favlog_app/core/router/app_router.dart';
 
 // Define a Riverpod provider for SupabaseClient
@@ -48,11 +49,73 @@ Future<void> main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends ConsumerWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> {
+  late final AppLinks _appLinks; // 型引数を削除
+  StreamSubscription<Uri>? _linkSubscription;
+  StreamSubscription<AuthState>? _authSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _initDeepLinks();
+    _initAuthListener();
+  }
+
+  @override
+  void dispose() {
+    _linkSubscription?.cancel();
+    _authSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _initDeepLinks() {
+    _appLinks = AppLinks();
+    // getInitialAppLink().then((uri) {
+    //   if (uri != null) {
+    //     _handleDeepLink(uri);
+    //   }
+    // });
+    _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
+      _handleDeepLink(uri);
+    });
+  }
+
+  void _handleDeepLink(Uri uri) {
+    // Supabaseが発行したディープリンク（マジックリンク、パスワードリセット、メールアドレス変更確認など）は
+    // URLにセッション情報を含んでいる可能性があるため、常にセッション回復を試みる。
+    Supabase.instance.client.auth.getSessionFromUrl(uri);
+  }
+
+  void _initAuthListener() {
+    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      final AuthChangeEvent event = data.event;
+      if (event == AuthChangeEvent.passwordRecovery) {
+        ref.read(goRouterProvider).go('/reset-password');
+      } else if (event == AuthChangeEvent.userUpdated) {
+        // メールアドレス変更完了時など
+        // SnackBarを表示してユーザーに通知する
+        final context = ref.read(goRouterProvider).routerDelegate.navigatorKey.currentContext;
+        if (context != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('ユーザー情報が更新されました。'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final goRouter = ref.watch(goRouterProvider);
 
     return MaterialApp.router(

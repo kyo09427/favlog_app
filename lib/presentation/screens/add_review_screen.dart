@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:favlog_app/presentation/providers/add_review_controller.dart';
 import 'package:favlog_app/presentation/widgets/error_dialog.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 
 class AddReviewScreen extends ConsumerStatefulWidget {
   const AddReviewScreen({super.key});

@@ -6,7 +6,6 @@ import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../domain/models/product.dart';
 import '../widgets/review_item.dart';
-import 'add_review_to_product_screen.dart';
 
 import '../providers/review_detail_controller.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
@@ -387,13 +386,36 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                                     onReviewUpdated: () => reviewDetailController.refreshAll(),
                                   ),
                                   if (isOwner)
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: TextButton.icon(
-                                        onPressed: () => _deleteReview(context, ref, review.id),
-                                        icon: const Icon(Icons.delete_outline, size: 18),
-                                        label: const Text('削除'),
-                                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          TextButton.icon(
+                                            onPressed: () async {
+                                              await context.push(
+                                                '/edit-review',
+                                                extra: {
+                                                  'review': review,
+                                                  'product': displayedProduct,
+                                                },
+                                              );
+                                              reviewDetailController.refreshAll();
+                                            },
+                                            icon: const Icon(Icons.edit_outlined, size: 18),
+                                            label: const Text('編集'),
+                                            style: TextButton.styleFrom(
+                                              foregroundColor: _primary,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          TextButton.icon(
+                                            onPressed: () => _deleteReview(context, ref, review.id),
+                                            icon: const Icon(Icons.delete_outline, size: 18),
+                                            label: const Text('削除'),
+                                            style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                 ],

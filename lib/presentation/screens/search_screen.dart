@@ -169,7 +169,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                               product.subcategory!,
                               style: theme.textTheme.bodySmall,
                             ),
-                            backgroundColor: theme.colorScheme.surfaceVariant,
+                            backgroundColor: theme.colorScheme.surfaceContainerHighest,
                             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             padding: const EdgeInsets.symmetric(horizontal: 4),
                           ),

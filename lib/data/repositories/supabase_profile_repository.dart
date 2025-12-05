@@ -16,7 +16,7 @@ class SupabaseProfileRepository implements ProfileRepository {
         .maybeSingle(); // Use maybeSingle directly
 
     if (data != null) {
-      return Profile.fromJson(data as Map<String, dynamic>);
+      return Profile.fromJson(data);
     }
     return null;
   }

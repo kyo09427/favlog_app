@@ -19,6 +19,12 @@ import '../../presentation/screens/comment_screen.dart'; // 追加
 import '../../presentation/screens/add_review_to_product_screen.dart'; // 追加
 import '../../presentation/screens/settings_screen.dart'; // 追加
 import '../../presentation/screens/single_review_screen.dart'; // 追加
+import '../../presentation/screens/password_reset_request_screen.dart'; // 追加
+import '../../presentation/screens/password_reset_email_sent_screen.dart'; // 追加
+import '../../presentation/screens/update_password_screen.dart'; // 追加
+import '../../presentation/screens/update_email_request_screen.dart'; // 追加
+import '../../presentation/screens/update_email_sent_screen.dart'; // 追加
+import '../../presentation/screens/confirm_email_change_screen.dart'; // 追加
 import '../../presentation/widgets/scaffold_with_nav_bar.dart';
 
 // StreamをリッスンしてGoRouterをリフレッシュするためのChangeNotifier
@@ -39,7 +45,6 @@ class GoRouterRefreshStream extends ChangeNotifier {
 
 // private navigators
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
-final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 // GoRouterのインスタンスを提供するRiverpodプロバイダー
 final goRouterProvider = Provider<GoRouter>((ref) {
@@ -51,37 +56,50 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: true, // デバッグ用にログを有効化
     refreshListenable: GoRouterRefreshStream(ref.watch(authRepositoryProvider).authStateChanges),
     redirect: (BuildContext context, GoRouterState state) {
-      final loggedIn = authState.value?.session != null;
-      
+      final authValue = authState.value;
+      final loggedIn = authValue != null && authValue.session != null;
+
       // まだ認証状態が確定していない場合は何もしない
       if (authState.isLoading || authState.hasError) {
         return null;
       }
+
+      // ログイン不要でアクセスできる公開ページ
+      const publicRoutes = [
+        '/auth',
+        '/password-reset-request',
+        '/password-reset-email-sent',
+        '/reset-password',
+      ];
       
-      final isAuthRoute = state.matchedLocation == '/auth';
+      final currentLocation = state.matchedLocation;
+      final isPublic = publicRoutes.contains(currentLocation);
 
-      // ログインしておらず、認証関連のルートでもない場合は、ログインページにリダイレクト
-      if (!loggedIn && !isAuthRoute) {
-        return '/auth';
+      // --- ログイン状態に基づくリダイレクト ---
+
+      // ① ログインしていない場合
+      if (!loggedIn) {
+        // 公開ページ以外は/authへ
+        return isPublic ? null : '/auth';
       }
 
-      // ログインしている場合
-      if (loggedIn) {
-        final emailVerified = authState.value?.session?.user?.emailConfirmedAt != null;
-        final isVerifyingEmail = state.matchedLocation == '/verify-email';
-        
-        // メール認証が済んでいない場合
-        if (!emailVerified) {
-          return isVerifyingEmail ? null : '/verify-email';
-        }
+      // ② ログインしている場合
 
-        // メール認証済みで、認証関連のページにいる場合はホームにリダイレクト
-        if (isAuthRoute || isVerifyingEmail) {
-          return '/';
-        }
+      // ②-a メール認証が済んでいない場合
+      final emailVerified = authValue!.session?.user?.emailConfirmedAt != null;
+      if (!emailVerified) {
+        // メール認証ページ以外なら、メール認証ページへ
+        return currentLocation == '/verify-email' ? null : '/verify-email';
       }
 
-      return null; // リダイレクトしない場合はnullを返す
+      // ②-b メール認証済みの場合
+      // ログイン画面やメール認証画面にアクセスしようとしたら、ホームへリダイレクト
+      if (currentLocation == '/auth' || currentLocation == '/verify-email') {
+        return '/';
+      }
+
+      // 上記のいずれにも該当しない場合はリダイレクトしない
+      return null;
     },
     routes: [
       // ボトムナビゲーションバーを持つStatefulShellRoute
@@ -190,6 +208,38 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final reviewId = state.pathParameters['reviewId']!;
           return SingleReviewScreen(reviewId: reviewId);
         },
+      ),
+      // パスワード変更関連
+      GoRoute(
+        path: '/password-reset-request',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PasswordResetRequestScreen(),
+      ),
+      GoRoute(
+        path: '/password-reset-email-sent',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PasswordResetEmailSentScreen(),
+      ),
+      GoRoute(
+        path: '/reset-password',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const UpdatePasswordScreen(),
+      ),
+      // メールアドレス変更関連
+      GoRoute(
+        path: '/update-email-request',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const UpdateEmailRequestScreen(),
+      ),
+      GoRoute(
+        path: '/update-email-sent',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const UpdateEmailSentScreen(),
+      ),
+      GoRoute(
+        path: '/confirm-email-change',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ConfirmEmailChangeScreen(),
       ),
     ],
   );
