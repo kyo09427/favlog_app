@@ -52,9 +52,14 @@ class SupabaseProductRepository implements ProductRepository {
   }
 
   @override
-  Future<void> createProduct(Product product) async {
+  Future<Product> createProduct(Product product) async {
     try {
-      await _supabaseClient.from('products').insert(product.toJson());
+      final response = await _supabaseClient
+          .from('products')
+          .insert(product.toJson())
+          .select()
+          .single();
+      return Product.fromJson(response);
     } catch (e) {
       rethrow;
     }

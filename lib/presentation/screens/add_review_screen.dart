@@ -521,10 +521,10 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      FormField<String>(
+                      FormField<String?>(
                         initialValue: addReviewState.selectedCategory,
                         validator: (value) {
-                          if (addReviewState.selectedCategory == null) {
+                          if (value == null) {
                             return 'カテゴリを1つ選択してください';
                           }
                           return null;
@@ -578,11 +578,13 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                                     onSelected:
                                         addReviewState.isLoading
                                             ? null
-                                            : (_) {
-                                                addReviewController
-                                                    .updateSelectedCategory(
-                                                        category);
-                                                field.didChange(category);
+                                            : (isSelected) {
+                                                if (isSelected) {
+                                                  addReviewController
+                                                      .updateSelectedCategory(
+                                                          category);
+                                                  field.didChange(category);
+                                                }
                                               },
                                   );
                                 }).toList(),
