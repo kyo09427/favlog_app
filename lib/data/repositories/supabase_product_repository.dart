@@ -86,8 +86,8 @@ class SupabaseProductRepository implements ProductRepository {
         throw Exception('商品が見つかりません（ID: ${product.id}）');
       }
       
-      // 更新を実行（.select()と.single()を削除）
-      await _supabaseClient
+      // 更新を実行して結果を取得
+      final result = await _supabaseClient
           .from('products')
           .update({
             'name': product.name,
@@ -96,7 +96,15 @@ class SupabaseProductRepository implements ProductRepository {
             'subcategory': product.subcategory,
             'image_url': product.imageUrl,
           })
-          .eq('id', product.id);
+          .eq('id', product.id)
+          .select();
+      
+      print('Update result: $result');
+      
+      // 更新された行が0行の場合はRLSポリシーで拒否された可能性が高い
+      if (result.isEmpty) {
+        throw Exception('商品の更新に失敗しました。この商品を編集する権限がない可能性があります。');
+      }
       
       print('Update completed successfully');
     } on PostgrestException catch (e) {
@@ -135,7 +143,7 @@ class SupabaseProductRepository implements ProductRepository {
   }
 
   @override
-  Future<String> uploadProductImage(String userId, Uint8List imageData, String fileExtension, {String contentType = 'image/jpeg'}) async {
+  Future<String> uploadProductImage(String userId, Uint8List imageData, String fileExtension, {String contentType = 'image/webp'}) async {
     try {
       final fileName = '${userId}_${DateTime.now().microsecondsSinceEpoch}.$fileExtension';
       await _supabaseClient.storage

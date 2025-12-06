@@ -1,4 +1,5 @@
 ﻿
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -156,7 +157,10 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
         quality: 80,
       );
 
-      final fileName = '${const Uuid().v4()}.jpg';
+      // プラットフォームに応じて拡張子とContent-Typeを設定
+      final fileExtension = kIsWeb ? 'jpg' : 'webp';
+      final contentType = kIsWeb ? 'image/jpeg' : 'image/webp';
+      final fileName = '${const Uuid().v4()}.$fileExtension';
       final path = '${currentUser.id}/$fileName';
 
       // 古いアバターのクリーンアップ（オプション）
@@ -174,8 +178,8 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
       await _supabaseClient.storage.from('avatars').uploadBinary(
             path,
             compressedBytes,
-            fileOptions: const FileOptions(
-                cacheControl: '3600', upsert: true, contentType: 'image/jpeg'),
+            fileOptions: FileOptions(
+                cacheControl: '3600', upsert: true, contentType: contentType),
           );
 
       final publicUrl = _supabaseClient.storage.from('avatars').getPublicUrl(path);
