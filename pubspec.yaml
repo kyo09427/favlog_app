@@ -39,7 +39,6 @@ flutter:
 
   assets:
     - assets/categories.json
-    - .env
     - assets/fonts/
     - assets/images/
 
