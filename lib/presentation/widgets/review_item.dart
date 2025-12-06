@@ -12,11 +12,11 @@ class ReviewItem extends ConsumerStatefulWidget {
   final Product product;
   final Review review;
   final ReviewStats? stats;
-  final bool? widget.isLiked;
-  final VoidCallback? widget.onLikeToggle;
-  final VoidCallback? widget.onCommentTap;
-  final VoidCallback? widget.onReviewUpdated;
-  final VoidCallback? widget.onDelete;
+  final bool? isLiked;
+  final VoidCallback? onLikeToggle;
+  final VoidCallback? onCommentTap;
+  final VoidCallback? onReviewUpdated;
+  final VoidCallback? onDelete;
 
   const ReviewItem({
     super.key,
@@ -30,6 +30,22 @@ class ReviewItem extends ConsumerStatefulWidget {
     this.onDelete,
   });
 
+
+
+  @override
+
+  ConsumerState<ReviewItem> createState() => _ReviewItemState();
+
+}
+
+
+
+class _ReviewItemState extends ConsumerState<ReviewItem> {
+
+  bool _isExpanded = false;
+
+
+
   Widget _buildRatingStars(BuildContext context) {
     final theme = Theme.of(context);
     const calmGreen = Color(0xFF22A06B);
@@ -42,10 +58,10 @@ class ReviewItem extends ConsumerStatefulWidget {
         IconData icon;
         Color color;
 
-        if (review.rating >= starPosition) {
+        if (widget.review.rating >= starPosition) {
           icon = Icons.star;
           color = calmGreen;
-        } else if (review.rating >= starPosition - 0.5) {
+        } else if (widget.review.rating >= starPosition - 0.5) {
           icon = Icons.star_half;
           color = calmGreen;
         } else {
@@ -94,8 +110,8 @@ class ReviewItem extends ConsumerStatefulWidget {
     final result = await context.push<bool>(
       '/edit-review',
       extra: {
-        'review': review,
-        'product': product,
+        'review': widget.review,
+        'product': widget.product,
       },
     );
 
@@ -132,7 +148,7 @@ class ReviewItem extends ConsumerStatefulWidget {
                 title: const Text('削除する', style: TextStyle(color: Colors.red)),
                 onTap: () {
                   Navigator.pop(context);
-                  if (onDelete != null) {
+                  if (widget.onDelete != null) {
                     widget.onDelete!();
                   }
                 },
@@ -145,14 +161,14 @@ class ReviewItem extends ConsumerStatefulWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final reviewText = widget.review.reviewText.trim();
     final currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id;
     final isOwner = currentUserId != null && currentUserId == widget.review.userId;
 
-    final userProfileAsync = ref.watch(userProfileProvider(review.userId));
+    final userProfileAsync = ref.watch(userProfileProvider(widget.review.userId));
 
     final likeCount = widget.stats?.likeCount ?? 0;
     final commentCount = widget.stats?.commentCount ?? 0;
@@ -219,7 +235,7 @@ class ReviewItem extends ConsumerStatefulWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    _formatDate(review.createdAt.toLocal()),
+                    _formatDate(widget.review.createdAt.toLocal()),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
                     ),
