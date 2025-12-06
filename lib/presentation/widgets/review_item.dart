@@ -272,14 +272,38 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
         ),
         const SizedBox(height: 8),
         // 本文
-        Text(
-          _truncateText(reviewText, 400),
-          style: theme.textTheme.bodyMedium?.copyWith(
-            height: 1.5,
-            color: isDark ? Colors.grey[200] : Colors.grey[800],
-          ),
-          maxLines: 4,
-          overflow: TextOverflow.ellipsis,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _isExpanded ? reviewText : _truncateText(reviewText, 200),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                height: 1.5,
+                color: isDark ? Colors.grey[200] : Colors.grey[800],
+              ),
+              maxLines: _isExpanded ? null : 4,
+              overflow: _isExpanded ? null : TextOverflow.ellipsis,
+            ),
+            // 「もっと見る」ボタン（200文字以上または3行以上の場合に表示）
+            if (reviewText.length > 200 || reviewText.split('\n').length > 3)
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isExpanded = !_isExpanded;
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    _isExpanded ? '閉じる' : 'もっと見る',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF22A06B),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 8),
         // アクション (いいね / コメント)
