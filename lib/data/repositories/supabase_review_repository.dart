@@ -44,6 +44,20 @@ class SupabaseReviewRepository implements ReviewRepository {
   }
 
   @override
+  Future<List<Review>> getReviewsByUserId(String userId) async {
+    try {
+      final response = await _supabaseClient
+          .from('reviews')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+      return (response as List).map((json) => Review.fromJson(json)).toList();
+    } catch (e) {
+      throw Exception('Failed to get reviews for user $userId: $e');
+    }
+  }
+
+  @override
   Future<Map<String, Review>> getLatestReviewsByProductIds(List<String> productIds) async {
     if (productIds.isEmpty) {
       return {};

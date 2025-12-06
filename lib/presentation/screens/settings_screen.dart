@@ -1,28 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart'; // go_routerのために追加
+import 'package:go_router/go_router.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const backgroundDark = Color(0xFF102216);
-    const itemBackground = Color(0xFF1C271F);
-    const borderColor = Color(0xFF3B5443);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    final backgroundColor = isDark ? const Color(0xFF102216) : const Color(0xFFF6F8F6);
+    final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+    final mutedTextColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+    final borderColor = isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
     const primaryColor = Color(0xFF13EC5B);
-    const textColor = Colors.white;
-    const mutedTextColor = Color(0xFF9DB9A6);
 
     return Scaffold(
-      backgroundColor: backgroundDark,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           '設定',
           style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: backgroundDark,
+        backgroundColor: backgroundColor,
         elevation: 0,
-        automaticallyImplyLeading: false, // ScaffoldWithNavBarを使用しているため不要
+        automaticallyImplyLeading: false,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -39,6 +42,8 @@ class SettingsScreen extends StatelessWidget {
                   context.push('/password-reset-request');
                 },
                 primaryColor: primaryColor,
+                textColor: textColor,
+                mutedTextColor: mutedTextColor,
               ),
               _buildSettingsItem(
                 context,
@@ -48,9 +53,13 @@ class SettingsScreen extends StatelessWidget {
                   context.push('/update-email-request');
                 },
                 primaryColor: primaryColor,
+                textColor: textColor,
+                mutedTextColor: mutedTextColor,
               ),
-              // 他のアカウント設定項目
             ],
+            cardColor: cardColor,
+            borderColor: borderColor,
+            textColor: textColor,
           ),
         ],
       ),
@@ -61,9 +70,10 @@ class SettingsScreen extends StatelessWidget {
     BuildContext context, {
     required String title,
     required List<Widget> children,
+    required Color cardColor,
+    required Color borderColor,
+    required Color textColor,
   }) {
-    const textColor = Colors.white;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -71,7 +81,7 @@ class SettingsScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
           child: Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               color: textColor,
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -81,9 +91,9 @@ class SettingsScreen extends StatelessWidget {
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF1C271F), // itemBackground
+            color: cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF3B5443)), // borderColor
+            border: Border.all(color: borderColor),
           ),
           child: Column(
             children: children
@@ -91,8 +101,8 @@ class SettingsScreen extends StatelessWidget {
                       children: [
                         item,
                         if (item != children.last)
-                          const Divider(
-                            color: Color(0xFF3B5443), // borderColor
+                          Divider(
+                            color: borderColor,
                             height: 1,
                             indent: 16,
                             endIndent: 16,
@@ -112,10 +122,9 @@ class SettingsScreen extends StatelessWidget {
     required IconData icon,
     required VoidCallback onTap,
     required Color primaryColor,
+    required Color textColor,
+    required Color mutedTextColor,
   }) {
-    const textColor = Colors.white;
-    const mutedTextColor = Color(0xFF9DB9A6);
-
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -127,14 +136,13 @@ class SettingsScreen extends StatelessWidget {
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(color: textColor, fontSize: 16),
+                style: TextStyle(color: textColor, fontSize: 16),
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, color: mutedTextColor, size: 18),
+            Icon(Icons.arrow_forward_ios, color: mutedTextColor, size: 18),
           ],
         ),
       ),
     );
   }
 }
-

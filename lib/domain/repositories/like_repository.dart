@@ -4,4 +4,5 @@ abstract class LikeRepository {
   Future<bool> hasUserLiked(String reviewId, String userId);
   Future<Map<String, int>> getLikeCounts(List<String> reviewIds);
   Future<List<String>> getUserLikedReviewIds(String userId, List<String> reviewIds);
+  Future<List<String>> getAllUserLikedReviewIds(String userId);
 }

@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -87,10 +87,30 @@ class _MyAppState extends ConsumerState<MyApp> {
     });
   }
 
-  void _handleDeepLink(Uri uri) {
+  void _handleDeepLink(Uri uri) async {
     // Supabaseが発行したディープリンク（マジックリンク、パスワードリセット、メールアドレス変更確認など）は
     // URLにセッション情報を含んでいる可能性があるため、常にセッション回復を試みる。
-    Supabase.instance.client.auth.getSessionFromUrl(uri);
+    try {
+      await Supabase.instance.client.auth.getSessionFromUrl(uri);
+    } catch (e) {
+      debugPrint('Deep link error: $e');
+      // エラーの種類に応じて適切な処理を行う
+      if (e.toString().contains('otp_expired') || e.toString().contains('invalid')) {
+        // リンクが期限切れまたは無効の場合
+        final context = ref.read(goRouterProvider).routerDelegate.navigatorKey.currentContext;
+        if (context != null && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('リンクの有効期限が切れているか、無効です。再度お試しください。'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+        // 認証画面にリダイレクト
+        ref.read(goRouterProvider).go('/auth');
+      }
+    }
   }
 
   void _initAuthListener() {

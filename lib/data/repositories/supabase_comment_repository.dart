@@ -31,6 +31,23 @@ class SupabaseCommentRepository implements CommentRepository {
   }
 
   @override
+  Future<List<Comment>> getCommentsByUserId(String userId) async {
+    try {
+      final response = await _supabaseClient
+          .from('comments')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+
+      return (response as List)
+          .map((json) => Comment.fromJson(json))
+          .toList();
+    } catch (e) {
+      throw Exception('ユーザーのコメント取得に失敗しました: $e');
+    }
+  }
+
+  @override
   Future<void> addComment(Comment comment) async {
     try {
       await _supabaseClient.from('comments').insert(comment.toJson());

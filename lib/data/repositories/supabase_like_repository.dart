@@ -102,4 +102,21 @@ class SupabaseLikeRepository implements LikeRepository {
       throw Exception('ユーザーのいいね状態の取得に失敗しました: $e');
     }
   }
+
+  @override
+  Future<List<String>> getAllUserLikedReviewIds(String userId) async {
+    try {
+      final response = await _supabaseClient
+          .from('likes')
+          .select('review_id')
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+
+      return (response as List)
+          .map((row) => row['review_id'] as String)
+          .toList();
+    } catch (e) {
+      throw Exception('ユーザーがいいねしたレビューの取得に失敗しました: $e');
+    }
+  }
 }
