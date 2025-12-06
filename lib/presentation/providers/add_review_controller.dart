@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -21,6 +23,7 @@ class AddReviewState {
   final String reviewText;
   final double rating;
   final File? imageFile;
+  final Uint8List? imageBytes; // Web用
   final bool isLoading;
   final String? error;
   final List<String> categories;
@@ -34,6 +37,7 @@ class AddReviewState {
     this.reviewText = '',
     this.rating = 3.0,
     this.imageFile,
+    this.imageBytes,
     this.isLoading = false,
     this.error,
     this.categories = const [],
@@ -48,11 +52,12 @@ class AddReviewState {
     String? reviewText,
     double? rating,
     File? imageFile,
+    Uint8List? imageBytes,
     bool? isLoading,
     String? error,
     List<String>? categories,
     List<String>? subcategorySuggestions,
-    bool clearImageFile = false,
+    bool clearImage = false,
     bool clearSelectedCategory = false,
   }) {
     return AddReviewState(
@@ -62,7 +67,8 @@ class AddReviewState {
       selectedCategory: clearSelectedCategory ? null : selectedCategory ?? this.selectedCategory,
       reviewText: reviewText ?? this.reviewText,
       rating: rating ?? this.rating,
-      imageFile: clearImageFile ? null : imageFile ?? this.imageFile,
+      imageFile: clearImage ? null : imageFile ?? this.imageFile,
+      imageBytes: clearImage ? null : imageBytes ?? this.imageBytes,
       isLoading: isLoading ?? this.isLoading,
       error: error,
       categories: categories ?? this.categories,
@@ -190,7 +196,12 @@ class AddReviewController extends StateNotifier<AddReviewState> {
       );
 
       if (pickedFile != null && !_isDisposed) {
-        state = state.copyWith(imageFile: File(pickedFile.path));
+        if (kIsWeb) {
+          final imageBytes = await pickedFile.readAsBytes();
+          state = state.copyWith(imageBytes: imageBytes, imageFile: null);
+        } else {
+          state = state.copyWith(imageFile: File(pickedFile.path), imageBytes: null);
+        }
       }
     } catch (e) {
       if (!_isDisposed) {
@@ -202,7 +213,7 @@ class AddReviewController extends StateNotifier<AddReviewState> {
   /// 選択した画像をクリア
   void clearImage() {
     if (_isDisposed) return;
-    state = state.copyWith(clearImageFile: true);
+    state = state.copyWith(clearImage: true);
   }
 
   /// レビューを投稿
@@ -224,9 +235,13 @@ class AddReviewController extends StateNotifier<AddReviewState> {
 
       // 画像のアップロード処理
       String? imageUrl;
-      if (state.imageFile != null) {
+      final hasImage = state.imageFile != null || state.imageBytes != null;
+
+      if (hasImage) {
         try {
-          final imageBytes = await state.imageFile!.readAsBytes();
+          final imageBytes = kIsWeb
+              ? state.imageBytes!
+              : await state.imageFile!.readAsBytes();
           // 画像を圧縮
           final compressedBytes = await _imageCompressor.compressImage(
             imageBytes,
@@ -282,7 +297,7 @@ class AddReviewController extends StateNotifier<AddReviewState> {
           rating: 3.0,
           isLoading: false,
           error: null,
-          clearImageFile: true,
+          clearImage: true,
           clearSelectedCategory: true,
           subcategorySuggestions: [],
         );

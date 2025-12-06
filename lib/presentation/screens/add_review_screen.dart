@@ -277,15 +277,22 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                                   : Colors.grey.shade300,
                             ),
                           ),
-                          child: addReviewState.imageFile != null
+                          child: addReviewState.imageFile != null || addReviewState.imageBytes != null
                               ? Stack(
                                   children: [
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(12),
-                                      child: Image.file(
-                                        addReviewState.imageFile!,
-                                        width: double.infinity,
-                                        height: double.infinity,
+                                      child: addReviewState.imageBytes != null
+                                          ? Image.memory(
+                                              addReviewState.imageBytes!,
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                              fit: BoxFit.cover,
+                                            )
+                                          : Image.file(
+                                              addReviewState.imageFile!,
+                                              width: double.infinity,
+                                              height: double.infinity,
                                         fit: BoxFit.cover,
                                       ),
                                     ),
