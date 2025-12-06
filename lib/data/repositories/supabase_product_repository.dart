@@ -84,6 +84,16 @@ class SupabaseProductRepository implements ProductRepository {
   }
 
   @override
+  Future<void> deleteProductImage(String imageUrl) async {
+    try {
+      final fileName = imageUrl.split('/').last;
+      await _supabaseClient.storage.from('product_images').remove([fileName]);
+    } catch (e) {
+      // 失敗してもエラーを投げない（例: ファイルが存在しない場合など）
+    }
+  }
+
+  @override
   Future<String> uploadProductImage(String userId, Uint8List imageData, String fileExtension, {String contentType = 'image/jpeg'}) async {
     try {
       final fileName = '${userId}_${DateTime.now().microsecondsSinceEpoch}.$fileExtension';
