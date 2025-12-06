@@ -9,7 +9,9 @@ import '../widgets/review_item.dart';
 
 import '../providers/review_detail_controller.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
+import '../../data/repositories/supabase_product_repository.dart';
 import '../../data/repositories/supabase_review_repository.dart';
+import '../widgets/error_dialog.dart';
 
 class ReviewDetailScreen extends ConsumerStatefulWidget {
   final String productId;
@@ -34,6 +36,112 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
         ref.read(reviewDetailControllerProvider(widget.productId).notifier).refreshAll();
       }
     });
+  }
+
+  Future<void> _showProductMenu(
+      BuildContext context, WidgetRef ref, Product product) async {
+    final theme = Theme.of(context);
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: theme.brightness == Brightness.dark
+          ? const Color(0xFF1C1C1E)
+          : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit_outlined, color: _primary),
+                title: const Text('編集する'),
+                onTap: () async {
+                  context.pop(); // Close the bottom sheet
+                  final result = await context.push('/edit-product', extra: product);
+                  if (result == true && mounted) {
+                    ref
+                        .read(reviewDetailControllerProvider(product.id)
+                            .notifier)
+                        .refreshAll();
+                  }
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.delete_outline, color: theme.colorScheme.error),
+                title: Text(
+                  '削除する',
+                  style: TextStyle(color: theme.colorScheme.error),
+                ),
+                onTap: () {
+                  _deleteProduct(context, ref, product);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteProduct(
+      BuildContext context, WidgetRef ref, Product product) async {
+    context.pop(); // Close the bottom sheet first
+
+    // レビューが存在するかチェック
+    final reviews =
+        ref.read(reviewDetailControllerProvider(product.id)).reviewsWithStats;
+    if (reviews.isNotEmpty) {
+      ErrorDialog.show(context, 'レビューが投稿されているため、商品を削除できません。');
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('商品の削除'),
+        content: const Text('この商品を削除してもよろしいですか？\nこの操作は取り消せません。'),
+        actions: [
+          TextButton(
+            onPressed: () => context.pop(false),
+            child: const Text('キャンセル'),
+          ),
+          TextButton(
+            onPressed: () => context.pop(true),
+            style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error),
+            child: const Text('削除'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      final productRepository = ref.read(productRepositoryProvider);
+
+      // 関連画像をStorageから削除
+      if (product.imageUrl != null) {
+        await productRepository.deleteProductImage(product.imageUrl!);
+      }
+
+      // 商品をDBから削除
+      await productRepository.deleteProduct(product.id);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('商品を削除しました')),
+        );
+        context.pop(); // 前の画面に戻る
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ErrorDialog.show(context, '商品の削除に失敗しました: ${e.toString()}');
+      }
+    }
   }
 
   Future<void> _deleteReview(
@@ -95,6 +203,9 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final backgroundColor = isDark ? _backgroundDark : _backgroundLight;
+
+    final isProductOwner =
+        currentUserId != null && displayedProduct.userId == currentUserId;
 
     if (displayedProduct.id == Product.empty().id) {
       return Scaffold(
@@ -299,6 +410,18 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                                 ],
                               ),
                             ),
+                            if (isProductOwner)
+                              SizedBox(
+                                width: 40,
+                                child: IconButton(
+                                  alignment: Alignment.topRight,
+                                  padding: const EdgeInsets.all(0),
+                                  icon: const Icon(Icons.more_vert),
+                                  onPressed: () {
+                                    _showProductMenu(context, ref, displayedProduct);
+                                  },
+                                ),
+                              ),
                           ],
                         ),
                       ),

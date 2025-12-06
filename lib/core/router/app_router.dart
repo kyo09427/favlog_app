@@ -17,6 +17,7 @@ import '../../presentation/screens/add_review_screen.dart';
 import '../../presentation/screens/edit_review_screen.dart'; // 追加
 import '../../presentation/screens/comment_screen.dart'; // 追加
 import '../../presentation/screens/add_review_to_product_screen.dart'; // 追加
+import '../../presentation/screens/edit_product_screen.dart';
 import '../../presentation/screens/settings_screen.dart'; // 追加
 import '../../presentation/screens/single_review_screen.dart'; // 追加
 import '../../presentation/screens/password_reset_request_screen.dart'; // 追加
@@ -198,6 +199,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final product = state.extra! as Product;
           return AddReviewToProductScreen(product: product);
+        },
+      ),
+      GoRoute(
+        path: '/edit-product',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final product = state.extra! as Product;
+          return EditProductScreen(product: product);
         },
       ),
       // 個別レビュー詳細ページ
