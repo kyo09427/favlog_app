@@ -17,6 +17,7 @@ import '../../data/repositories/supabase_review_repository.dart';
 import '../../data/repositories/supabase_product_repository.dart';
 import '../../data/repositories/supabase_comment_repository.dart';
 import '../../data/repositories/supabase_like_repository.dart';
+import '../../data/repositories/supabase_auth_repository.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -144,7 +145,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
             );
           }
 
-          final currentUserId = Supabase.instance.client.auth.currentUser?.id ?? '';
+          final authRepository = ref.read(authRepositoryProvider);
+          final currentUserId = authRepository.getCurrentUser()?.id ?? '';
 
           return CustomScrollView(
             slivers: [
