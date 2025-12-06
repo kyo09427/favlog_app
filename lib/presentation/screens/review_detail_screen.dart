@@ -69,79 +69,11 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                   }
                 },
               ),
-              ListTile(
-                leading: Icon(Icons.delete_outline, color: theme.colorScheme.error),
-                title: Text(
-                  '削除する',
-                  style: TextStyle(color: theme.colorScheme.error),
-                ),
-                onTap: () {
-                  _deleteProduct(context, ref, product);
-                },
-              ),
             ],
           ),
         ),
       ),
     );
-  }
-
-  Future<void> _deleteProduct(
-      BuildContext context, WidgetRef ref, Product product) async {
-    context.pop(); // Close the bottom sheet first
-
-    // レビューが存在するかチェック
-    final reviews =
-        ref.read(reviewDetailControllerProvider(product.id)).reviewsWithStats;
-    if (reviews.isNotEmpty) {
-      ErrorDialog.show(context, 'レビューが投稿されているため、商品を削除できません。');
-      return;
-    }
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('商品の削除'),
-        content: const Text('この商品を削除してもよろしいですか？\nこの操作は取り消せません。'),
-        actions: [
-          TextButton(
-            onPressed: () => context.pop(false),
-            child: const Text('キャンセル'),
-          ),
-          TextButton(
-            onPressed: () => context.pop(true),
-            style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.error),
-            child: const Text('削除'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !context.mounted) return;
-
-    try {
-      final productRepository = ref.read(productRepositoryProvider);
-
-      // 関連画像をStorageから削除
-      if (product.imageUrl != null) {
-        await productRepository.deleteProductImage(product.imageUrl!);
-      }
-
-      // 商品をDBから削除
-      await productRepository.deleteProduct(product.id);
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('商品を削除しました')),
-        );
-        context.pop(); // 前の画面に戻る
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ErrorDialog.show(context, '商品の削除に失敗しました: ${e.toString()}');
-      }
-    }
   }
 
   Future<void> _deleteReview(
@@ -178,8 +110,33 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('レビューを削除しました')),
         );
-        final controller = ref.read(reviewDetailControllerProvider(widget.productId).notifier);
-        await controller.refreshAll();
+
+        // 最後のレビューが削除されたかチェック
+        final reviews = ref.read(reviewDetailControllerProvider(widget.productId))
+            .reviewsWithStats;
+
+        // deleteReviewが成功した時点では、Stateのリストの長さはまだ1残っている
+        if (reviews.length == 1) {
+          final productRepository = ref.read(productRepositoryProvider);
+          final product = ref.read(reviewDetailControllerProvider(widget.productId)).currentProduct;
+
+          // 関連画像をStorageから削除
+          if (product.imageUrl != null) {
+            await productRepository.deleteProductImage(product.imageUrl!);
+          }
+          // 商品をDBから削除
+          await productRepository.deleteProduct(product.id);
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('最後のレビューが削除されたため、商品も自動的に削除されました。')),
+            );
+            context.pop(); // 前の画面に戻る
+          }
+        } else {
+          final controller = ref.read(reviewDetailControllerProvider(widget.productId).notifier);
+          await controller.refreshAll();
+        }
       }
     } catch (e) {
       if (context.mounted) {
@@ -410,18 +367,17 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                                 ],
                               ),
                             ),
-                            if (isProductOwner)
-                              SizedBox(
-                                width: 40,
-                                child: IconButton(
-                                  alignment: Alignment.topRight,
-                                  padding: const EdgeInsets.all(0),
-                                  icon: const Icon(Icons.more_vert),
-                                  onPressed: () {
-                                    _showProductMenu(context, ref, displayedProduct);
-                                  },
-                                ),
+                            SizedBox(
+                              width: 40,
+                              child: IconButton(
+                                alignment: Alignment.topRight,
+                                padding: const EdgeInsets.all(0),
+                                icon: const Icon(Icons.more_vert),
+                                onPressed: () {
+                                  _showProductMenu(context, ref, displayedProduct);
+                                },
                               ),
+                            ),
                           ],
                         ),
                       ),

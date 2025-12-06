@@ -223,11 +223,6 @@ class EditProductController extends StateNotifier<EditProductState> {
         throw Exception('ユーザーがログインしていません。');
       }
 
-      // 所有者チェック
-      if (state.originalProduct.userId != user.id) {
-        throw Exception('この商品を編集する権限がありません。');
-      }
-
       // 画像のアップロード処理（新しい画像が選択されている場合）
       String? imageUrl = state.existingImageUrl;
       if (state.newImageFile != null) {
