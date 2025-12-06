@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/product.dart';
 import '../../domain/repositories/product_repository.dart';
-import '../../main.dart'; // Import the main.dart to use supabaseProvider
+import '../../main.dart';
 
 final productRepositoryProvider = Provider<ProductRepository>((ref) {
   return SupabaseProductRepository(ref.watch(supabaseProvider));
@@ -19,18 +19,17 @@ class SupabaseProductRepository implements ProductRepository {
     try {
       var query = _supabaseClient
           .from('products')
-          .select(); // まず select() を呼び出し、FilterBuilder を取得
+          .select();
 
       if (category != null && category != 'すべて') {
-        query = query.eq('category', category); // FilterBuilder に対して eq を適用
+        query = query.eq('category', category);
       }
 
       if (searchQuery != null && searchQuery.isNotEmpty) {
-        query = query.ilike('name', '%$searchQuery%'); // Lightweight search by product name
+        query = query.ilike('name', '%$searchQuery%');
       }
 
-      // フィルタリングの後にソートを適用
-      final response = await query.order('created_at', ascending: false).limit(100); // Limit to avoid fetching too much data
+      final response = await query.order('created_at', ascending: false).limit(100);
       return (response as List).map((json) => Product.fromJson(json)).toList();
     } catch (e) {
       rethrow;
@@ -68,11 +67,50 @@ class SupabaseProductRepository implements ProductRepository {
   @override
   Future<void> updateProduct(Product product) async {
     try {
+      // デバッグ用にログ出力
+      print('Updating product: ${product.id}');
+      print('User ID: ${_supabaseClient.auth.currentUser?.id}');
+      print('Product user_id: ${product.userId}');
+      print('Product data: ${product.toJson()}');
+      
+      // まず、商品が存在するか確認
+      final existingProduct = await _supabaseClient
+          .from('products')
+          .select()
+          .eq('id', product.id)
+          .maybeSingle();
+      
+      print('Existing product: $existingProduct');
+      
+      if (existingProduct == null) {
+        throw Exception('商品が見つかりません（ID: ${product.id}）');
+      }
+      
+      // 更新を実行（.select()と.single()を削除）
       await _supabaseClient
           .from('products')
-          .update(product.toJson())
+          .update({
+            'name': product.name,
+            'url': product.url,
+            'category': product.category,
+            'subcategory': product.subcategory,
+            'image_url': product.imageUrl,
+          })
           .eq('id', product.id);
+      
+      print('Update completed successfully');
+    } on PostgrestException catch (e) {
+      print('PostgrestException: ${e.message}');
+      print('Details: ${e.details}');
+      print('Hint: ${e.hint}');
+      print('Code: ${e.code}');
+      
+      if (e.code == '42501') {
+        throw Exception('更新権限がありません。この商品を編集する権限がない可能性があります。');
+      }
+      throw Exception('商品の更新に失敗しました: ${e.message}');
     } catch (e) {
+      print('Update error: $e');
       rethrow;
     }
   }
@@ -124,7 +162,7 @@ class SupabaseProductRepository implements ProductRepository {
 
       final subcategories = (response as List)
           .map((json) => json['subcategory'] as String)
-          .toSet() // Remove duplicates
+          .toSet()
           .toList();
           
       return subcategories;
