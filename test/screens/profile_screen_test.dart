@@ -215,12 +215,12 @@ void main() {
       )).called(1);
 
       verify(() => mockStorageFileApi.uploadBinary(
-            any(that: contains('.jpg')),
+            any(that: contains('.webp')),
             compressedBytes,
-            fileOptions: any(named: 'fileOptions', that: isA<FileOptions>().having((fo) => fo.contentType, 'contentType', 'image/jpeg')),
+            fileOptions: any(named: 'fileOptions', that: isA<FileOptions>().having((fo) => fo.contentType, 'contentType', 'image/webp')),
           )).called(1);
 
-      verify(() => mockStorageFileApi.getPublicUrl(any(that: contains('.jpg')))).called(1);
+      verify(() => mockStorageFileApi.getPublicUrl(any(that: contains('.webp')))).called(1);
 
       verify(() => mockProfileRepository.updateProfile(
             any(that: isA<Profile>().having((p) => p.avatarUrl, 'avatarUrl', publicUrl)),
