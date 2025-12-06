@@ -135,7 +135,7 @@ class SupabaseProductRepository implements ProductRepository {
   }
 
   @override
-  Future<String> uploadProductImage(String userId, Uint8List imageData, String fileExtension, {String contentType = 'image/webp'}) async {
+  Future<String> uploadProductImage(String userId, Uint8List imageData, String fileExtension, {String contentType = 'image/jpeg'}) async {
     try {
       final fileName = '${userId}_${DateTime.now().microsecondsSinceEpoch}.$fileExtension';
       await _supabaseClient.storage

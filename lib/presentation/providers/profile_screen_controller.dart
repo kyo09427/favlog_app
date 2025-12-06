@@ -175,7 +175,7 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
             path,
             compressedBytes,
             fileOptions: const FileOptions(
-                cacheControl: '3600', upsert: true, contentType: 'image/webp'),
+                cacheControl: '3600', upsert: true, contentType: 'image/jpeg'),
           );
 
       final publicUrl = _supabaseClient.storage.from('avatars').getPublicUrl(path);

@@ -269,14 +269,14 @@ class EditProductController extends StateNotifier<EditProductState> {
             quality: 80,
           );
 
-          const fileExtension = 'webp';
+          const fileExtension = 'jpg';
 
           // Supabase Storageにアップロード
           imageUrl = await productRepository.uploadProductImage(
             user.id,
             compressedBytes,
             fileExtension,
-            contentType: 'image/webp',
+            contentType: 'image/jpeg',
           );
         } catch (imageError) {
           throw Exception('画像のアップロードに失敗しました: ${imageError.toString()}');

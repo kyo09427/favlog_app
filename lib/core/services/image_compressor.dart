@@ -3,6 +3,9 @@ import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image/image.dart' as img;
 
+// 画像圧縮サービスクラス
+// プラットフォーム（Web/ネイティブ）に応じて内部で処理を切り替える
+// すべての画像をWebP形式で圧縮（WebはJPEGフォールバック）
 class ImageCompressor {
   Future<Uint8List> compressImage(
     Uint8List imageBytes, {
@@ -34,18 +37,11 @@ class ImageCompressor {
         maintainAspect: true,
       );
 
-      // WebP形式でエンコード（JPEGにフォールバック）
-      try {
-        final encoded = img.encodeWebP(resized);
-        return Uint8List.fromList(encoded);
-      } catch (e) {
-        // WebPエンコードに失敗したらJPEGを使用
-        debugPrint('WebP encoding failed, using JPEG: \');
-        return Uint8List.fromList(img.encodeJpg(resized, quality: quality));
-      }
+      // Web版ではJPEG形式でエンコード（WebPサポートが不安定なため）
+      return Uint8List.fromList(img.encodeJpg(resized, quality: quality));
     } catch (e) {
-      debugPrint('Error compressing image on web: \');
-      return imageBytes;
+      debugPrint('Error compressing image on web: $e');
+      return imageBytes; // 圧縮に失敗した場合は元のバイトデータを返す
     }
   }
 
@@ -56,17 +52,18 @@ class ImageCompressor {
     int quality,
   ) async {
     try {
+      // flutter_image_compress は Uint8List を受け取る compressWithList を提供している
       final result = await FlutterImageCompress.compressWithList(
         imageBytes,
         minWidth: maxWidth,
         minHeight: maxHeight,
         quality: quality,
-        format: CompressFormat.webp,
+        format: CompressFormat.webp, // ネイティブ版はWebP形式
       );
       return result;
     } catch (e) {
-      debugPrint('Error compressing image on native: \');
-      return imageBytes;
+      debugPrint('Error compressing image on native: $e');
+      return imageBytes; // 圧縮に失敗した場合は元のバイトデータを返す
     }
   }
 }
