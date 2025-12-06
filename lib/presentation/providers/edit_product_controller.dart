@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,6 +12,7 @@ import '../../core/providers/common_providers.dart';
 import '../../core/services/image_compressor.dart';
 import 'home_screen_controller.dart';
 import 'search_controller.dart';
+import 'review_detail_controller.dart';
 
 /// 商品編集画面の状態
 class EditProductState {
@@ -19,6 +22,7 @@ class EditProductState {
   final String subcategory;
   final String? existingImageUrl;
   final File? newImageFile;
+  final Uint8List? newImageBytes; // Web用に追加
   final bool isLoading;
   final String? error;
   final Product originalProduct;
@@ -32,6 +36,7 @@ class EditProductState {
     required this.subcategory,
     this.existingImageUrl,
     this.newImageFile,
+    this.newImageBytes,
     this.isLoading = false,
     this.error,
     required this.originalProduct,
@@ -46,12 +51,14 @@ class EditProductState {
     String? subcategory,
     String? existingImageUrl,
     File? newImageFile,
+    Uint8List? newImageBytes,
     bool? isLoading,
     String? error,
     Product? originalProduct,
     List<String>? categories,
     List<String>? subcategorySuggestions,
     bool clearNewImageFile = false,
+    bool clearNewImageBytes = false,
   }) {
     return EditProductState(
       productName: productName ?? this.productName,
@@ -60,6 +67,7 @@ class EditProductState {
       subcategory: subcategory ?? this.subcategory,
       existingImageUrl: existingImageUrl ?? this.existingImageUrl,
       newImageFile: clearNewImageFile ? null : newImageFile ?? this.newImageFile,
+      newImageBytes: clearNewImageBytes ? null : newImageBytes ?? this.newImageBytes,
       isLoading: isLoading ?? this.isLoading,
       error: error,
       originalProduct: originalProduct ?? this.originalProduct,
@@ -193,7 +201,20 @@ class EditProductController extends StateNotifier<EditProductState> {
       );
 
       if (pickedFile != null && !_isDisposed) {
-        state = state.copyWith(newImageFile: File(pickedFile.path));
+        if (kIsWeb) {
+          final imageBytes = await pickedFile.readAsBytes();
+          state = state.copyWith(
+            newImageBytes: imageBytes,
+            newImageFile: null,
+            clearNewImageFile: true,
+          );
+        } else {
+          state = state.copyWith(
+            newImageFile: File(pickedFile.path),
+            newImageBytes: null,
+            clearNewImageBytes: true,
+          );
+        }
       }
     } catch (e) {
       if (!_isDisposed) {
@@ -205,7 +226,10 @@ class EditProductController extends StateNotifier<EditProductState> {
   /// 選択した画像をクリア
   void clearImage() {
     if (_isDisposed) return;
-    state = state.copyWith(clearNewImageFile: true);
+    state = state.copyWith(
+      clearNewImageFile: true,
+      clearNewImageBytes: true,
+    );
   }
 
   /// 商品情報を更新
@@ -226,9 +250,18 @@ class EditProductController extends StateNotifier<EditProductState> {
 
       // 画像のアップロード処理（新しい画像が選択されている場合）
       String? imageUrl = state.existingImageUrl;
-      if (state.newImageFile != null) {
+      final hasNewImage = state.newImageFile != null || state.newImageBytes != null;
+
+      if (hasNewImage) {
         try {
-          final imageBytes = await state.newImageFile!.readAsBytes();
+          final Uint8List imageBytes;
+          
+          if (kIsWeb) {
+            imageBytes = state.newImageBytes!;
+          } else {
+            imageBytes = await state.newImageFile!.readAsBytes();
+          }
+
           // 画像を圧縮
           final compressedBytes = await _imageCompressor.compressImage(
             imageBytes,
@@ -259,20 +292,24 @@ class EditProductController extends StateNotifier<EditProductState> {
         imageUrl: imageUrl,
       );
 
-      // 商品を更新し、更新後のデータを取得
-      final resultProduct = await productRepository.updateProduct(updatedProduct);
+      // 商品を更新
+      await productRepository.updateProduct(updatedProduct);
 
       // 関連するプロバイダーを無効化してデータを再取得させる
       _ref.invalidate(homeScreenControllerProvider);
       _ref.invalidate(searchControllerProvider);
+      
+      // 商品詳細画面のプロバイダーも無効化
+      _ref.invalidate(reviewDetailControllerProvider(state.originalProduct.id));
 
       // 成功したら状態を更新
       if (!_isDisposed) {
         state = state.copyWith(
           isLoading: false,
-          originalProduct: resultProduct, // 更新後のデータでオリジナルを更新
-          existingImageUrl: resultProduct.imageUrl, // imageUrlも更新後のものを使用
+          originalProduct: updatedProduct,
+          existingImageUrl: updatedProduct.imageUrl,
           clearNewImageFile: true,
+          clearNewImageBytes: true,
         );
       }
     } on AuthException catch (e) {
