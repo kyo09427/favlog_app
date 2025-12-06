@@ -586,7 +586,7 @@ class RatingStars extends StatelessWidget {
 }
 
 // ReviewItemをラップしてstatsを提供するウィジェット
-class _ReviewItemWithStats extends ConsumerWidget {
+class _ReviewItemWithStats extends ConsumerStatefulWidget {
   final Product product;
   final Review review;
 
@@ -596,7 +596,17 @@ class _ReviewItemWithStats extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ReviewItemWithStats> createState() => _ReviewItemWithStatsState();
+}
+
+class _ReviewItemWithStatsState extends ConsumerState<_ReviewItemWithStats> {
+  int? _likeCount;
+  int? _commentCount;
+  bool? _isLiked;
+  bool _isInitialized = false;
+
+  @override
+  Widget build(BuildContext context) {
     final commentRepository = ref.watch(commentRepositoryProvider);
     final likeRepository = ref.watch(likeRepositoryProvider);
     final authRepository = ref.watch(authRepositoryProvider);
@@ -604,68 +614,116 @@ class _ReviewItemWithStats extends ConsumerWidget {
 
     if (currentUser == null) {
       return ReviewItem(
-        product: product,
-        review: review,
+        product: widget.product,
+        review: widget.review,
       );
     }
 
-    return FutureBuilder<List<dynamic>>(
-      future: Future.wait([
-        commentRepository.getCommentsByReviewId(review.id),
-        likeRepository.getLikeCounts([review.id]),
-        likeRepository.hasUserLiked(review.id, currentUser.id),
-      ]),
-      builder: (context, snapshot) {
-        int commentCount = 0;
-        int likeCount = 0;
-        bool isLiked = false;
+    // 初回のみデータを取得
+    if (!_isInitialized) {
+      _loadInitialData(commentRepository, likeRepository, currentUser.id);
+    }
 
-        if (snapshot.hasData) {
-          final comments = snapshot.data![0] as List;
-          final likes = snapshot.data![1] as Map<String, int>;
-          final liked = snapshot.data![2] as bool;
-          commentCount = comments.length;
-          likeCount = likes[review.id] ?? 0;
-          isLiked = liked;
-        }
+    // ローカル状態を使用
+    final likeCount = _likeCount ?? 0;
+    final commentCount = _commentCount ?? 0;
+    final isLiked = _isLiked ?? false;
 
-        final stats = ReviewStats(
-          reviewId: review.id,
-          likeCount: likeCount,
-          commentCount: commentCount,
-        );
+    final stats = ReviewStats(
+      reviewId: widget.review.id,
+      likeCount: likeCount,
+      commentCount: commentCount,
+    );
 
-        return ReviewItem(
-          product: product,
-          review: review,
-          stats: stats,
-          isLiked: isLiked,
-          onLikeToggle: () async {
-            try {
-              if (isLiked) {
-                await likeRepository.removeLike(review.id);
-              } else {
-                await likeRepository.addLike(review.id);
-              }
-            } catch (e) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('いいねの操作に失敗しました: $e')),
-                );
-              }
-            }
-          },
-          onCommentTap: () {
-            context.push(
-              '/comment',
-              extra: {
-                'reviewId': review.id,
-                'productName': product.name,
-              },
-            );
+    return ReviewItem(
+      product: widget.product,
+      review: widget.review,
+      stats: stats,
+      isLiked: isLiked,
+      onLikeToggle: () => _toggleLike(likeRepository, isLiked),
+      onCommentTap: () {
+        context.push(
+          '/comment',
+          extra: {
+            'reviewId': widget.review.id,
+            'productName': widget.product.name,
           },
         );
       },
     );
+  }
+
+  Future<void> _loadInitialData(
+    dynamic commentRepository,
+    dynamic likeRepository,
+    String userId,
+  ) async {
+    try {
+      final results = await Future.wait<dynamic>([
+        commentRepository.getCommentsByReviewId(widget.review.id),
+        likeRepository.getLikeCounts([widget.review.id]),
+        likeRepository.hasUserLiked(widget.review.id, userId),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          final comments = results[0] as List;
+          final likes = results[1] as Map<String, int>;
+          final liked = results[2] as bool;
+          _commentCount = comments.length;
+          _likeCount = likes[widget.review.id] ?? 0;
+          _isLiked = liked;
+          _isInitialized = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _commentCount = 0;
+          _likeCount = 0;
+          _isLiked = false;
+          _isInitialized = true;
+        });
+      }
+    }
+  }
+
+  Future<void> _toggleLike(dynamic likeRepository, bool currentlyLiked) async {
+    try {
+      // 楽観的UI更新（即座に反映）
+      setState(() {
+        if (currentlyLiked) {
+          _isLiked = false;
+          _likeCount = (_likeCount ?? 1) - 1;
+        } else {
+          _isLiked = true;
+          _likeCount = (_likeCount ?? 0) + 1;
+        }
+      });
+
+      // サーバーに送信
+      if (currentlyLiked) {
+        await likeRepository.removeLike(widget.review.id);
+      } else {
+        await likeRepository.addLike(widget.review.id);
+      }
+    } catch (e) {
+      // エラー時は元に戻す
+      if (mounted) {
+        setState(() {
+          if (currentlyLiked) {
+            _isLiked = true;
+            _likeCount = (_likeCount ?? 0) + 1;
+          } else {
+            _isLiked = false;
+            _likeCount = (_likeCount ?? 1) - 1;
+          }
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('いいねの操作に失敗しました: $e')),
+        );
+      }
+    }
   }
 }

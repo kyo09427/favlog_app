@@ -1,42 +1,47 @@
-# ワークフローの名前
+# Androidアプリのリリースビルド
 name: Android Build
 
-# ワークフローのトリガー
 on:
-  # GitHubのUIから手動でワークフローを実行できるようにする
+  # 手動実行のみ
   workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'ビルドタイプ'
+        required: true
+        default: 'apk'
+        type: choice
+        options:
+          - apk
+          - aab
+          - both
 
 jobs:
-  # ビルドジョブ
   build-android:
-    # 最新のUbuntu環境で実行
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
-      # 1. リポジトリのソースコードをチェックアウト
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Javaのセットアップ (Androidビルドに必要)
-      #    Android 11 (API 30) 以降のビルドにはJava 11以上が推奨されるため、17を指定
-      - name: Set up JDK 17
+      - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'gradle' # Gradleキャッシュを有効化
 
-      # 3. Flutterのセットアップ
-      - name: Set up Flutter
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true
+          cache-key: flutter-android-${{ hashFiles('**/pubspec.lock') }}
 
-      # 4. Androidリリース署名のためのキーストアファイルを作成
       - name: Create Keystore
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/release.keystore
 
-      # 5. key.propertiesファイルを作成
       - name: Create key.properties
         run: |
           echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" > android/key.properties
@@ -44,24 +49,57 @@ jobs:
           echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
           echo "storeFile=release.keystore" >> android/key.properties
 
-      # 6. .envファイルを作成 (GitHub Secretsから読み込み)
-      #    注意: 事前にリポジトリで SUPABASE_URL と SUPABASE_ANON_KEY のシークレット設定が必要
       - name: Create .env file
         run: |
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
           echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
 
-      # 7. 依存パッケージをインストール
-      - name: Install dependencies
+      - name: Get dependencies
         run: flutter pub get
 
-      # 8. AndroidのリリースAPKをビルド
-      - name: Build Android APK
-        run: flutter build apk --release
+      - name: Build APK
+        if: github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both'
+        run: flutter build apk --release --split-per-abi
 
-      # 9. ビルドされたApp Bundleをアーティファクトとしてアップロード
-      - name: Upload APK
+      - name: Build App Bundle
+        if: github.event.inputs.build_type == 'aab' || github.event.inputs.build_type == 'both'
+        run: flutter build appbundle --release
+
+      - name: Upload APK (arm64-v8a)
+        if: github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both'
         uses: actions/upload-artifact@v4
         with:
-          name: FavLog_release.apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: FavLog_arm64-v8a.apk
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          retention-days: 30
+
+      - name: Upload APK (armeabi-v7a)
+        if: github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both'
+        uses: actions/upload-artifact@v4
+        with:
+          name: FavLog_armeabi-v7a.apk
+          path: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+          retention-days: 30
+
+      - name: Upload APK (x86_64)
+        if: github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both'
+        uses: actions/upload-artifact@v4
+        with:
+          name: FavLog_x86_64.apk
+          path: build/app/outputs/flutter-apk/app-x86_64-release.apk
+          retention-days: 30
+
+      - name: Upload App Bundle
+        if: github.event.inputs.build_type == 'aab' || github.event.inputs.build_type == 'both'
+        uses: actions/upload-artifact@v4
+        with:
+          name: FavLog.aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 90 # AABは長期保存
+
+      - name: Clean up secrets
+        if: always()
+        run: |
+          rm -f android/release.keystore
+          rm -f android/key.properties
+          rm -f .env

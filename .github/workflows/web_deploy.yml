@@ -3,20 +3,33 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'android/**'
+      - 'ios/**'
+  workflow_dispatch: # 手動実行を追加
+
+# 同時デプロイを防ぐ
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
     
-    - name: Set up Flutter
+    - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        channel: 'stable' # 最新のstableバージョンを使用
+        channel: 'stable'
+        cache: true # Flutterキャッシュを有効化
+        cache-key: flutter-web-${{ hashFiles('**/pubspec.lock') }}
+        cache-path: ${{ runner.tool_cache }}/flutter
 
     - name: Get dependencies
       run: flutter pub get
@@ -30,14 +43,26 @@ jobs:
         echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
 
     - name: Build web
-      run: flutter build web --release --base-href /favlog_app/
+      run: flutter build web --release --base-href /favlog_app/ --no-tree-shake-icons
 
     - name: Copy index.html to 404.html
       run: cp build/web/index.html build/web/404.html
 
+    # ビルド結果をキャッシュ（次のステップで使用）
+    - name: Cache build output
+      uses: actions/cache@v4
+      with:
+        path: build/web
+        key: web-build-${{ github.sha }}
+        restore-keys: |
+          web-build-
+
     - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v4
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./build/web
+        force_orphan: true # 履歴を残さずデプロイ（サイズ削減）
+        user_name: 'github-actions[bot]'
+        user_email: 'github-actions[bot]@users.noreply.github.com'
