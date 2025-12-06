@@ -6,6 +6,12 @@ import 'package:favlog_app/presentation/providers/home_screen_controller.dart';
 import 'package:favlog_app/presentation/providers/category_providers.dart';
 import 'package:favlog_app/presentation/widgets/review_item.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:favlog_app/domain/models/product.dart';
+import 'package:favlog_app/domain/models/review.dart';
+import 'package:favlog_app/domain/models/review_stats.dart';
+import 'package:favlog_app/data/repositories/supabase_comment_repository.dart';
+import 'package:favlog_app/data/repositories/supabase_like_repository.dart';
+import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -254,7 +260,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               ),
               const SizedBox(height: 8),
               if (latestReview != null)
-                ReviewItem(
+                _ReviewItemWithStats(
                   product: product,
                   review: latestReview,
                 )
@@ -575,6 +581,91 @@ class RatingStars extends StatelessWidget {
 
         return Icon(icon, size: size, color: iconColor);
       }),
+    );
+  }
+}
+
+// ReviewItemをラップしてstatsを提供するウィジェット
+class _ReviewItemWithStats extends ConsumerWidget {
+  final Product product;
+  final Review review;
+
+  const _ReviewItemWithStats({
+    required this.product,
+    required this.review,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final commentRepository = ref.watch(commentRepositoryProvider);
+    final likeRepository = ref.watch(likeRepositoryProvider);
+    final authRepository = ref.watch(authRepositoryProvider);
+    final currentUser = authRepository.getCurrentUser();
+
+    if (currentUser == null) {
+      return ReviewItem(
+        product: product,
+        review: review,
+      );
+    }
+
+    return FutureBuilder<List<dynamic>>(
+      future: Future.wait([
+        commentRepository.getCommentsByReviewId(review.id),
+        likeRepository.getLikeCounts([review.id]),
+        likeRepository.hasUserLiked(review.id, currentUser.id),
+      ]),
+      builder: (context, snapshot) {
+        int commentCount = 0;
+        int likeCount = 0;
+        bool isLiked = false;
+
+        if (snapshot.hasData) {
+          final comments = snapshot.data![0] as List;
+          final likes = snapshot.data![1] as Map<String, int>;
+          final liked = snapshot.data![2] as bool;
+          commentCount = comments.length;
+          likeCount = likes[review.id] ?? 0;
+          isLiked = liked;
+        }
+
+        final stats = ReviewStats(
+          reviewId: review.id,
+          likeCount: likeCount,
+          commentCount: commentCount,
+        );
+
+        return ReviewItem(
+          product: product,
+          review: review,
+          stats: stats,
+          isLiked: isLiked,
+          onLikeToggle: () async {
+            try {
+              if (isLiked) {
+                await likeRepository.removeLike(review.id);
+              } else {
+                await likeRepository.addLike(review.id);
+              }
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('いいねの操作に失敗しました: $e')),
+                );
+              }
+            }
+          },
+          onCommentTap: () {
+            context.push(
+              '/comment',
+              extra: {
+                'reviewId': review.id,
+                'productName': product.name,
+              },
+            );
+          },
+        );
+      },
     );
   }
 }
