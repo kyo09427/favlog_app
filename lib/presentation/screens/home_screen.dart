@@ -282,6 +282,72 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     );
   }
 
+  Widget _buildCategoryChips(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<List<String>> categoriesAsyncValue,
+    String selectedCategory,
+    HomeScreenController controller,
+  ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return categoriesAsyncValue.when(
+      data: (categories) => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          children: categories.map((category) {
+            final isSelected = category == selectedCategory;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              child: ChoiceChip(
+                label: Text(category),
+                selected: isSelected,
+                onSelected: (_) => controller.selectCategory(category),
+                selectedColor: theme.colorScheme.primary,
+                labelStyle: TextStyle(
+                  color: isSelected
+                      ? theme.colorScheme.onPrimary
+                      : (isDark ? Colors.white70 : Colors.black87),
+                ),
+                backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
+                shape: StadiumBorder(
+                  side: BorderSide(
+                    color: isSelected
+                      ? theme.colorScheme.primary
+                      : (isDark ? Colors.grey[700]! : Colors.grey[300]!),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+      loading: () => Shimmer.fromColors(
+        baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+        highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+        child: Container(
+          height: 48.0,
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.grey[800] : Colors.white,
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+      ),
+      error: (error, stack) => Container(
+        height: 48,
+        alignment: Alignment.center,
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        child: Text(
+          'カテゴリ読込エラー',
+          style: TextStyle(color: Colors.red[300]),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final homeScreenState = ref.watch(homeScreenControllerProvider);
@@ -365,131 +431,87 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
             },
           ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(72),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
-            child: categoriesAsyncValue.when(
-              data: (categories) {
-                final isDark = theme.brightness == Brightness.dark;
-                return DropdownButtonFormField<String>(
-                  initialValue: homeScreenState.selectedCategory,
-                  decoration: InputDecoration(
-                    labelText: 'カテゴリで絞り込み',
-                    labelStyle: TextStyle(
-                      color: isDark ? Colors.white70 : Colors.black54,
-                    ),
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    filled: true,
-                    fillColor: isDark
-                        ? Colors.black.withOpacity(0.3)
-                        : Colors.white.withOpacity(0.9),
-                  ),
-                  dropdownColor: isDark ? Colors.grey[850] : Colors.white,
-                  items: categories.map<DropdownMenuItem<String>>((String category) {
-                    return DropdownMenuItem<String>(
-                      value: category,
-                      child: Text(category),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    if (newValue != null) {
-                      homeScreenController.selectCategory(newValue);
-                    }
-                  },
+      ),
+      body: Column(
+        children: [
+          _buildCategoryChips(
+            context,
+            ref,
+            categoriesAsyncValue,
+            homeScreenState.selectedCategory,
+            homeScreenController,
+          ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                await homeScreenController.fetchProducts(
+                  category: homeScreenState.selectedCategory,
+                  searchQuery: homeScreenState.searchQuery,
+                  isRefresh: true,
                 );
               },
-              loading: () {
-                final isDark = theme.brightness == Brightness.dark;
-                return Shimmer.fromColors(
-                  baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                  highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
-                  child: Container(
-                    height: 48.0,
-                    color: isDark ? Colors.grey[800] : Colors.white,
-                  ),
-                );
-              },
-              error: (error, stack) => Container(
-                height: 48,
-                alignment: Alignment.center,
-                child: Text(
-                  'カテゴリ読込エラー',
-                  style: TextStyle(color: Colors.red[300]),
-                ),
-              ),
+              child: homeScreenState.isLoading && homeScreenState.products.isEmpty
+                  ? _buildLoadingShimmer()
+                  : homeScreenState.products.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.inbox, size: 80, color: Colors.grey[400]),
+                              const SizedBox(height: 16),
+                              Text(
+                                'まだレビューが投稿されていません',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '右下の + ボタンから投稿してみましょう!',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : LayoutBuilder(
+                          builder: (context, constraints) {
+                            if (constraints.maxWidth > 600) {
+                              return GridView.builder(
+                                controller: _scrollController,
+                                padding: const EdgeInsets.all(8),
+                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: constraints.maxWidth > 900 ? 3 : 2,
+                                  childAspectRatio: 0.75,
+                                  crossAxisSpacing: 8,
+                                  mainAxisSpacing: 8,
+                                ),
+                                itemCount: homeScreenState.products.length,
+                                itemBuilder: (context, index) {
+                                  return _buildProductCard(
+                                    context,
+                                    homeScreenState.products[index],
+                                  );
+                                },
+                              );
+                            } else {
+                              return ListView.builder(
+                                controller: _scrollController,
+                                itemCount: homeScreenState.products.length,
+                                itemBuilder: (context, index) {
+                                  return _buildProductCard(
+                                    context,
+                                    homeScreenState.products[index],
+                                  );
+                                },
+                              );
+                            }
+                          },
+                        ),
             ),
           ),
-        ),
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await homeScreenController.fetchProducts(
-            category: homeScreenState.selectedCategory,
-            searchQuery: homeScreenState.searchQuery,
-            isRefresh: true,
-          );
-        },
-        child: homeScreenState.isLoading && homeScreenState.products.isEmpty
-            ? _buildLoadingShimmer()
-            : homeScreenState.products.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.inbox, size: 80, color: Colors.grey[400]),
-                        const SizedBox(height: 16),
-                        Text(
-                          'まだレビューが投稿されていません',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '右下の + ボタンから投稿してみましょう!',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : LayoutBuilder(
-                    builder: (context, constraints) {
-                      if (constraints.maxWidth > 600) {
-                        return GridView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.all(8),
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: constraints.maxWidth > 900 ? 3 : 2,
-                            childAspectRatio: 0.75,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
-                          ),
-                          itemCount: homeScreenState.products.length,
-                          itemBuilder: (context, index) {
-                            return _buildProductCard(
-                              context,
-                              homeScreenState.products[index],
-                            );
-                          },
-                        );
-                      } else {
-                        return ListView.builder(
-                          controller: _scrollController,
-                          itemCount: homeScreenState.products.length,
-                          itemBuilder: (context, index) {
-                            return _buildProductCard(
-                              context,
-                              homeScreenState.products[index],
-                            );
-                          },
-                        );
-                      }
-                    },
-                  ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: primaryColor,
