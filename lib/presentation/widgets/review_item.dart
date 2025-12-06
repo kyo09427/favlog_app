@@ -1,4 +1,4 @@
-import 'package:go_router/go_router.dart';
+﻿import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,15 +8,15 @@ import '../../domain/models/review_stats.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../core/providers/profile_providers.dart';
 
-class ReviewItem extends ConsumerWidget {
+class ReviewItem extends ConsumerStatefulWidget {
   final Product product;
   final Review review;
   final ReviewStats? stats;
-  final bool? isLiked;
-  final VoidCallback? onLikeToggle;
-  final VoidCallback? onCommentTap;
-  final VoidCallback? onReviewUpdated;
-  final VoidCallback? onDelete;
+  final bool? widget.isLiked;
+  final VoidCallback? widget.onLikeToggle;
+  final VoidCallback? widget.onCommentTap;
+  final VoidCallback? widget.onReviewUpdated;
+  final VoidCallback? widget.onDelete;
 
   const ReviewItem({
     super.key,
@@ -99,8 +99,8 @@ class ReviewItem extends ConsumerWidget {
       },
     );
 
-    if (result == true && onReviewUpdated != null) {
-      onReviewUpdated!();
+    if (result == true && widget.onReviewUpdated != null) {
+      widget.onReviewUpdated!();
     }
   }
 
@@ -133,7 +133,7 @@ class ReviewItem extends ConsumerWidget {
                 onTap: () {
                   Navigator.pop(context);
                   if (onDelete != null) {
-                    onDelete!();
+                    widget.onDelete!();
                   }
                 },
               ),
@@ -148,15 +148,15 @@ class ReviewItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final reviewText = review.reviewText.trim();
+    final reviewText = widget.review.reviewText.trim();
     final currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id;
-    final isOwner = currentUserId != null && currentUserId == review.userId;
+    final isOwner = currentUserId != null && currentUserId == widget.review.userId;
 
     final userProfileAsync = ref.watch(userProfileProvider(review.userId));
 
-    final likeCount = stats?.likeCount ?? 0;
-    final commentCount = stats?.commentCount ?? 0;
-    final liked = isLiked ?? false;
+    final likeCount = widget.stats?.likeCount ?? 0;
+    final commentCount = widget.stats?.commentCount ?? 0;
+    final liked = widget.isLiked ?? false;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,7 +246,7 @@ class ReviewItem extends ConsumerWidget {
             _buildRatingStars(context),
             const SizedBox(width: 6),
             Text(
-              review.rating.toStringAsFixed(1),
+              widget.review.rating.toStringAsFixed(1),
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: isDark ? Colors.white : Colors.black,
@@ -271,7 +271,7 @@ class ReviewItem extends ConsumerWidget {
           children: [
             InkWell(
               borderRadius: BorderRadius.circular(999),
-              onTap: onLikeToggle,
+              onTap: widget.onLikeToggle,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                 child: Row(
@@ -298,7 +298,7 @@ class ReviewItem extends ConsumerWidget {
             const SizedBox(width: 24),
             InkWell(
               borderRadius: BorderRadius.circular(999),
-              onTap: onCommentTap,
+              onTap: widget.onCommentTap,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                 child: Row(
