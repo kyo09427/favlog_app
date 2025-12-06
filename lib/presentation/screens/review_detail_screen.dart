@@ -11,7 +11,6 @@ import '../providers/review_detail_controller.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../data/repositories/supabase_product_repository.dart';
 import '../../data/repositories/supabase_review_repository.dart';
-import '../widgets/error_dialog.dart';
 
 class ReviewDetailScreen extends ConsumerStatefulWidget {
   final String productId;
@@ -459,44 +458,12 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                                     isLiked: isLiked,
                                     onLikeToggle: () => reviewDetailController.toggleLike(review.id),
                                     onCommentTap: () {
-                                      // context.push()ではなくcontext.go()を使用してURLを更新
-                                      context.go('/review/${review.id}');
+                                      // コメント画面に遷移
+                                      context.push('/review/${review.id}');
                                     },
                                     onReviewUpdated: () => reviewDetailController.refreshAll(),
+                                    onDelete: () => _deleteReview(context, ref, review.id),
                                   ),
-                                  if (isOwner)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 8),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.end,
-                                        children: [
-                                          TextButton.icon(
-                                            onPressed: () async {
-                                              await context.push(
-                                                '/edit-review',
-                                                extra: {
-                                                  'review': review,
-                                                  'product': displayedProduct,
-                                                },
-                                              );
-                                              reviewDetailController.refreshAll();
-                                            },
-                                            icon: const Icon(Icons.edit_outlined, size: 18),
-                                            label: const Text('編集'),
-                                            style: TextButton.styleFrom(
-                                              foregroundColor: _primary,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          TextButton.icon(
-                                            onPressed: () => _deleteReview(context, ref, review.id),
-                                            icon: const Icon(Icons.delete_outline, size: 18),
-                                            label: const Text('削除'),
-                                            style: TextButton.styleFrom(foregroundColor: Colors.red),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
                                 ],
                               ),
                             );

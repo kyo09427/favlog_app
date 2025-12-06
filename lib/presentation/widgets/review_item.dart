@@ -16,6 +16,7 @@ class ReviewItem extends ConsumerWidget {
   final VoidCallback? onLikeToggle;
   final VoidCallback? onCommentTap;
   final VoidCallback? onReviewUpdated;
+  final VoidCallback? onDelete;
 
   const ReviewItem({
     super.key,
@@ -26,6 +27,7 @@ class ReviewItem extends ConsumerWidget {
     this.onLikeToggle,
     this.onCommentTap,
     this.onReviewUpdated,
+    this.onDelete,
   });
 
   Widget _buildRatingStars(BuildContext context) {
@@ -90,7 +92,7 @@ class ReviewItem extends ConsumerWidget {
 
   Future<void> _handleEdit(BuildContext context) async {
     final result = await context.push<bool>(
-      '/edit-review', // 新しいパスを定義する必要がある
+      '/edit-review',
       extra: {
         'review': review,
         'product': product,
@@ -100,6 +102,46 @@ class ReviewItem extends ConsumerWidget {
     if (result == true && onReviewUpdated != null) {
       onReviewUpdated!();
     }
+  }
+
+  void _showMenu(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit_outlined, color: Color(0xFF22A06B)),
+                title: const Text('編集する'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _handleEdit(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: const Text('削除する', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(context);
+                  if (onDelete != null) {
+                    onDelete!();
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -188,12 +230,12 @@ class ReviewItem extends ConsumerWidget {
             if (isOwner)
               IconButton(
                 icon: Icon(
-                  Icons.edit_outlined,
+                  Icons.more_vert,
                   size: 20,
                   color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
-                onPressed: () => _handleEdit(context),
-                tooltip: '編集',
+                onPressed: () => _showMenu(context, ref),
+                tooltip: 'メニュー',
               ),
           ],
         ),

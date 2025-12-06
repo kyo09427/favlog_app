@@ -19,7 +19,6 @@ import '../../presentation/screens/comment_screen.dart'; // 追加
 import '../../presentation/screens/add_review_to_product_screen.dart'; // 追加
 import '../../presentation/screens/edit_product_screen.dart';
 import '../../presentation/screens/settings_screen.dart'; // 追加
-import '../../presentation/screens/single_review_screen.dart'; // 追加
 import '../../presentation/screens/password_reset_request_screen.dart'; // 追加
 import '../../presentation/screens/password_reset_email_sent_screen.dart'; // 追加
 import '../../presentation/screens/update_password_screen.dart'; // 追加
@@ -28,7 +27,7 @@ import '../../presentation/screens/update_email_sent_screen.dart'; // 追加
 import '../../presentation/screens/confirm_email_change_screen.dart'; // 追加
 import '../../presentation/widgets/scaffold_with_nav_bar.dart';
 
-// StreamをリッスンしてGoRouterをリフレッシュするためのChangeNotifier
+// StreamをリチE��ンしてGoRouterをリフレチE��ュするためのChangeNotifier
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
     notifyListeners();
@@ -54,18 +53,18 @@ final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
-    debugLogDiagnostics: true, // デバッグ用にログを有効化
+    debugLogDiagnostics: true, // チE��チE��用にログを有効匁E
     refreshListenable: GoRouterRefreshStream(ref.watch(authRepositoryProvider).authStateChanges),
     redirect: (BuildContext context, GoRouterState state) {
       final authValue = authState.value;
       final loggedIn = authValue != null && authValue.session != null;
 
-      // まだ認証状態が確定していない場合は何もしない
+      // まだ認証状態が確定してぁE��ぁE��合�E何もしなぁE
       if (authState.isLoading || authState.hasError) {
         return null;
       }
 
-      // ログイン不要でアクセスできる公開ページ
+      // ログイン不要でアクセスできる公開�Eージ
       const publicRoutes = [
         '/auth',
         '/password-reset-request',
@@ -76,40 +75,40 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final currentLocation = state.matchedLocation;
       final isPublic = publicRoutes.contains(currentLocation);
 
-      // --- ログイン状態に基づくリダイレクト ---
+      // --- ログイン状態に基づくリダイレクチE---
 
-      // ① ログインしていない場合
+      // ① ログインしてぁE��ぁE��吁E
       if (!loggedIn) {
-        // 公開ページ以外は/authへ
+        // 公開�Eージ以外�E/authへ
         return isPublic ? null : '/auth';
       }
 
-      // ② ログインしている場合
+      // ② ログインしてぁE��場吁E
 
-      // ②-a メール認証が済んでいない場合
-      final emailVerified = authValue!.session?.user?.emailConfirmedAt != null;
+      // ②-a メール認証が済んでぁE��ぁE��吁E
+      final emailVerified = authValue.session?.user.emailConfirmedAt != null;
       if (!emailVerified) {
-        // メール認証ページ以外なら、メール認証ページへ
+        // メール認証ペ�Eジ以外なら、メール認証ペ�Eジへ
         return currentLocation == '/verify-email' ? null : '/verify-email';
       }
 
-      // ②-b メール認証済みの場合
-      // ログイン画面やメール認証画面にアクセスしようとしたら、ホームへリダイレクト
+      // ②-b メール認証済みの場吁E
+      // ログイン画面めE��ール認証画面にアクセスしよぁE��したら、�EームへリダイレクチE
       if (currentLocation == '/auth' || currentLocation == '/verify-email') {
         return '/';
       }
 
-      // 上記のいずれにも該当しない場合はリダイレクトしない
+      // 上記�EぁE��れにも該当しなぁE��合�EリダイレクトしなぁE
       return null;
     },
     routes: [
-      // ボトムナビゲーションバーを持つStatefulShellRoute
+      // ボトムナビゲーションバ�Eを持つStatefulShellRoute
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return ScaffoldWithNavBar(navigationShell: navigationShell);
         },
         branches: [
-          // Home タブ
+          // Home タチE
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -118,7 +117,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Search タブ
+          // Search タチE
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -127,7 +126,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Profile タブ
+          // Profile タチE
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -136,7 +135,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Settings タブ (新規追加)
+          // Settings タチE(新規追加)
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -148,7 +147,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
       
-      // ボトムナビゲーションバーの外に表示される画面
+      // ボトムナビゲーションバ�Eの外に表示される画面
       GoRoute(
         path: '/auth',
         parentNavigatorKey: _rootNavigatorKey,
@@ -172,7 +171,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           return ReviewDetailScreen(productId: productId);
         },
       ),
-      // 新規追加ルート
+      // 新規追加ルーチE
       GoRoute(
         path: '/edit-review',
         parentNavigatorKey: _rootNavigatorKey,
@@ -209,13 +208,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           return EditProductScreen(product: product);
         },
       ),
-      // 個別レビュー詳細ページ
+      // 個別レビュー詳細ペ�Eジ
       GoRoute(
         path: '/review/:reviewId',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final reviewId = state.pathParameters['reviewId']!;
-          return SingleReviewScreen(reviewId: reviewId);
+          return CommentScreen(reviewId: reviewId, productName: '');
         },
       ),
       // パスワード変更関連

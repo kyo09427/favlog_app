@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -249,14 +248,14 @@ class AddReviewController extends StateNotifier<AddReviewState> {
             quality: 80,
           );
           
-          const fileExtension = 'jpg';
+          const fileExtension = 'webp';
           
           // Supabase Storageにアップロード
           imageUrl = await productRepository.uploadProductImage(
             user.id,
             compressedBytes,
             fileExtension,
-            contentType: 'image/jpeg',
+            contentType: 'image/webp',
           );
         } catch (imageError) {
           throw Exception('画像のアップロードに失敗しました: ${imageError.toString()}');

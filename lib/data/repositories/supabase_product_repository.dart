@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/product.dart';
@@ -100,7 +100,7 @@ class SupabaseProductRepository implements ProductRepository {
   }
 
   @override
-  Future<String> uploadProductImage(String userId, Uint8List imageData, String fileExtension, {String contentType = 'image/jpeg'}) async {
+  Future<String> uploadProductImage(String userId, Uint8List imageData, String fileExtension, {String contentType = 'image/webp'}) async {
     try {
       final fileName = '${userId}_${DateTime.now().microsecondsSinceEpoch}.$fileExtension';
       await _supabaseClient.storage

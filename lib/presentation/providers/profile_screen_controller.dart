@@ -1,4 +1,4 @@
-
+﻿
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -175,7 +175,7 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
             path,
             compressedBytes,
             fileOptions: const FileOptions(
-                cacheControl: '3600', upsert: true, contentType: 'image/jpeg'),
+                cacheControl: '3600', upsert: true, contentType: 'image/webp'),
           );
 
       final publicUrl = _supabaseClient.storage.from('avatars').getPublicUrl(path);

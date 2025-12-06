@@ -1,4 +1,4 @@
-﻿import 'package:go_router/go_router.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -167,105 +167,6 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
       return '${difference.inDays}日前';
     }
     return '${date.year}/${date.month}/${date.day}';
-  }
-
-  Future<void> _editComment(Comment comment) async {
-    final controller = TextEditingController(text: comment.commentText);
-    
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('コメントを編集'),
-        content: TextField(
-          controller: controller,
-          maxLines: null,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'コメントを入力...',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('キャンセル'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('保存'),
-          ),
-        ],
-      ),
-    );
-
-    if (result == null || result.trim().isEmpty) return;
-
-    try {
-      final commentRepository = ref.read(commentRepositoryProvider);
-      final updatedComment = Comment(
-        id: comment.id,
-        userId: comment.userId,
-        reviewId: comment.reviewId,
-        commentText: result.trim(),
-        createdAt: comment.createdAt,
-      );
-      
-      await commentRepository.updateComment(updatedComment);
-      ref.invalidate(commentListProvider(widget.reviewId));
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('コメントを編集しました')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('編集に失敗しました: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _deleteComment(String commentId) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('コメントを削除'),
-        content: const Text('このコメントを削除してもよろしいですか?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('キャンセル'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('削除'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    try {
-      final commentRepository = ref.read(commentRepositoryProvider);
-      await commentRepository.deleteComment(commentId);
-      ref.invalidate(commentListProvider(widget.reviewId));
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('コメントを削除しました')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('削除に失敗しました: $e')),
-        );
-      }
-    }
   }
 
   @override
@@ -704,41 +605,6 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                                           ],
                                         ),
                                       ),
-
-                                      // 自分のコメントの場合、メニューボタンを表示
-                                      if (isOwner)
-                                        PopupMenuButton<String>(
-                                          icon: Icon(Icons.more_vert, size: 20, color: mutedTextColor),
-                                          onSelected: (value) {
-                                            if (value == 'edit') {
-                                              _editComment(comment);
-                                            } else if (value == 'delete') {
-                                              _deleteComment(comment.id);
-                                            }
-                                          },
-                                          itemBuilder: (context) => [
-                                            const PopupMenuItem(
-                                              value: 'edit',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.edit, size: 18),
-                                                  SizedBox(width: 8),
-                                                  Text('編集'),
-                                                ],
-                                              ),
-                                            ),
-                                            const PopupMenuItem(
-                                              value: 'delete',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.delete, size: 18, color: Colors.red),
-                                                  SizedBox(width: 8),
-                                                  Text('削除', style: TextStyle(color: Colors.red)),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
                                     ],
                                   ),
                                 );

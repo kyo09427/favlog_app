@@ -5,6 +5,7 @@ abstract class ReviewRepository {
   Future<List<ProductStats>> getProductStats(List<String> productIds);
   Future<List<Review>> getReviews({String? category});
   Future<List<Review>> getReviewsByProductId(String productId);
+  Future<List<Review>> getReviewsByUserId(String userId);
   Future<Map<String, Review>> getLatestReviewsByProductIds(List<String> productIds);
   Future<Review> getReviewById(String reviewId);
   Future<void> createReview(Review review);
