@@ -685,7 +685,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                                 child: IconButton(
                                   onPressed: () {
                                     controller.pickAndUploadAvatar();
-                                    Navigator.pop(context);
                                   },
                                   icon: const Icon(
                                     Icons.edit,
@@ -702,7 +701,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                         TextButton(
                           onPressed: () {
                             controller.pickAndUploadAvatar();
-                            Navigator.pop(context);
                           },
                           child: const Text(
                             'プロフィール画像を変更',
