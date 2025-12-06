@@ -147,15 +147,42 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 children: [
                   // Header
                   Padding(
-                    padding: const EdgeInsets.only(top: 48, bottom: 32),
-                    child: Text(
-                      'FavLog',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                        letterSpacing: -0.5,
-                      ),
+                    padding: const EdgeInsets.only(top: 48, bottom: 16),
+                    child: Column(
+                      children: [
+                        Text(
+                          'FavLog',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        // アプリアイコン
+                        Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 20,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: Image.asset(
+                              'assets/images/app_icon.png',
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 

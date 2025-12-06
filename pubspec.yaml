@@ -41,6 +41,7 @@ flutter:
     - assets/categories.json
     - .env
     - assets/fonts/
+    - assets/images/
 
   fonts:
     - family: KosugiMaru
