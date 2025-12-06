@@ -260,19 +260,21 @@ class EditProductController extends StateNotifier<EditProductState> {
         imageUrl: imageUrl,
       );
 
-      // 商品を更新し、更新後のデータを取得
-      final resultProduct = await productRepository.updateProduct(updatedProduct);
+      // 商品を更新
+      await productRepository.updateProduct(updatedProduct);
 
       // 関連するプロバイダーを無効化してデータを再取得させる
       _ref.invalidate(homeScreenControllerProvider);
       _ref.invalidate(searchControllerProvider);
+      // 必要に応じて他のプロバイダーも無効化する
+      // 例: _ref.invalidate(productDetailProvider(state.originalProduct.id));
 
       // 成功したら状態を更新
       if (!_isDisposed) {
         state = state.copyWith(
           isLoading: false,
-          originalProduct: resultProduct, // 更新後のデータでオリジナルを更新
-          existingImageUrl: resultProduct.imageUrl, // imageUrlも更新後のものを使用
+          originalProduct: updatedProduct, // 更新後のデータでオリジナルを更新
+          existingImageUrl: updatedProduct.imageUrl, // imageUrlも更新後のものを使用
           clearNewImageFile: true,
         );
       }
