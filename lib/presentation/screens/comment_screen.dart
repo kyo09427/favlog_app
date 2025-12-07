@@ -185,11 +185,11 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
             child: const Text('キャンセル'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, controller.text),
+            onPressed: () => context.pop(controller.text),
             child: const Text('保存'),
           ),
         ],
@@ -233,11 +233,11 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
         content: const Text('このコメントを削除してもよろしいですか?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => context.pop(false),
             child: const Text('キャンセル'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => context.pop(true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('削除'),
           ),
