@@ -816,9 +816,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                     height: 48,
                     child: ElevatedButton(
                       onPressed: () async {
-                        // 順次更新を実行
-                        await controller.updateUsername(usernameController.text);
-                        await controller.updateUserId(userIdController.text);
+                        await controller.updateProfileDetails(
+                          username: usernameController.text,
+                          displayId: userIdController.text,
+                        );
                         if (context.mounted) {
                           Navigator.pop(context);
                         }

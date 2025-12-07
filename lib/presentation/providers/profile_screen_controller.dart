@@ -97,59 +97,57 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
     }
   }
 
-  Future<void> updateUsername(String newUsername) async {
+  Future<void> updateProfileDetails({
+    required String username,
+    required String displayId,
+  }) async {
     if (_isDisposed) return;
     
-    final currentProfile = state.value;
+    final currentProfile = state.valueOrNull;
     if (currentProfile == null) {
-      state = AsyncValue.error('プロフィールが見つかりません', StackTrace.current);
-      return;
-    }
-    
-    if (newUsername.trim().isEmpty) {
-      state = AsyncValue.error('ユーザー名を入力してください', StackTrace.current);
-      return;
-    }
-    
-    state = const AsyncValue.loading();
-    try {
-      final updatedProfile = currentProfile.copyWith(username: newUsername.trim());
-      await _profileRepository.updateProfile(updatedProfile);
-      
       if (!_isDisposed) {
-        state = AsyncValue.data(updatedProfile);
+        state = AsyncValue.error('プロフィールが見つかりません', StackTrace.current);
       }
-    } catch (e, st) {
-      if (!_isDisposed) {
-        state = AsyncValue.error('プロフィールの更新に失敗しました: $e', st);
-      }
-    }
-  }
-
-  Future<void> updateUserId(String newUserId) async {
-    if (_isDisposed) return;
-    
-    final currentProfile = state.value;
-    if (currentProfile == null) {
-      state = AsyncValue.error('プロフィールが見つかりません', StackTrace.current);
       return;
     }
     
-    if (newUserId.trim().isEmpty) {
-      state = AsyncValue.error('ユーザーIDを入力してください', StackTrace.current);
+    final newUsername = username.trim();
+    final newDisplayId = displayId.trim();
+    
+    if (newUsername.isEmpty) {
+      if (!_isDisposed) {
+        state = AsyncValue<Profile?>.error('ユーザー名を入力してください', StackTrace.current).copyWithPrevious(state);
+      }
+      return;
+    }
+    
+    if (newDisplayId.isEmpty) {
+      if (!_isDisposed) {
+        state = AsyncValue<Profile?>.error('ユーザーIDを入力してください', StackTrace.current).copyWithPrevious(state);
+      }
       return;
     }
 
-    // IDの形式チェック（英数字とアンダースコアのみ、など）
+    // IDの形式チェック
     final validCharacters = RegExp(r'^[a-zA-Z0-9_]+$');
-    if (!validCharacters.hasMatch(newUserId.trim())) {
-      state = AsyncValue.error('ユーザーIDは英数字とアンダースコアのみ使用できます', StackTrace.current);
+    if (!validCharacters.hasMatch(newDisplayId)) {
+      if (!_isDisposed) {
+        state = AsyncValue<Profile?>.error('ユーザーIDは英数字とアンダースコアのみ使用できます', StackTrace.current).copyWithPrevious(state);
+      }
+      return;
+    }
+
+    // 変更がない場合はリターン
+    if (newUsername == currentProfile.username && newDisplayId == currentProfile.displayId) {
       return;
     }
     
     state = const AsyncValue.loading();
     try {
-      final updatedProfile = currentProfile.copyWith(displayId: newUserId.trim());
+      final updatedProfile = currentProfile.copyWith(
+        username: newUsername,
+        displayId: newDisplayId,
+      );
       await _profileRepository.updateProfile(updatedProfile);
       
       if (!_isDisposed) {
@@ -157,8 +155,7 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
       }
     } catch (e, st) {
       if (!_isDisposed) {
-        // 重複エラーなどの詳細なハンドリングができるとベスト
-        state = AsyncValue.error('ユーザーIDの更新に失敗しました: $e', st);
+        state = AsyncValue<Profile?>.error('プロフィールの更新に失敗しました: $e', st).copyWithPrevious(state);
       }
     }
   }
