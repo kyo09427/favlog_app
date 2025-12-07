@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../domain/models/profile.dart';
 import '../../domain/models/review.dart';
 import '../../domain/models/product.dart';
@@ -278,7 +278,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                           borderRadius: BorderRadius.circular(6),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 2,
                               offset: const Offset(0, 1),
                             ),

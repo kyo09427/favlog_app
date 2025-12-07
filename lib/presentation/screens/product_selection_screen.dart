@@ -18,7 +18,7 @@ class _ProductSelectionScreenState extends ConsumerState<ProductSelectionScreen>
   final TextEditingController _searchController = TextEditingController();
   List<Product> _recentProducts = [];
   List<Product> _searchResults = [];
-  bool _isSearching = false;
+
   bool _isLoading = true;
 
   @override
@@ -75,12 +75,11 @@ class _ProductSelectionScreenState extends ConsumerState<ProductSelectionScreen>
     if (query.trim().isEmpty) {
       setState(() {
         _searchResults = [];
-        _isSearching = false;
       });
       return;
     }
 
-    setState(() => _isSearching = true);
+
 
     try {
       final productRepository = ref.read(productRepositoryProvider);
@@ -165,7 +164,7 @@ class _ProductSelectionScreenState extends ConsumerState<ProductSelectionScreen>
                   hintStyle: TextStyle(color: mutedTextColor),
                   prefixIcon: Icon(Icons.search, color: mutedTextColor),
                   filled: true,
-                  fillColor: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF3F4F6),
+                  fillColor: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide(color: borderColor),
@@ -263,7 +262,7 @@ class _ProductSelectionScreenState extends ConsumerState<ProductSelectionScreen>
                                       label: const Text('新しい商品を追加する'),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: isDark
-                                            ? Colors.white.withOpacity(0.1)
+                                            ? Colors.white.withValues(alpha: 0.1)
                                             : const Color(0xFFE5E7EB),
                                         foregroundColor: textColor,
                                         elevation: 0,

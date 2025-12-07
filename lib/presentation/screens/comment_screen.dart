@@ -337,7 +337,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                         commentsAsync.when(
                           data: (comments) => 'コメント ${comments.length}件',
                           loading: () => 'コメント',
-                          error: (_, __) => 'コメント 0件',
+                          error: (_, s) => 'コメント 0件',
                         ),
                         style: TextStyle(
                           fontSize: 16,
@@ -410,7 +410,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                                         color: Colors.grey[300],
                                       ),
                                     ),
-                                    error: (_, __) => Container(
+                                    error: (_, s) => Container(
                                       width: 32,
                                       height: 32,
                                       decoration: BoxDecoration(
@@ -434,7 +434,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                                               commentAuthorProfile.when(
                                                 data: (p) => p?.username ?? 'ユーザー',
                                                 loading: () => '読み込み中...',
-                                                error: (_, __) => 'ユーザー',
+                                                error: (_, s) => 'ユーザー',
                                               ),
                                               style: TextStyle(
                                                 fontSize: 14,

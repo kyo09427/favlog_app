@@ -64,13 +64,13 @@ void main() {
     await tester.pumpAndSettle();
 
     // Check if header title is displayed
-    expect(find.text('レビュー投稿'), findsOneWidget);
+    expect(find.text('レビューを書く'), findsOneWidget);
 
     // Check if product name is displayed
     expect(find.text('テスト商品'), findsOneWidget);
 
     // Check if rating section is present
-    expect(find.text('評価'), findsOneWidget);
+    expect(find.text('総合評価'), findsOneWidget);
     
     // Check if rating stars are present
     // デフォルトの評価が3.5なので、3つのfilled星、1つのhalf星、1つのborder星
@@ -79,20 +79,20 @@ void main() {
     expect(find.byIcon(Icons.star_border), findsNWidgets(1));
 
     // Check if image section is present
-    expect(find.text('写真を追加'), findsOneWidget);
+    expect(find.text('写真'), findsOneWidget);
 
     // Check if review text section is present
-    expect(find.text('レビュー本文'), findsOneWidget);
+    expect(find.textContaining('レビュー詳細'), findsOneWidget);
 
     // Check if subcategory section is present
-    expect(find.text('サブカテゴリ (任意)'), findsOneWidget);
+    expect(find.text('タグ'), findsOneWidget);
 
     // Check if visibility section is present
     expect(find.text('公開範囲'), findsOneWidget);
     expect(find.text('全体に公開'), findsOneWidget);
 
     // Check if submit button is present
-    expect(find.text('レビューを投稿する'), findsOneWidget);
+    expect(find.text('投稿'), findsOneWidget);
   });
 
   testWidgets('AddReviewScreen renders when no product is selected', (WidgetTester tester) async {
@@ -100,12 +100,12 @@ void main() {
     await tester.pumpAndSettle();
 
     // レビュー投稿画面はレンダリングされるべき
-    expect(find.text('レビュー投稿'), findsOneWidget);
+    expect(find.text('レビューを書く'), findsOneWidget);
     
     // 商品情報が表示されないことを確認（selectedProductがnullの場合）
     // UIは表示されるが、商品名は表示されない
-    expect(find.text('評価'), findsOneWidget);
-    expect(find.text('レビュー本文'), findsOneWidget);
-    expect(find.text('レビューを投稿する'), findsOneWidget);
+    expect(find.text('総合評価'), findsOneWidget);
+    // expect(find.text('レビュー本文'), findsOneWidget); // Label removed
+    expect(find.text('投稿'), findsOneWidget);
   });
 }

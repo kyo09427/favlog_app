@@ -2,6 +2,7 @@
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+// ignore: depend_on_referenced_packages
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -99,7 +100,7 @@ class _MyAppState extends ConsumerState<MyApp> {
       if (e.toString().contains('otp_expired') || e.toString().contains('invalid')) {
         // リンクが期限切れまたは無効の場合
         final context = ref.read(goRouterProvider).routerDelegate.navigatorKey.currentContext;
-        if (context != null && mounted) {
+        if (context != null && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('リンクの有効期限が切れているか、無効です。再度お試しください。'),
@@ -123,7 +124,7 @@ class _MyAppState extends ConsumerState<MyApp> {
         // メールアドレス変更完了時など
         // SnackBarを表示してユーザーに通知する
         final context = ref.read(goRouterProvider).routerDelegate.navigatorKey.currentContext;
-        if (context != null) {
+        if (context != null && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('ユーザー情報が更新されました。'),

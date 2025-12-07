@@ -80,20 +80,18 @@ class _AddReviewToProductScreenState
         final starPosition = index + 1;
 
         IconData icon;
-        Color color;
+
 
         if (rating >= starPosition) {
           icon = Icons.star;
-          color = const Color(0xFF22A06B);
+
         } else if (rating >= starPosition - 0.5 &&
             rating < starPosition) {
           icon = Icons.star_half;
-          color = const Color(0xFF22A06B);
+
         } else {
           icon = Icons.star_border;
-          color = theme.brightness == Brightness.dark
-              ? Colors.grey[600]!
-              : Colors.grey[400]!;
+
         }
 
         return IconButton(
@@ -251,7 +249,7 @@ class _AddReviewToProductScreenState
                               '感じたことや良かったところ、イマイチだったところなどをメモしておきましょう。',
                           filled: true,
                           fillColor: theme.brightness == Brightness.dark
-                              ? Colors.white.withOpacity(0.04)
+                              ? Colors.white.withValues(alpha: 0.04)
                               : Colors.white,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -272,8 +270,7 @@ class _AddReviewToProductScreenState
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: const Color(0xFF22A06B) ??
-                                  Colors.green,
+                              color: const Color(0xFF22A06B),
                               width: 1.5,
                             ),
                           ),
@@ -310,7 +307,7 @@ class _AddReviewToProductScreenState
                     : Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 10,
                     offset: const Offset(0, -2),
                   ),

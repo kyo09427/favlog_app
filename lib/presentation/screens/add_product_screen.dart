@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../providers/add_product_controller.dart';
@@ -83,7 +83,9 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
     // エラー表示
     if (state.error != null) {
       Future.microtask(() {
-        ErrorDialog.show(context, state.error!);
+        if (context.mounted) {
+          ErrorDialog.show(context, state.error!);
+        }
       });
     }
 
@@ -161,7 +163,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                             hintText: '例：最高のワイヤレスイヤホン',
                             hintStyle: TextStyle(color: mutedTextColor),
                             filled: true,
-                            fillColor: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF3F4F6),
+                            fillColor: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(color: borderColor),
@@ -215,7 +217,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                             hintText: 'https://example.com',
                             hintStyle: TextStyle(color: mutedTextColor),
                             filled: true,
-                            fillColor: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF3F4F6),
+                            fillColor: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(color: borderColor),
@@ -286,7 +288,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                                 decoration: BoxDecoration(
                                   color: isSelected
                                       ? primaryColor
-                                      : (isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFE5E7EB)),
+                                      : (isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE5E7EB)),
                                   borderRadius: BorderRadius.circular(24),
                                 ),
                                 child: Text(
@@ -337,7 +339,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                             hintText: '例：ミステリー',
                             hintStyle: TextStyle(color: mutedTextColor),
                             filled: true,
-                            fillColor: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF3F4F6),
+                            fillColor: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(color: borderColor),
@@ -378,7 +380,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                                 label: Text('#$tag'),
                                 deleteIcon: const Icon(Icons.close, size: 16),
                                 onDeleted: () => controller.removeSubcategoryTag(tag),
-                                backgroundColor: primaryColor.withOpacity(0.2),
+                                backgroundColor: primaryColor.withValues(alpha: 0.2),
                                 labelStyle: const TextStyle(
                                   color: primaryColor,
                                   fontWeight: FontWeight.w500,
@@ -416,7 +418,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 foregroundColor: Colors.black,
-                disabledBackgroundColor: primaryColor.withOpacity(0.5),
+                disabledBackgroundColor: primaryColor.withValues(alpha: 0.5),
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

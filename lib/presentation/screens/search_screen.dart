@@ -122,7 +122,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: theme.dividerColor.withOpacity(0.3),
+              color: theme.dividerColor.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -158,7 +158,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 color: Colors.white,
                               ),
                             ),
-                            backgroundColor: theme.colorScheme.primary.withOpacity(0.8),
+                            backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.8),
                             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             padding: const EdgeInsets.symmetric(horizontal: 4),
                           ),
@@ -294,7 +294,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                               boxShadow: selected
                                   ? [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.05),
+                                        color: Colors.black.withValues(alpha: 0.05),
                                         blurRadius: 4,
                                         offset: const Offset(0, 2),
                                       ),
@@ -491,7 +491,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     ),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(999),
-                      color: Colors.green.withOpacity(0.15),
+                      color: Colors.green.withValues(alpha: 0.15),
                     ),
                     child: Text(
                       keyword,

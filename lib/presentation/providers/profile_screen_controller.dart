@@ -20,7 +20,7 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
   final ProfileRepository _profileRepository;
   final SupabaseClient _supabaseClient;
   final AuthRepository _authRepository;
-  final Ref _ref;
+
   final ImagePicker _imagePicker;
   final ImageCompressor _imageCompressor;
   bool _isDisposed = false;
@@ -30,7 +30,7 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
     this._profileRepository,
     this._supabaseClient,
     this._authRepository,
-    this._ref,
+
     this._imagePicker,
     this._imageCompressor,
   ) : super(const AsyncValue.loading()) {
@@ -262,7 +262,7 @@ final profileScreenControllerProvider =
     profileRepository,
     supabaseClient,
     authRepository,
-    ref,
+
     imagePicker,
     imageCompressor,
   );

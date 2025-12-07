@@ -8,7 +8,7 @@ import '../../domain/models/product.dart';
 import '../widgets/review_item.dart';
 
 import '../providers/review_detail_controller.dart';
-import '../../data/repositories/supabase_auth_repository.dart';
+
 import '../../data/repositories/supabase_product_repository.dart';
 import '../../data/repositories/supabase_review_repository.dart';
 
@@ -153,15 +153,14 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
   Widget build(BuildContext context) {
     final reviewDetailState = ref.watch(reviewDetailControllerProvider(widget.productId));
     final reviewDetailController = ref.read(reviewDetailControllerProvider(widget.productId).notifier);
-    final currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id;
+
 
     final displayedProduct = reviewDetailState.currentProduct;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final backgroundColor = isDark ? _backgroundDark : _backgroundLight;
 
-    final isProductOwner =
-        currentUserId != null && displayedProduct.userId == currentUserId;
+
 
     if (displayedProduct.id == Product.empty().id) {
       return Scaffold(
@@ -196,7 +195,7 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                 decoration: BoxDecoration(
                   color: backgroundColor,
                   border: Border(
-                    bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
+                    bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
                   ),
                 ),
                 child: Row(
@@ -384,7 +383,7 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                       Container(
                         decoration: BoxDecoration(
                           border: Border(
-                            bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
+                            bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
                           ),
                         ),
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -439,12 +438,12 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                             final review = reviewWithStats.review;
                             final stats = reviewWithStats.stats;
                             final isLiked = reviewWithStats.isLikedByCurrentUser;
-                            final isOwner = currentUserId != null && currentUserId == review.userId;
+
 
                             return Container(
                               decoration: BoxDecoration(
                                 border: Border(
-                                  bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
+                                  bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
                                 ),
                               ),
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -510,9 +509,11 @@ class _UrlLink extends StatelessWidget {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('このURLを開けませんでした')),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('このURLを開けませんでした')),
+        );
+      }
     }
   }
 

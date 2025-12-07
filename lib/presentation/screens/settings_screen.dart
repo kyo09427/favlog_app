@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -185,6 +186,7 @@ class SettingsScreen extends ConsumerWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+
             RadioListTile<ThemeMode>(
               title: const Text('ライトモード'),
               value: ThemeMode.light,
@@ -196,6 +198,7 @@ class SettingsScreen extends ConsumerWidget {
                 }
               },
             ),
+
             RadioListTile<ThemeMode>(
               title: const Text('ダークモード'),
               value: ThemeMode.dark,
@@ -207,6 +210,7 @@ class SettingsScreen extends ConsumerWidget {
                 }
               },
             ),
+
             RadioListTile<ThemeMode>(
               title: const Text('システムのテーマに合わせる'),
               value: ThemeMode.system,

@@ -1,14 +1,14 @@
+// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../../domain/models/product.dart';
 import '../providers/add_review_controller.dart';
-import '../widgets/error_dialog.dart';
 
 class AddReviewScreen extends ConsumerStatefulWidget {
   final Product? selectedProduct;
@@ -83,7 +83,11 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
       );
       
       if (image != null) {
-        ref.read(addReviewControllerProvider.notifier).addImage(File(image.path));
+        if (source == ImageSource.camera) {
+           ref.read(addReviewControllerProvider.notifier).addImage(ImageSource.camera);
+        } else {
+           ref.read(addReviewControllerProvider.notifier).addImage(ImageSource.gallery);
+        }
       }
     }
   }
@@ -208,11 +212,7 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                if (state.selectedProduct!.brand != null)
-                                  Text(
-                                    state.selectedProduct!.brand!,
-                                    style: TextStyle(color: mutedTextColor, fontSize: 13),
-                                  ),
+
                               ],
                             ),
                           ),
@@ -294,11 +294,11 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        ...state.tags.map((tag) => Chip(
+                        ...state.subcategoryTags.map((tag) => Chip(
                               label: Text(tag, style: const TextStyle(fontSize: 12)),
                               backgroundColor: cardColor,
                               side: BorderSide(color: borderColor),
-                              onDeleted: () => controller.removeTag(tag),
+                              onDeleted: () => controller.removeSubcategoryTag(tag),
                             )),
                         SizedBox(
                           width: 120,
@@ -317,7 +317,7 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                             ),
                             onSubmitted: (value) {
                               if (value.isNotEmpty) {
-                                controller.addTag(value);
+                                controller.addSubcategoryTag(value);
                                 _tagInputController.clear();
                               }
                             },

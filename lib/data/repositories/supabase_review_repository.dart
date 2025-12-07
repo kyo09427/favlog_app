@@ -147,7 +147,7 @@ class SupabaseReviewRepository implements ReviewRepository {
           await _supabaseClient.storage.from('product_images').remove(fileNames);
         } catch (e) {
           // 画像削除の失敗はメイン処理に影響させない
-          print('Failed to delete old review images: $e');
+          // print('Failed to delete old review images: $e');
         }
       }
     } catch (e) {
@@ -169,7 +169,7 @@ class SupabaseReviewRepository implements ReviewRepository {
           final fileNames = review.imageUrls.map((url) => url.split('/').last).toList();
           await _supabaseClient.storage.from('product_images').remove(fileNames);
         } catch (e) {
-          print('Failed to delete review images: $e');
+          // print('Failed to delete review images: $e');
         }
       }
     } catch (e) {

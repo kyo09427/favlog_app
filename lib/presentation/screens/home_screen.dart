@@ -99,7 +99,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               color: isDark ? Colors.grey[800] : Colors.white,
             ),
           ),
-          errorWidget: (context, _, __) => Container(
+          errorWidget: (context, url, error) => Container(
             width: size,
             height: size,
             decoration: BoxDecoration(
@@ -173,7 +173,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: theme.dividerColor.withOpacity(0.2),
+          color: theme.dividerColor.withValues(alpha: 0.2),
         ),
       ),
       elevation: 0,
@@ -214,14 +214,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                               if (product.category != null)
                                 _buildChip(
                                   product.category!,
-                                  theme.colorScheme.primary.withOpacity(0.8),
+                                  theme.colorScheme.primary.withValues(alpha: 0.8),
                                   Colors.white,
                                   theme,
                                 ),
                               if (product.subcategoryTags.isNotEmpty)
                                 _buildChip(
                                   product.subcategoryTags.first,
-                                  theme.colorScheme.secondary.withOpacity(0.8),
+                                  theme.colorScheme.secondary.withValues(alpha: 0.8),
                                   Colors.white,
                                   theme,
                                 ),
@@ -450,7 +450,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
               if (shouldLogout == true && mounted) {
                 await homeScreenController.signOut();
-                if (mounted) {
+                if (context.mounted) {
                   context.go('/auth');
                 }
               }

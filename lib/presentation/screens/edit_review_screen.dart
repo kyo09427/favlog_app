@@ -2,11 +2,8 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
-
 import '../../domain/models/review.dart';
 import '../../domain/models/product.dart';
 import '../providers/edit_review_controller.dart';
@@ -143,7 +140,9 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
     // エラー表示
     if (state.error != null) {
       Future.microtask(() {
-        ErrorDialog.show(context, state.error!);
+        if (context.mounted) {
+          ErrorDialog.show(context, state.error!);
+        }
       });
     }
 
@@ -275,7 +274,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                         hintText: '良かった点、気になった点など、自由にレビューを書きましょう。',
                         hintStyle: TextStyle(color: mutedTextColor),
                         filled: true,
-                        fillColor: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF3F4F6),
+                        fillColor: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(color: borderColor),
@@ -310,7 +309,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                         hintText: '例：ミステリー小説、ワイヤレスイヤホン',
                         hintStyle: TextStyle(color: mutedTextColor),
                         filled: true,
-                        fillColor: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF3F4F6),
+                        fillColor: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(color: borderColor),
@@ -351,7 +350,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                             label: Text('#$tag'),
                             deleteIcon: const Icon(Icons.close, size: 16),
                             onDeleted: () => controller.removeSubcategoryTag(tag),
-                            backgroundColor: primaryColor.withOpacity(0.2),
+                            backgroundColor: primaryColor.withValues(alpha: 0.2),
                             labelStyle: const TextStyle(
                               color: primaryColor,
                               fontWeight: FontWeight.w500,
@@ -379,7 +378,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF3F4F6),
+                          color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -388,7 +387,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                               width: 32,
                               height: 32,
                               decoration: BoxDecoration(
-                                color: primaryColor.withOpacity(0.2),
+                                color: primaryColor.withValues(alpha: 0.2),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -429,7 +428,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              backgroundColor.withOpacity(0),
+              backgroundColor.withValues(alpha: 0),
               backgroundColor,
             ],
           ),
@@ -445,9 +444,9 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 foregroundColor: Colors.black,
-                disabledBackgroundColor: primaryColor.withOpacity(0.5),
+                disabledBackgroundColor: primaryColor.withValues(alpha: 0.5),
                 elevation: 0,
-                shadowColor: primaryColor.withOpacity(0.3),
+                shadowColor: primaryColor.withValues(alpha: 0.3),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

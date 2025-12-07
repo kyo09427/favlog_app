@@ -72,10 +72,12 @@ class SupabaseProductRepository implements ProductRepository {
   Future<void> updateProduct(Product product) async {
     try {
       // デバッグ用にログ出力
+      /*
       print('Updating product: ${product.id}');
       print('User ID: ${_supabaseClient.auth.currentUser?.id}');
       print('Product user_id: ${product.userId}');
       print('Product data: ${product.toJson()}');
+      */
       
       // まず、商品が存在するか確認
       final existingProduct = await _supabaseClient
@@ -84,7 +86,7 @@ class SupabaseProductRepository implements ProductRepository {
           .eq('id', product.id)
           .maybeSingle();
       
-      print('Existing product: $existingProduct');
+      // print('Existing product: $existingProduct');
       
       if (existingProduct == null) {
         throw Exception('商品が見つかりません（ID: ${product.id}）');
@@ -103,14 +105,14 @@ class SupabaseProductRepository implements ProductRepository {
           .eq('id', product.id)
           .select();
       
-      print('Update result: $result');
+      // print('Update result: $result');
       
       // 更新された行が0行の場合はRLSポリシーで拒否された可能性が高い
       if (result.isEmpty) {
         throw Exception('商品の更新に失敗しました。この商品を編集する権限がない可能性があります。');
       }
       
-      print('Update completed successfully');
+      // print('Update completed successfully');
 
       // 画像が変更された場合、古い画像を削除
       if (existingProduct['image_url'] != null && 
@@ -118,17 +120,19 @@ class SupabaseProductRepository implements ProductRepository {
         await deleteProductImage(existingProduct['image_url'] as String);
       }
     } on PostgrestException catch (e) {
+      /*
       print('PostgrestException: ${e.message}');
       print('Details: ${e.details}');
       print('Hint: ${e.hint}');
       print('Code: ${e.code}');
+      */
       
       if (e.code == '42501') {
         throw Exception('更新権限がありません。この商品を編集する権限がない可能性があります。');
       }
       throw Exception('商品の更新に失敗しました: ${e.message}');
     } catch (e) {
-      print('Update error: $e');
+      // print('Update error: $e');
       rethrow;
     }
   }
