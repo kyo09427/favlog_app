@@ -26,7 +26,6 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
   @override
   void initState() {
     super.initState();
-    // 選択された商品がある場合、コントローラーに設定
     if (widget.selectedProduct != null) {
       Future.microtask(() {
         ref.read(addReviewControllerProvider.notifier).setProduct(widget.selectedProduct!);
@@ -47,15 +46,73 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
     final success = await controller.submitReview();
     
     if (success && mounted && selectedProduct != null) {
-      // レビュー対象の商品詳細画面へ遷移
-      // goを使うことで、ブラウザの戻るボタンで投稿画面に戻らないようにする
       context.go('/product/${selectedProduct.id}');
     }
   }
 
-// ... (省略) ...
+  Future<void> _showImageSourceDialog() async {
+    final picker = ImagePicker();
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('画像の追加'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('カメラで撮影'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('アルバムから選択'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
 
-                  SizedBox(
+    if (source != null) {
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      
+      if (image != null) {
+        ref.read(addReviewControllerProvider.notifier).addImage(File(image.path));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(addReviewControllerProvider);
+    final controller = ref.read(addReviewControllerProvider.notifier);
+    
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    final backgroundColor = isDark ? const Color(0xFF102216) : const Color(0xFFF6F8F6);
+    final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+    final mutedTextColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+    final borderColor = isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
+
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ヘッダー
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                   SizedBox(
                     width: 48,
                     height: 48,
                     child: IconButton(
@@ -69,8 +126,276 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                       icon: Icon(Icons.close, color: textColor, size: 24),
                     ),
                   ),
+                  Expanded(
+                    child: Text(
+                      'レビューを書く',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 48,
+                    child: TextButton(
+                      onPressed: state.isLoading ? null : _handleSubmit,
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: state.isLoading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text(
+                              '投稿',
+                              style: TextStyle(
+                                color: Color(0xFF13ec5b),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 商品情報
+                    if (state.selectedProduct != null) ...[
+                      Row(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(8),
+                              image: state.selectedProduct!.imageUrl != null
+                                  ? DecorationImage(
+                                      image: CachedNetworkImageProvider(state.selectedProduct!.imageUrl!),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
+                            ),
+                            child: state.selectedProduct!.imageUrl == null
+                                ? const Icon(Icons.shopping_bag, color: Colors.grey)
+                                : null,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  state.selectedProduct!.name,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: textColor,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (state.selectedProduct!.brand != null)
+                                  Text(
+                                    state.selectedProduct!.brand!,
+                                    style: TextStyle(color: mutedTextColor, fontSize: 13),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                    ],
 
-// ... (省略) ...
+                    // 評価
+                    Center(
+                      child: Column(
+                        children: [
+                          Text(
+                            '総合評価',
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildStarRating(state.rating, controller),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // レビュー本文
+                    TextField(
+                      controller: _reviewTextController,
+                      maxLines: 5,
+                      onChanged: controller.updateReviewText,
+                      style: TextStyle(color: textColor),
+                      decoration: InputDecoration(
+                        hintText: 'レビュー詳細（任意）\n商品の良かった点・気になった点などを詳しく教えてください。',
+                        hintStyle: TextStyle(color: mutedTextColor),
+                        filled: true,
+                        fillColor: cardColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: borderColor),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: borderColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFF13ec5b)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // 写真
+                    Text(
+                      '写真',
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildImageGrid(state, controller, cardColor, borderColor, textColor, mutedTextColor),
+                    const SizedBox(height: 24),
+
+                    // タグ
+                    Text(
+                      'タグ',
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ...state.tags.map((tag) => Chip(
+                              label: Text(tag, style: const TextStyle(fontSize: 12)),
+                              backgroundColor: cardColor,
+                              side: BorderSide(color: borderColor),
+                              onDeleted: () => controller.removeTag(tag),
+                            )),
+                        SizedBox(
+                          width: 120,
+                          child: TextField(
+                            controller: _tagInputController,
+                            style: TextStyle(fontSize: 13, color: textColor),
+                            decoration: InputDecoration(
+                              hintText: 'タグを追加',
+                              hintStyle: TextStyle(color: mutedTextColor),
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: BorderSide(color: borderColor),
+                              ),
+                            ),
+                            onSubmitted: (value) {
+                              if (value.isNotEmpty) {
+                                controller.addTag(value);
+                                _tagInputController.clear();
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // 公開範囲
+                    Text(
+                      '公開範囲',
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: borderColor),
+                      ),
+                      child: Column(
+                        children: [
+                          'public',
+                          'friends',
+                          'private'
+                        ].map((visibility) {
+                          final isSelected = state.visibility == visibility;
+                          final isLast = visibility == 'private';
+                          return Column(
+                            children: [
+                              RadioListTile<String>(
+                                value: visibility,
+                                groupValue: state.visibility,
+                                onChanged: (value) {
+                                  if (value != null) controller.updateVisibility(value);
+                                },
+                                title: Row(
+                                  children: [
+                                    Icon(
+                                      _getVisibilityIcon(visibility),
+                                      size: 20,
+                                      color: isSelected ? const Color(0xFF13ec5b) : mutedTextColor,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      _getVisibilityLabel(visibility),
+                                      style: TextStyle(
+                                        color: isSelected ? textColor : mutedTextColor,
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                activeColor: const Color(0xFF13ec5b),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                                dense: true,
+                              ),
+                              if (!isLast) Divider(height: 1, color: borderColor),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 48),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildStarRating(double rating, AddReviewController controller) {
     return Row(
@@ -81,8 +406,6 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
 
         return GestureDetector(
           onTapUp: (details) {
-            // アイコンのサイズは36.0
-            // 左半分をタップしたら0.5、右半分なら1.0として計算
             final isLeftHalf = details.localPosition.dx < 18.0;
             final newRating = starValue - (isLeftHalf ? 0.5 : 0.0);
             controller.updateRating(newRating);

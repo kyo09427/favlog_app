@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../providers/theme_provider.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     
@@ -30,6 +32,29 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _buildSettingsSection(
+            context,
+            title: 'アプリ設定',
+            children: [
+              _buildSettingsItem(
+                context,
+                title: 'テーマ設定',
+                icon: Icons.brightness_6_outlined,
+                onTap: () => _showThemeSelectionDialog(context, ref),
+                primaryColor: primaryColor,
+                textColor: textColor,
+                mutedTextColor: mutedTextColor,
+                trailing: Text(
+                  _getThemeModeLabel(ref.watch(themeModeProvider)),
+                  style: TextStyle(color: mutedTextColor, fontSize: 14),
+                ),
+              ),
+            ],
+            cardColor: cardColor,
+            borderColor: borderColor,
+            textColor: textColor,
+          ),
+          const SizedBox(height: 24),
           _buildSettingsSection(
             context,
             title: 'アカウント',
@@ -124,6 +149,7 @@ class SettingsScreen extends StatelessWidget {
     required Color primaryColor,
     required Color textColor,
     required Color mutedTextColor,
+    Widget? trailing,
   }) {
     return InkWell(
       onTap: onTap,
@@ -139,10 +165,79 @@ class SettingsScreen extends StatelessWidget {
                 style: TextStyle(color: textColor, fontSize: 16),
               ),
             ),
+            if (trailing != null) ...[
+              trailing,
+              const SizedBox(width: 8),
+            ],
             Icon(Icons.arrow_forward_ios, color: mutedTextColor, size: 18),
           ],
         ),
       ),
     );
+  }
+  void _showThemeSelectionDialog(BuildContext context, WidgetRef ref) {
+    final currentTheme = ref.read(themeModeProvider);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('テーマ設定'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RadioListTile<ThemeMode>(
+              title: const Text('ライトモード'),
+              value: ThemeMode.light,
+              groupValue: currentTheme,
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(themeModeProvider.notifier).setThemeMode(value);
+                  context.pop();
+                }
+              },
+            ),
+            RadioListTile<ThemeMode>(
+              title: const Text('ダークモード'),
+              value: ThemeMode.dark,
+              groupValue: currentTheme,
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(themeModeProvider.notifier).setThemeMode(value);
+                  context.pop();
+                }
+              },
+            ),
+            RadioListTile<ThemeMode>(
+              title: const Text('システムのテーマに合わせる'),
+              value: ThemeMode.system,
+              groupValue: currentTheme,
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(themeModeProvider.notifier).setThemeMode(value);
+                  context.pop();
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => context.pop(),
+            child: const Text('キャンセル'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getThemeModeLabel(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.light:
+        return 'ライトモード';
+      case ThemeMode.dark:
+        return 'ダークモード';
+      case ThemeMode.system:
+        return '自動（システム設定）';
+    }
   }
 }

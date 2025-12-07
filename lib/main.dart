@@ -6,6 +6,7 @@ import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:favlog_app/core/router/app_router.dart';
+import 'package:favlog_app/presentation/providers/theme_provider.dart';
 
 // Define a Riverpod provider for SupabaseClient
 final supabaseProvider = Provider<SupabaseClient>((ref) {
@@ -142,46 +143,74 @@ class _MyAppState extends ConsumerState<MyApp> {
       routerConfig: goRouter,
       title: 'FavLog App',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF4CAF50),
-          brightness: Brightness.light,
-        ),
         useMaterial3: true,
         fontFamily: 'KosugiMaru',
+        brightness: Brightness.light,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF13EC5B),
+          brightness: Brightness.light,
+          primary: const Color(0xFF13EC5B),
+          surface: Colors.white,
+          onSurface: const Color(0xFF1F2937), // Text color
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF6F8F6),
+        cardColor: Colors.white,
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 0,
+          backgroundColor: Color(0xFFF6F8F6),
+          foregroundColor: Color(0xFF1F2937),
+          surfaceTintColor: Colors.transparent, // Disable Material 3 tint
         ),
         textTheme: const TextTheme(
-          headlineSmall: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold), // 投稿タイトル
-          titleLarge: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),    // ユーザー名など
-          titleMedium: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
-          bodyMedium: TextStyle(fontSize: 14.0, height: 1.5),                    // コメント文
-          bodySmall: TextStyle(fontSize: 12.0, height: 1.5),
-          labelLarge: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold),     // UI文字（ボタンなど）
+          headlineSmall: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
+          titleLarge: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
+          titleMedium: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
+          bodyMedium: TextStyle(fontSize: 14.0, height: 1.5, color: Color(0xFF1F2937)),
+          bodySmall: TextStyle(fontSize: 12.0, height: 1.5, color: Color(0xFF6B7280)),
+          labelLarge: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold),
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: Colors.white,
+          selectedItemColor: Color(0xFF13EC5B),
+          unselectedItemColor: Color(0xFF9CA3AF),
         ),
       ),
       darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF4CAF50),
-          brightness: Brightness.dark,
-        ),
         useMaterial3: true,
         fontFamily: 'KosugiMaru',
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF13EC5B),
+          brightness: Brightness.dark,
+          primary: const Color(0xFF13EC5B),
+          surface: const Color(0xFF1C1C1E),
+          onSurface: Colors.white,
+        ),
+        scaffoldBackgroundColor: const Color(0xFF102216),
+        cardColor: const Color(0xFF1C1C1E),
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 0,
+          backgroundColor: Color(0xFF102216),
+          foregroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
         ),
         textTheme: const TextTheme(
-          headlineSmall: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold), // 投稿タイトル
-          titleLarge: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),    // ユーザー名など
-          titleMedium: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
-          bodyMedium: TextStyle(fontSize: 14.0, height: 1.5),                    // コメント文
-          bodySmall: TextStyle(fontSize: 12.0, height: 1.5),
-          labelLarge: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold),     // UI文字（ボタンなど）
+          headlineSmall: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold, color: Colors.white),
+          titleLarge: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Colors.white),
+          titleMedium: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Colors.white),
+          bodyMedium: TextStyle(fontSize: 14.0, height: 1.5, color: Colors.white),
+          bodySmall: TextStyle(fontSize: 12.0, height: 1.5, color: Color(0xFF9CA3AF)),
+          labelLarge: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold),
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: Color(0xFF1C1C1E),
+          selectedItemColor: Color(0xFF13EC5B),
+          unselectedItemColor: Color(0xFF9CA3AF),
         ),
       ),
-      themeMode: ThemeMode.system,
+      themeMode: ref.watch(themeModeProvider),
     );
   }
 }
