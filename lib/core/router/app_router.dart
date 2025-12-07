@@ -5,26 +5,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_providers.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
-import '../../domain/models/product.dart'; // 追加
-import '../../domain/models/review.dart'; // 追加
+import '../../domain/models/product.dart';
+import '../../domain/models/review.dart';
 import '../../presentation/screens/home_screen.dart';
 import '../../presentation/screens/search_screen.dart';
 import '../../presentation/screens/profile_screen.dart';
 import '../../presentation/screens/auth_screen.dart';
 import '../../presentation/screens/review_detail_screen.dart';
 import '../../presentation/screens/email_verification_screen.dart';
+import '../../presentation/screens/product_selection_screen.dart';
+import '../../presentation/screens/add_product_screen.dart';
 import '../../presentation/screens/add_review_screen.dart';
-import '../../presentation/screens/edit_review_screen.dart'; // 追加
-import '../../presentation/screens/comment_screen.dart'; // 追加
-import '../../presentation/screens/add_review_to_product_screen.dart'; // 追加
+import '../../presentation/screens/edit_review_screen.dart';
+import '../../presentation/screens/comment_screen.dart';
+import '../../presentation/screens/add_review_to_product_screen.dart';
 import '../../presentation/screens/edit_product_screen.dart';
-import '../../presentation/screens/settings_screen.dart'; // 追加
-import '../../presentation/screens/password_reset_request_screen.dart'; // 追加
-import '../../presentation/screens/password_reset_email_sent_screen.dart'; // 追加
-import '../../presentation/screens/update_password_screen.dart'; // 追加
-import '../../presentation/screens/update_email_request_screen.dart'; // 追加
-import '../../presentation/screens/update_email_sent_screen.dart'; // 追加
-import '../../presentation/screens/confirm_email_change_screen.dart'; // 追加
+import '../../presentation/screens/settings_screen.dart';
+import '../../presentation/screens/password_reset_request_screen.dart';
+import '../../presentation/screens/password_reset_email_sent_screen.dart';
+import '../../presentation/screens/update_password_screen.dart';
+import '../../presentation/screens/update_email_request_screen.dart';
+import '../../presentation/screens/update_email_sent_screen.dart';
+import '../../presentation/screens/confirm_email_change_screen.dart';
 import '../../presentation/widgets/scaffold_with_nav_bar.dart';
 
 // StreamをリチE��ンしてGoRouterをリフレチE��ュするためのChangeNotifier
@@ -158,10 +160,27 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const EmailVerificationScreen(),
       ),
+      // 商品選択画面（レビュ投稿の最初のステップ）
+      GoRoute(
+        path: '/product-selection',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ProductSelectionScreen(),
+      ),
+      // 新しい商品を追加する画面
+      GoRoute(
+        path: '/add-product',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AddProductScreen(),
+      ),
+      // レビュー投稿画面（商品が選択された後）
       GoRoute(
         path: '/add-review',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const AddReviewScreen(),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final product = extra?['product'] as Product?;
+          return AddReviewScreen(selectedProduct: product);
+        },
       ),
       GoRoute(
         path: '/product/:productId',

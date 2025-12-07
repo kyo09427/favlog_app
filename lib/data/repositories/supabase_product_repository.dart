@@ -93,7 +93,7 @@ class SupabaseProductRepository implements ProductRepository {
             'name': product.name,
             'url': product.url,
             'category': product.category,
-            'subcategory': product.subcategory,
+            'subcategory_tags': product.subcategoryTags,
             'image_url': product.imageUrl,
           })
           .eq('id', product.id)

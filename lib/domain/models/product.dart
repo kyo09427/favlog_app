@@ -7,7 +7,7 @@ class Product {
   final String? url;
   final String name;
   final String? category;
-  final String? subcategory;
+  final List<String> subcategoryTags; // 複数のサブカテゴリタグに変更
   final String? imageUrl;
 
   Product({
@@ -17,21 +17,21 @@ class Product {
     this.url,
     required this.name,
     this.category,
-    this.subcategory,
+    List<String>? subcategoryTags,
     this.imageUrl,
   })  : id = id ?? const Uuid().v4(),
-        // 修正: 明示的にUTCとして保存
-        createdAt = createdAt ?? DateTime.now().toUtc();
+        createdAt = createdAt ?? DateTime.now().toUtc(),
+        subcategoryTags = subcategoryTags ?? [];
 
   factory Product.empty() {
     return Product(
       id: const Uuid().v4(),
-      createdAt: DateTime.now().toUtc(), // 修正: UTC指定
+      createdAt: DateTime.now().toUtc(),
       userId: '',
       url: null,
       name: '',
       category: null,
-      subcategory: null,
+      subcategoryTags: [],
       imageUrl: null,
     );
   }
@@ -39,13 +39,14 @@ class Product {
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
       id: json['id'] as String,
-      // 修正: parseUtcを使用してUTCとして明示的にパース
       createdAt: DateTime.parse(json['created_at'] as String).toUtc(),
       userId: json['user_id'] as String,
       url: json['url'] as String?,
       name: json['name'] as String,
       category: json['category'] as String?,
-      subcategory: json['subcategory'] as String?,
+      subcategoryTags: json['subcategory_tags'] != null
+          ? List<String>.from(json['subcategory_tags'] as List)
+          : (json['subcategory'] != null ? [json['subcategory'] as String] : []), // 後方互換性
       imageUrl: json['image_url'] as String?,
     );
   }
@@ -53,13 +54,12 @@ class Product {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      // 修正: toUtcを追加してUTCとして保存
       'created_at': createdAt.toUtc().toIso8601String(),
       'user_id': userId,
       'url': url,
       'name': name,
       'category': category,
-      'subcategory': subcategory,
+      'subcategory_tags': subcategoryTags,
       'image_url': imageUrl,
     };
   }
@@ -71,7 +71,7 @@ class Product {
     String? url,
     String? name,
     String? category,
-    String? subcategory,
+    List<String>? subcategoryTags,
     String? imageUrl,
   }) {
     return Product(
@@ -81,7 +81,7 @@ class Product {
       url: url ?? this.url,
       name: name ?? this.name,
       category: category ?? this.category,
-      subcategory: subcategory ?? this.subcategory,
+      subcategoryTags: subcategoryTags ?? this.subcategoryTags,
       imageUrl: imageUrl ?? this.imageUrl,
     );
   }

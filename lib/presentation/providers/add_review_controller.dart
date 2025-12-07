@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/repositories/supabase_product_repository.dart';
 import '../../data/repositories/supabase_review_repository.dart';
-import '../../data/repositories/asset_category_repository.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../domain/models/product.dart';
 import '../../domain/models/review.dart';
@@ -15,70 +14,67 @@ import '../../core/services/image_compressor.dart';
 
 /// レビュー追加画面の状態
 class AddReviewState {
-  final String productUrl;
-  final String productName;
-  final String subcategory;
-  final String? selectedCategory;
+  final Product? selectedProduct; // 選択された商品
   final String reviewText;
   final double rating;
-  final File? imageFile;
-  final Uint8List? imageBytes; // Web用
+  final List<ImageData> images; // 複数画像対応
+  final List<String> subcategoryTags; // サブカテゴリタグ
+  final String visibility; // 公開範囲
   final bool isLoading;
   final String? error;
-  final List<String> categories;
-  final List<String> subcategorySuggestions;
 
   AddReviewState({
-    this.productUrl = '',
-    this.productName = '',
-    this.subcategory = '',
-    this.selectedCategory,
+    this.selectedProduct,
     this.reviewText = '',
-    this.rating = 3.0,
-    this.imageFile,
-    this.imageBytes,
+    this.rating =3.5,
+    this.images = const [],
+    this.subcategoryTags = const [],
+    this.visibility = 'public',
     this.isLoading = false,
     this.error,
-    this.categories = const [],
-    this.subcategorySuggestions = const [],
   });
 
   AddReviewState copyWith({
-    String? productUrl,
-    String? productName,
-    String? subcategory,
-    String? selectedCategory,
+    Product? selectedProduct,
     String? reviewText,
     double? rating,
-    File? imageFile,
-    Uint8List? imageBytes,
+    List<ImageData>? images,
+    List<String>? subcategoryTags,
+    String? visibility,
     bool? isLoading,
     String? error,
-    List<String>? categories,
-    List<String>? subcategorySuggestions,
-    bool clearImage = false,
-    bool clearSelectedCategory = false,
   }) {
     return AddReviewState(
-      productUrl: productUrl ?? this.productUrl,
-      productName: productName ?? this.productName,
-      subcategory: subcategory ?? this.subcategory,
-      selectedCategory: clearSelectedCategory ? null : selectedCategory ?? this.selectedCategory,
+      selectedProduct: selectedProduct ?? this.selectedProduct,
       reviewText: reviewText ?? this.reviewText,
       rating: rating ?? this.rating,
-      imageFile: clearImage ? null : imageFile ?? this.imageFile,
-      imageBytes: clearImage ? null : imageBytes ?? this.imageBytes,
+      images: images ?? this.images,
+      subcategoryTags: subcategoryTags ?? this.subcategoryTags,
+      visibility: visibility ?? this.visibility,
       isLoading: isLoading ?? this.isLoading,
       error: error,
-      categories: categories ?? this.categories,
-      subcategorySuggestions: subcategorySuggestions ?? this.subcategorySuggestions,
     );
   }
 }
 
+/// 画像データクラス
+class ImageData {
+  final File? file; // モバイル用
+  final Uint8List? bytes; // Web用
+  final String? id; // 一意のID
+
+  ImageData({
+    this.file,
+    this.bytes,
+    String? id,
+  }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString();
+
+  bool get hasData => file != null || bytes != null;
+}
+
 /// レビュー追加コントローラーのプロバイダー
 final addReviewControllerProvider =
-    StateNotifierProvider<AddReviewController, AddReviewState>((ref) {
+    StateNotifierProvider.autoDispose<AddReviewController, AddReviewState>((ref) {
   final imageCompressor = ref.watch(imageCompressorProvider);
   return AddReviewController(ref, imageCompressor);
 });
@@ -90,9 +86,8 @@ class AddReviewController extends StateNotifier<AddReviewState> {
   final ImagePicker _picker = ImagePicker();
   bool _isDisposed = false;
 
-  AddReviewController(this._ref, this._imageCompressor) : super(AddReviewState()) {
-    _loadCategories();
-  }
+  AddReviewController(this._ref, this._imageCompressor, {Product? selectedProduct})
+      : super(AddReviewState(selectedProduct: selectedProduct));
 
   @override
   void dispose() {
@@ -100,73 +95,10 @@ class AddReviewController extends StateNotifier<AddReviewState> {
     super.dispose();
   }
 
-  /// カテゴリ一覧を読み込む
-  Future<void> _loadCategories() async {
+  /// 商品を設定
+  void setProduct(Product product) {
     if (_isDisposed) return;
-    
-    try {
-      final categoryRepository = _ref.read(categoryRepositoryProvider);
-      final fetchedCategories = await categoryRepository.getCategories();
-      
-      if (!_isDisposed) {
-        state = state.copyWith(categories: fetchedCategories);
-      }
-    } catch (e) {
-      if (!_isDisposed) {
-        state = state.copyWith(error: 'カテゴリの読み込みに失敗しました: ${e.toString()}');
-      }
-    }
-  }
-
-  /// 商品名を更新
-  void updateProductName(String name) {
-    if (_isDisposed) return;
-    state = state.copyWith(productName: name);
-  }
-
-  /// 商品URLを更新
-  void updateProductUrl(String url) {
-    if (_isDisposed) return;
-    state = state.copyWith(productUrl: url);
-  }
-
-  /// 選択されたカテゴリを更新し、サブカテゴリ候補を取得
-  void updateSelectedCategory(String category) {
-    if (_isDisposed) return;
-    
-    state = state.copyWith(selectedCategory: category, subcategory: '');
-    fetchSubcategorySuggestions(category);
-  }
-
-  /// サブカテゴリの候補を取得
-  Future<void> fetchSubcategorySuggestions(String category) async {
-    if (_isDisposed || category.isEmpty) {
-      if (!_isDisposed) {
-        state = state.copyWith(subcategorySuggestions: []);
-      }
-      return;
-    }
-    
-    try {
-      final productRepository = _ref.read(productRepositoryProvider);
-      final suggestions = await productRepository.getSubcategories(category);
-      
-      if (!_isDisposed) {
-        state = state.copyWith(subcategorySuggestions: suggestions);
-      }
-    } catch (e) {
-      // サブカテゴリ候補の取得失敗は致命的エラーではないので、
-      // エラーを表示せず候補リストを空にするだけ
-      if (!_isDisposed) {
-        state = state.copyWith(subcategorySuggestions: []);
-      }
-    }
-  }
-
-  /// サブカテゴリを更新
-  void updateSubcategory(String subcategory) {
-    if (_isDisposed) return;
-    state = state.copyWith(subcategory: subcategory);
+    state = state.copyWith(selectedProduct: product);
   }
 
   /// レビューテキストを更新
@@ -175,16 +107,24 @@ class AddReviewController extends StateNotifier<AddReviewState> {
     state = state.copyWith(reviewText: text);
   }
 
-  /// 評価を更新（1.0〜5.0の範囲に制限）
+  /// 評価を更新（0.5刻み、1.0〜5.0の範囲）
   void updateRating(double rating) {
     if (_isDisposed) return;
-    final clampedRating = rating.clamp(1.0, 5.0);
+    // 0.5刻みに丸める
+    final roundedRating = (rating * 2).round() / 2;
+    final clampedRating = roundedRating.clamp(0.5, 5.0);
     state = state.copyWith(rating: clampedRating);
   }
 
-  /// ギャラリーから画像を選択
-  Future<void> pickImage(ImageSource source) async {
+  /// 画像を追加（最大3枚まで）
+  Future<void> addImage(ImageSource source) async {
     if (_isDisposed) return;
+    
+    // 最大3枚まで
+    if (state.images.length >= 3) {
+      state = state.copyWith(error: '画像は最大3枚までです');
+      return;
+    }
 
     try {
       final pickedFile = await _picker.pickImage(
@@ -195,12 +135,16 @@ class AddReviewController extends StateNotifier<AddReviewState> {
       );
 
       if (pickedFile != null && !_isDisposed) {
+        ImageData imageData;
         if (kIsWeb) {
-          final imageBytes = await pickedFile.readAsBytes();
-          state = state.copyWith(imageBytes: imageBytes, imageFile: null);
+          final bytes = await pickedFile.readAsBytes();
+          imageData = ImageData(bytes: bytes);
         } else {
-          state = state.copyWith(imageFile: File(pickedFile.path), imageBytes: null);
+          imageData = ImageData(file: File(pickedFile.path));
         }
+        
+        final updatedImages = List<ImageData>.from(state.images)..add(imageData);
+        state = state.copyWith(images: updatedImages);
       }
     } catch (e) {
       if (!_isDisposed) {
@@ -209,15 +153,53 @@ class AddReviewController extends StateNotifier<AddReviewState> {
     }
   }
 
-  /// 選択した画像をクリア
-  void clearImage() {
+  /// 画像を削除
+  void removeImage(String imageId) {
     if (_isDisposed) return;
-    state = state.copyWith(clearImage: true);
+    final updatedImages = state.images.where((img) => img.id != imageId).toList();
+    state = state.copyWith(images: updatedImages);
+  }
+
+  /// サブカテゴリタグを追加
+  void addSubcategoryTag(String tag) {
+    if (_isDisposed) return;
+    final trimmedTag = tag.trim();
+    if (trimmedTag.isEmpty) return;
+    
+    // 重複チェック
+    if (state.subcategoryTags.contains(trimmedTag)) return;
+    
+    final updatedTags = List<String>.from(state.subcategoryTags)..add(trimmedTag);
+    state = state.copyWith(subcategoryTags: updatedTags);
+  }
+
+  /// サブカテゴリタグを削除
+  void removeSubcategoryTag(String tag) {
+    if (_isDisposed) return;
+    final updatedTags = state.subcategoryTags.where((t) => t != tag).toList();
+    state = state.copyWith(subcategoryTags: updatedTags);
+  }
+
+  /// 公開範囲を更新
+  void updateVisibility(String visibility) {
+    if (_isDisposed) return;
+    state = state.copyWith(visibility: visibility);
   }
 
   /// レビューを投稿
-  Future<void> submitReview() async {
-    if (_isDisposed) return;
+  Future<bool> submitReview() async {
+    if (_isDisposed) return false;
+    
+    // バリデーション
+    if (state.selectedProduct == null) {
+      state = state.copyWith(error: '商品が選択されていません');
+      return false;
+    }
+    
+    if (state.reviewText.trim().isEmpty) {
+      state = state.copyWith(error: 'レビュー本文を入力してください');
+      return false;
+    }
     
     state = state.copyWith(isLoading: true, error: null);
     
@@ -232,15 +214,14 @@ class AddReviewController extends StateNotifier<AddReviewState> {
         throw Exception('ユーザーがログインしていません。');
       }
 
-      // 画像のアップロード処理
-      String? imageUrl;
-      final hasImage = state.imageFile != null || state.imageBytes != null;
-
-      if (hasImage) {
+      // 複数画像のアップロード処理
+      final List<String> imageUrls = [];
+      for (final imageData in state.images) {
         try {
           final imageBytes = kIsWeb
-              ? state.imageBytes!
-              : await state.imageFile!.readAsBytes();
+              ? imageData.bytes!
+              : await imageData.file!.readAsBytes();
+          
           // 画像を圧縮
           final compressedBytes = await _imageCompressor.compressImage(
             imageBytes,
@@ -253,36 +234,28 @@ class AddReviewController extends StateNotifier<AddReviewState> {
           final contentType = kIsWeb ? 'image/jpeg' : 'image/webp';
           
           // Supabase Storageにアップロード
-          imageUrl = await productRepository.uploadProductImage(
+          final imageUrl = await productRepository.uploadProductImage(
             user.id,
             compressedBytes,
             fileExtension,
             contentType: contentType,
           );
+          
+          imageUrls.add(imageUrl);
         } catch (imageError) {
           throw Exception('画像のアップロードに失敗しました: ${imageError.toString()}');
         }
       }
 
-      // 商品情報を作成
-      final newProduct = Product(
-        userId: user.id,
-        url: state.productUrl.isEmpty ? null : state.productUrl,
-        name: state.productName,
-        category: state.selectedCategory,
-        subcategory: state.subcategory.isEmpty ? null : state.subcategory,
-        imageUrl: imageUrl,
-      );
-
-      // 商品を登録し、DBから返された情報を取得
-      final createdProduct = await productRepository.createProduct(newProduct);
-
       // レビュー情報を作成
       final newReview = Review(
         userId: user.id,
-        productId: createdProduct.id,
+        productId: state.selectedProduct!.id,
         reviewText: state.reviewText,
         rating: state.rating,
+        imageUrls: imageUrls,
+        subcategoryTags: state.subcategoryTags,
+        visibility: state.visibility,
       );
 
       // レビューを登録
@@ -290,19 +263,14 @@ class AddReviewController extends StateNotifier<AddReviewState> {
 
       // 成功したら状態をリセット
       if (!_isDisposed) {
-        state = state.copyWith(
-          productUrl: '',
-          productName: '',
-          subcategory: '',
-          reviewText: '',
-          rating: 3.0,
+        state = AddReviewState(
+          selectedProduct: null,
           isLoading: false,
           error: null,
-          clearImage: true,
-          clearSelectedCategory: true,
-          subcategorySuggestions: [],
         );
       }
+      
+      return true;
     } on AuthException catch (e) {
       // 認証エラー
       if (!_isDisposed) {
@@ -311,6 +279,7 @@ class AddReviewController extends StateNotifier<AddReviewState> {
           error: '認証エラー: ${e.message}',
         );
       }
+      return false;
     } catch (e) {
       // その他のエラー
       if (!_isDisposed) {
@@ -319,6 +288,7 @@ class AddReviewController extends StateNotifier<AddReviewState> {
           error: e.toString(),
         );
       }
+      return false;
     }
   }
 }

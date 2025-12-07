@@ -206,7 +206,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 8),
-                        if (product.category != null || product.subcategory != null)
+                        if (product.category != null || product.subcategoryTags.isNotEmpty)
                           Wrap(
                             spacing: 6,
                             runSpacing: 6,
@@ -218,9 +218,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                                   Colors.white,
                                   theme,
                                 ),
-                              if (product.subcategory != null)
+                              if (product.subcategoryTags.isNotEmpty)
                                 _buildChip(
-                                  product.subcategory!,
+                                  product.subcategoryTags.first,
                                   theme.colorScheme.secondary.withOpacity(0.8),
                                   Colors.white,
                                   theme,
@@ -543,7 +543,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         onPressed: () async {
-          final result = await context.push<bool>('/add-review');
+          final result = await context.push<bool>('/product-selection');
 
           if (result == true && mounted) {
             homeScreenController.fetchProducts(

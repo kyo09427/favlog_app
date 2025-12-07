@@ -146,7 +146,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  if (product.category != null || product.subcategory != null)
+                  if (product.category != null || product.subcategoryTags.isNotEmpty)
                     Wrap(
                       spacing: 8,
                       runSpacing: 4,
@@ -163,10 +163,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             padding: const EdgeInsets.symmetric(horizontal: 4),
                           ),
-                        if (product.subcategory != null)
+                        if (product.subcategoryTags.isNotEmpty)
                           Chip(
                             label: Text(
-                              product.subcategory!,
+                              product.subcategoryTags.first,
                               style: theme.textTheme.bodySmall,
                             ),
                             backgroundColor: theme.colorScheme.surfaceContainerHighest,

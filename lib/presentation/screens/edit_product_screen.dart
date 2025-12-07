@@ -31,7 +31,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
     super.initState();
     _productNameController = TextEditingController(text: widget.product.name);
     _productUrlController = TextEditingController(text: widget.product.url ?? '');
-    _subcategoryController = TextEditingController(text: widget.product.subcategory ?? '');
+    _subcategoryController = TextEditingController(text: widget.product.subcategoryTags.isNotEmpty ? widget.product.subcategoryTags.first : '');
   }
 
   @override

@@ -286,14 +286,12 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                                         : Colors.grey[700],
                                   ),
                                 ),
-                              if (widget.product.subcategory != null &&
-                                  widget.product.subcategory!
-                                      .isNotEmpty)
+                              if (widget.product.subcategoryTags.isNotEmpty)
                                 Padding(
                                   padding: const EdgeInsets.only(
                                       top: 4.0),
                                   child: Text(
-                                    widget.product.subcategory!,
+                                    widget.product.subcategoryTags.first,
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: theme.brightness ==

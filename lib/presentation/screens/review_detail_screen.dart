@@ -344,12 +344,11 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                                                   overflow: TextOverflow.ellipsis,
                                                 ),
                                               ),
-                                            if (displayedProduct.subcategory != null &&
-                                                displayedProduct.subcategory!.isNotEmpty) ...[
+                                            if (displayedProduct.subcategoryTags.isNotEmpty) ...[
                                               const SizedBox(width: 6),
                                               Flexible(
                                                 child: Text(
-                                                  '#${displayedProduct.subcategory}',
+                                                  '#${displayedProduct.subcategoryTags.first}',
                                                   style: theme.textTheme.bodySmall?.copyWith(
                                                     color: _primary,
                                                     fontWeight: FontWeight.w500,

@@ -160,6 +160,17 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
     );
   }
 
+  void _showImageViewer(BuildContext context, List<String> imageUrls, int initialIndex) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (context) => ImageViewerDialog(
+        imageUrls: imageUrls,
+        initialIndex: initialIndex,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -271,6 +282,54 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
           ],
         ),
         const SizedBox(height: 8),
+        
+        // レビュー画像（ある場合）
+        if (widget.review.imageUrls.isNotEmpty) ...[
+          SizedBox(
+            height: 120,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: widget.review.imageUrls.length,
+              itemBuilder: (context, index) {
+                final imageUrl = widget.review.imageUrls[index];
+                return Padding(
+                  padding: EdgeInsets.only(right: index < widget.review.imageUrls.length - 1 ? 8 : 0),
+                  child: GestureDetector(
+                    onTap: () => _showImageViewer(context, widget.review.imageUrls, index),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: CachedNetworkImage(
+                        imageUrl: imageUrl,
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          width: 120,
+                          height: 120,
+                          color: isDark ? Colors.grey[800] : Colors.grey[200],
+                          child: const Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          width: 120,
+                          height: 120,
+                          color: isDark ? Colors.grey[800] : Colors.grey[200],
+                          child: Icon(
+                            Icons.image_not_supported_outlined,
+                            color: isDark ? Colors.grey[600] : Colors.grey[400],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        
         // 本文
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -363,6 +422,134 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// 画像拡大表示用のダイアログ
+class ImageViewerDialog extends StatefulWidget {
+  final List<String> imageUrls;
+  final int initialIndex;
+
+  const ImageViewerDialog({
+    super.key,
+    required this.imageUrls,
+    this.initialIndex = 0,
+  });
+
+  @override
+  State<ImageViewerDialog> createState() => _ImageViewerDialogState();
+}
+
+class _ImageViewerDialogState extends State<ImageViewerDialog> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.zero,
+      child: Stack(
+        children: [
+          // 画像表示エリア
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              color: Colors.black87,
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: widget.imageUrls.length,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  return InteractiveViewer(
+                    minScale: 0.5,
+                    maxScale: 4.0,
+                    child: Center(
+                      child: CachedNetworkImage(
+                        imageUrl: widget.imageUrls[index],
+                        fit: BoxFit.contain,
+                        placeholder: (context, url) => const Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => const Center(
+                          child: Icon(
+                            Icons.error_outline,
+                            color: Colors.white,
+                            size: 48,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          
+          // 閉じるボタン
+          Positioned(
+            top: 40,
+            right: 16,
+            child: SafeArea(
+              child: IconButton(
+                icon: const Icon(
+                  Icons.close,
+                  color: Colors.white,
+                  size: 32,
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ),
+
+          // インジケーター（複数画像がある場合）
+          if (widget.imageUrls.length > 1)
+            Positioned(
+              bottom: 40,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      '${_currentIndex + 1} / ${widget.imageUrls.length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

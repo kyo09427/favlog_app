@@ -1,743 +1,603 @@
-import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:favlog_app/presentation/providers/add_review_controller.dart';
-import 'package:favlog_app/presentation/widgets/error_dialog.dart';
+import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+import '../../domain/models/product.dart';
+import '../providers/add_review_controller.dart';
+import '../widgets/error_dialog.dart';
 
 class AddReviewScreen extends ConsumerStatefulWidget {
-  const AddReviewScreen({super.key});
+  final Product? selectedProduct;
+
+  const AddReviewScreen({super.key, this.selectedProduct});
 
   @override
   ConsumerState<AddReviewScreen> createState() => _AddReviewScreenState();
 }
 
 class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _productNameController;
-  late final TextEditingController _productUrlController;
-  late final TextEditingController _subcategoryController;
-  late final TextEditingController _reviewTextController;
+  final TextEditingController _reviewTextController = TextEditingController();
+  final TextEditingController _tagInputController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    final addReviewState = ref.read(addReviewControllerProvider);
-    _productNameController =
-        TextEditingController(text: addReviewState.productName);
-    _productUrlController =
-        TextEditingController(text: addReviewState.productUrl);
-    _subcategoryController =
-        TextEditingController(text: addReviewState.subcategory);
-    _reviewTextController =
-        TextEditingController(text: addReviewState.reviewText);
+    // 選択された商品がある場合、コントローラーに設定
+    if (widget.selectedProduct != null) {
+      Future.microtask(() {
+        ref.read(addReviewControllerProvider.notifier).setProduct(widget.selectedProduct!);
+      });
+    }
   }
 
   @override
   void dispose() {
-    _productNameController.dispose();
-    _productUrlController.dispose();
-    _subcategoryController.dispose();
     _reviewTextController.dispose();
+    _tagInputController.dispose();
     super.dispose();
   }
 
-  Future<void> _pickImage(ImageSource source) async {
+  Future<void> _handleSubmit() async {
     final controller = ref.read(addReviewControllerProvider.notifier);
-    await controller.pickImage(source);
+    final success = await controller.submitReview();
+    
+    if (success && mounted) {
+      context.pop(true); // 成功したら前の画面に戻る
+    }
   }
 
-  void _showImageSourceDialog() {
-    final theme = Theme.of(context);
+  Future<void> _showImageSourceDialog() async {
     showModalBottomSheet(
       context: context,
-      backgroundColor: theme.brightness == Brightness.dark
-          ? const Color(0xFF1C1C1E)
-          : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.camera_alt, color: Color(0xFF22A06B)),
-                title: const Text('カメラで撮影'),
-                onTap: () {
-                  context.pop();
-                  _pickImage(ImageSource.camera);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library, color: Color(0xFF22A06B)),
-                title: const Text('ギャラリーから選択'),
-                onTap: () {
-                  context.pop();
-                  _pickImage(ImageSource.gallery);
-                },
-              ),
-            ],
-          ),
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('ギャラリーから選択'),
+              onTap: () {
+                context.pop();
+                ref.read(addReviewControllerProvider.notifier).addImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera),
+              title: const Text('カメラで撮影'),
+              onTap: () {
+                context.pop();
+                ref.read(addReviewControllerProvider.notifier).addImage(ImageSource.camera);
+              },
+            ),
+          ],
         ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final addReviewState = ref.watch(addReviewControllerProvider);
-    final addReviewController =
-        ref.read(addReviewControllerProvider.notifier);
+  Future<void> _showVisibilityDialog() async {
+    final currentVisibility = ref.read(addReviewControllerProvider).visibility;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('公開範囲'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildVisibilityOption('public', '全体に公開', Icons.public, currentVisibility),
+            _buildVisibilityOption('friends', '親しい友達', Icons.group, currentVisibility),
+            _buildVisibilityOption('private', '非公開', Icons.lock, currentVisibility),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => context.pop(),
+            child: const Text('閉じる'),
+          ),
+        ],
+      ),
+    );
+  }
 
-    // エラーをダイアログ表示
-    ref.listen<AddReviewState>(
-      addReviewControllerProvider,
-      (previous, next) {
-        if (next.error != null && next.error != previous?.error) {
-          ErrorDialog.show(context, next.error!);
-        }
+  Widget _buildVisibilityOption(String value, String label, IconData icon, String currentValue) {
+    final isSelected = value == currentValue;
+    const primaryColor = Color(0xFF13ec5b);
+    
+    return ListTile(
+      leading: Icon(icon, color: isSelected ? primaryColor : null),
+      title: Text(label),
+      trailing: isSelected ? const Icon(Icons.check, color: primaryColor) : null,
+      selected: isSelected,
+      onTap: () {
+        ref.read(addReviewControllerProvider.notifier).updateVisibility(value);
+        context.pop();
       },
     );
+  }
 
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(addReviewControllerProvider);
+    final controller = ref.read(addReviewControllerProvider.notifier);
     final theme = Theme.of(context);
-    final bgColor = theme.brightness == Brightness.dark
-        ? const Color(0xFF102216)
-        : const Color(0xFFF6F8F6);
+    final isDark = theme.brightness == Brightness.dark;
 
-    Future<void> handleSubmit() async {
-      if (!_formKey.currentState!.validate()) {
-        return;
-      }
+    const primaryColor = Color(0xFF13ec5b);
+    final backgroundColor = isDark ? const Color(0xFF102216) : const Color(0xFFF6F8F6);
+    final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+    final mutedTextColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+    final borderColor = isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
 
-      await addReviewController.submitReview();
-
-      final latestState = ref.read(addReviewControllerProvider);
-      if (context.mounted && latestState.error == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('レビューと商品情報を追加しました!')),
-        );
-        context.pop(true);
-      }
-    }
-
-    // 星（0.5刻み）
-    List<Widget> buildStars() {
-      final rating = addReviewState.rating;
-      return List.generate(5, (index) {
-        final starIndex = index + 1;
-        final isFilled = rating >= starIndex;
-        final isHalf = rating >= starIndex - 0.5 && rating < starIndex;
-
-        IconData icon;
-        Color color;
-
-        if (isFilled) {
-          icon = Icons.star;
-          color = const Color(0xFF22A06B);
-        } else if (isHalf) {
-          icon = Icons.star_half;
-          color = const Color(0xFF22A06B);
-        } else {
-          icon = Icons.star_border;
-          color = theme.brightness == Brightness.dark
-              ? Colors.grey[600]!
-              : Colors.grey[400]!;
-        }
-
-        return IconButton(
-          iconSize: 32,
-          padding: EdgeInsets.zero,
-          onPressed: addReviewState.isLoading
-              ? null
-              : () {
-                  double newRating;
-                  if (rating == starIndex.toDouble()) {
-                    newRating = starIndex - 0.5;
-                  } else {
-                    newRating = starIndex.toDouble();
-                  }
-                  if (newRating < 1) newRating = 1;
-                  if (newRating > 5) newRating = 5;
-                  addReviewController.updateRating(newRating);
-                },
-          icon: Icon(icon, color: color),
-        );
+    // エラー表示
+    if (state.error != null) {
+      Future.microtask(() {
+        ErrorDialog.show(context, state.error!);
       });
     }
 
-    const visibilityLabel = '親しい友達';
-
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
             // ヘッダー
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: bgColor,
-                border: Border(
-                  bottom: BorderSide(
-                    color: theme.brightness == Brightness.dark
-                        ? Colors.white24
-                        : Colors.grey.shade300,
-                  ),
-                ),
+                color: backgroundColor,
+                border: Border(bottom: BorderSide(color: borderColor)),
               ),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.arrow_back_ios_new,
-                      size: 18,
-                      color: theme.brightness == Brightness.dark
-                          ? Colors.white
-                          : Colors.black87,
-                    ),
-                    onPressed: () => context.pop(),
-                  ),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'レビューを追加',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                  ),
                   SizedBox(
-                    width: 80,
-                    child: TextButton(
-                      onPressed:
-                          addReviewState.isLoading ? null : handleSubmit,
-                      style: TextButton.styleFrom(
-                        foregroundColor:
-                            theme.brightness == Brightness.dark
-                                ? Colors.white
-                                : Colors.black87,
-                      ),
-                      child: const Text(
-                        '投稿',
-                        style: TextStyle(
-                          color: Color(0xFF22A06B),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    width: 48,
+                    height: 48,
+                    child: IconButton(
+                      onPressed: () => context.pop(),
+                      icon: Icon(Icons.close, color: textColor, size: 24),
                     ),
                   ),
+                  Expanded(
+                    child: Text(
+                      'レビュー投稿',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(width: 48),
                 ],
               ),
             ),
 
-            // 本文
+            // コンテンツ
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 16,
-                ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 画像セクション
-                      Text(
-                        '商品画像',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: theme.brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      GestureDetector(
-                        onTap: addReviewState.isLoading
-                            ? null
-                            : _showImageSourceDialog,
-                        child: Container(
-                          width: double.infinity,
-                          height: 200,
-                          decoration: BoxDecoration(
-                            color: theme.brightness == Brightness.dark
-                                ? Colors.white.withOpacity(0.04)
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: theme.brightness == Brightness.dark
-                                  ? Colors.white24
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          child: addReviewState.imageFile != null || addReviewState.imageBytes != null
-                              ? Stack(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: addReviewState.imageBytes != null
-                                          ? Image.memory(
-                                              addReviewState.imageBytes!,
-                                              width: double.infinity,
-                                              height: double.infinity,
-                                              fit: BoxFit.cover,
-                                            )
-                                          : Image.file(
-                                              addReviewState.imageFile!,
-                                              width: double.infinity,
-                                              height: double.infinity,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                    Positioned(
-                                      top: 8,
-                                      right: 8,
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.black54,
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        child: IconButton(
-                                          icon: const Icon(
-                                            Icons.close,
-                                            color: Colors.white,
-                                            size: 20,
-                                          ),
-                                          onPressed: () {
-                                            addReviewController.clearImage();
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.add_photo_alternate_outlined,
-                                      size: 48,
-                                      color: theme.brightness == Brightness.dark
-                                          ? Colors.grey[600]
-                                          : Colors.grey[400],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '画像を追加',
-                                      style: TextStyle(
-                                        color: theme.brightness == Brightness.dark
-                                            ? Colors.grey[400]
-                                            : Colors.grey[600],
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'タップして選択',
-                                      style: TextStyle(
-                                        color: theme.brightness == Brightness.dark
-                                            ? Colors.grey[600]
-                                            : Colors.grey[400],
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // 評価
-                      Text(
-                        '評価',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: theme.brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 商品情報
+                    if (state.selectedProduct != null) ...[
                       Row(
                         children: [
-                          ...buildStars(),
-                          const SizedBox(width: 8),
-                          Text(
-                            addReviewState.rating.toStringAsFixed(1),
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: theme.brightness == Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black87,
+                          // 商品画像
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: state.selectedProduct!.imageUrl != null
+                                ? CachedNetworkImage(
+                                    imageUrl: state.selectedProduct!.imageUrl!,
+                                    width: 80,
+                                    height: 80,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Container(
+                                    width: 80,
+                                    height: 80,
+                                    color: Colors.grey[300],
+                                    child: const Icon(Icons.image, size: 32),
+                                  ),
+                          ),
+                          const SizedBox(width: 16),
+                          // 商品名
+                          Expanded(
+                            child: Text(
+                              state.selectedProduct!.name,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const Text(' / 5.0'),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'タップすると0.5刻みで評価を変更できます',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.brightness == Brightness.dark
-                              ? Colors.grey[300]
-                              : Colors.grey[600],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // 商品名
-                      Text(
-                        '商品・サービス名',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: theme.brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _productNameController,
-                        decoration: InputDecoration(
-                          hintText: '例: 隠れ家カフェ「L\'ombre」',
-                          filled: true,
-                          fillColor: theme.brightness == Brightness.dark
-                              ? Colors.white.withOpacity(0.04)
-                              : Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: theme.brightness == Brightness.dark
-                                  ? Colors.white24
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: theme.brightness == Brightness.dark
-                                  ? Colors.white24
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          focusedBorder: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(12),
-                            ),
-                            borderSide: BorderSide(
-                              color: Color(0xFF22A06B),
-                              width: 1.5,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 15,
-                            vertical: 14,
-                          ),
-                        ),
-                        onChanged: addReviewController.updateProductName,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return '商品・サービス名を入力してください';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 24),
-
-                      // URL
-                      Text(
-                        'URL（任意）',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: theme.brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _productUrlController,
-                        decoration: InputDecoration(
-                          hintText: '例: https://example.com',
-                          prefixIcon: Icon(
-                            Icons.link,
-                            color: theme.brightness == Brightness.dark
-                                ? Colors.grey[300]
-                                : Colors.grey[700],
-                          ),
-                          filled: true,
-                          fillColor: theme.brightness == Brightness.dark
-                              ? Colors.white.withOpacity(0.04)
-                              : Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: theme.brightness == Brightness.dark
-                                  ? Colors.white24
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: theme.brightness == Brightness.dark
-                                  ? Colors.white24
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          focusedBorder: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(12),
-                            ),
-                            borderSide: BorderSide(
-                              color: Color(0xFF22A06B),
-                              width: 1.5,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 15,
-                            vertical: 14,
-                          ),
-                        ),
-                        keyboardType: TextInputType.url,
-                        onChanged: addReviewController.updateProductUrl,
-                      ),
-                      const SizedBox(height: 24),
-
-                      // カテゴリ
-                      Text(
-                        'カテゴリ',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: theme.brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      FormField<String?>(
-                        initialValue: addReviewState.selectedCategory,
-                        validator: (value) {
-                          if (value == null) {
-                            return 'カテゴリを1つ選択してください';
-                          }
-                          return null;
-                        },
-                        builder: (field) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: addReviewState.categories
-                                    .map<Widget>((category) {
-                                  final selected =
-                                      addReviewState.selectedCategory ==
-                                          category;
-                                  return ChoiceChip(
-                                    label: Text(
-                                      category,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: selected
-                                            ? const Color(0xFF102216)
-                                            : (theme.brightness ==
-                                                    Brightness.dark
-                                                ? Colors.white
-                                                : Colors.black87),
-                                      ),
-                                    ),
-                                    selected: selected,
-                                    selectedColor:
-                                        const Color(0xFF22A06B),
-                                    backgroundColor:
-                                        theme.brightness ==
-                                                Brightness.dark
-                                            ? Colors.white10
-                                            : Colors.grey.shade100,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(20),
-                                      side: BorderSide(
-                                        color: selected
-                                            ? const Color(0xFF22A06B)
-                                            : (theme.brightness ==
-                                                    Brightness.dark
-                                                ? Colors.white24
-                                                : Colors.grey.shade300),
-                                      ),
-                                    ),
-                                    onSelected:
-                                        addReviewState.isLoading
-                                            ? null
-                                            : (isSelected) {
-                                                if (isSelected) {
-                                                  addReviewController
-                                                      .updateSelectedCategory(
-                                                          category);
-                                                  field.didChange(category);
-                                                }
-                                              },
-                                  );
-                                }).toList(),
-                              ),
-                              if (field.hasError)
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.only(top: 4.0),
-                                  child: Text(
-                                    field.errorText!,
-                                    style: const TextStyle(
-                                      color: Colors.redAccent,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 24),
-
-                      // サブカテゴリ
-                      Text(
-                        'サブカテゴリ（任意）',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: theme.brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _subcategoryController,
-                        decoration: InputDecoration(
-                          hintText: '例: カフェ / スイーツ / 本 など',
-                          filled: true,
-                          fillColor: theme.brightness == Brightness.dark
-                              ? Colors.white.withOpacity(0.04)
-                              : Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: theme.brightness == Brightness.dark
-                                  ? Colors.white24
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: theme.brightness == Brightness.dark
-                                  ? Colors.white24
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          focusedBorder: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(12),
-                            ),
-                            borderSide: BorderSide(
-                              color: Color(0xFF22A06B),
-                              width: 1.5,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 15,
-                            vertical: 14,
-                          ),
-                        ),
-                        onChanged: addReviewController.updateSubcategory,
-                      ),
-                      const SizedBox(height: 24),
-
-                      // レビュー本文
-                      Text(
-                        'レビュー',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: theme.brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _reviewTextController,
-                        decoration: InputDecoration(
-                          hintText: 'この商品・サービスについての感想を書いてください',
-                          filled: true,
-                          fillColor: theme.brightness == Brightness.dark
-                              ? Colors.white.withOpacity(0.04)
-                              : Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: theme.brightness == Brightness.dark
-                                  ? Colors.white24
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: theme.brightness == Brightness.dark
-                                  ? Colors.white24
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          focusedBorder: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(12),
-                            ),
-                            borderSide: BorderSide(
-                              color: Color(0xFF22A06B),
-                              width: 1.5,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 15,
-                            vertical: 14,
-                          ),
-                        ),
-                        maxLines: 6,
-                        onChanged: addReviewController.updateReviewText,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'レビューを入力してください';
-                          }
-                          if (value.trim().length < 10) {
-                            return 'レビューは10文字以上で入力してください';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 32),
                     ],
-                  ),
+
+                    // 評価
+                    Text(
+                      '評価',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildStarRating(state.rating, controller),
+                    const SizedBox(height: 32),
+
+                    // 写真を追加
+                    Text(
+                      '写真を追加',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildImageGrid(state, controller, cardColor, borderColor, textColor, mutedTextColor),
+                    const SizedBox(height: 32),
+
+                    // レビュー本文
+                    Text(
+                      'レビュー本文',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _reviewTextController,
+                      onChanged: controller.updateReviewText,
+                      maxLines: 8,
+                      style: TextStyle(color: textColor),
+                      decoration: InputDecoration(
+                        hintText: '良かった点、気になった点など、自由にレビューを書きましょう。',
+                        hintStyle: TextStyle(color: mutedTextColor),
+                        filled: true,
+                        fillColor: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF3F4F6),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: borderColor),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: borderColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: primaryColor, width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.all(15),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // サブカテゴリ
+                    Text(
+                      'サブカテゴリ (任意)',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: mutedTextColor,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _tagInputController,
+                      style: TextStyle(color: textColor),
+                      decoration: InputDecoration(
+                        hintText: '例：ミステリー小説、ワイヤレスイヤホン',
+                        hintStyle: TextStyle(color: mutedTextColor),
+                        filled: true,
+                        fillColor: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF3F4F6),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: borderColor),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: borderColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: primaryColor, width: 2),
+                        ),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.add),
+                          onPressed: () {
+                            if (_tagInputController.text.trim().isNotEmpty) {
+                              controller.addSubcategoryTag(_tagInputController.text.trim());
+                              _tagInputController.clear();
+                            }
+                          },
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+                      ),
+                      onSubmitted: (value) {
+                        if (value.trim().isNotEmpty) {
+                          controller.addSubcategoryTag(value.trim());
+                          _tagInputController.clear();
+                        }
+                      },
+                    ),
+                    if (state.subcategoryTags.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: state.subcategoryTags.map((tag) {
+                          return Chip(
+                            label: Text('#$tag'),
+                            deleteIcon: const Icon(Icons.close, size: 16),
+                            onDeleted: () => controller.removeSubcategoryTag(tag),
+                            backgroundColor: primaryColor.withOpacity(0.2),
+                            labelStyle: const TextStyle(
+                              color: primaryColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            deleteIconColor: primaryColor,
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                    const SizedBox(height: 32),
+
+                    // 公開範囲
+                    Text(
+                      '公開範囲',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: _showVisibilityDialog,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: primaryColor.withOpacity(0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                _getVisibilityIcon(state.visibility),
+                                color: primaryColor,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _getVisibilityLabel(state.visibility),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: textColor,
+                                ),
+                              ),
+                            ),
+                            Icon(Icons.arrow_forward_ios, size: 16, color: mutedTextColor),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 100), // ボタン用のスペース
+                  ],
                 ),
               ),
             ),
           ],
         ),
       ),
+
+      // 投稿ボタン（下部固定）
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              backgroundColor.withOpacity(0),
+              backgroundColor,
+            ],
+          ),
+          border: Border(top: BorderSide(color: borderColor)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: state.isLoading ? null : _handleSubmit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.black,
+                disabledBackgroundColor: primaryColor.withOpacity(0.5),
+                elevation: 0,
+                shadowColor: primaryColor.withOpacity(0.3),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: state.isLoading
+                  ? const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.black,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'レビューを投稿する',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ),
     );
+  }
+
+  Widget _buildStarRating(double rating, AddReviewController controller) {
+    return Row(
+      children: List.generate(5, (index) {
+        final starValue = index + 1;
+        final isFilled = rating >= starValue;
+        final isHalf = rating >= starValue - 0.5 && rating < starValue;
+
+        return GestureDetector(
+          onTap: () {
+            // タップした星の位置で評価を設定
+            controller.updateRating(starValue.toDouble());
+          },
+          child: Icon(
+            isFilled
+                ? Icons.star
+                : isHalf
+                    ? Icons.star_half
+                    : Icons.star_border,
+            size: 36,
+            color: isFilled || isHalf ? const Color(0xFF13ec5b) : Colors.grey[400],
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildImageGrid(
+    AddReviewState state,
+    AddReviewController controller,
+    Color cardColor,
+    Color borderColor,
+    Color textColor,
+    Color mutedTextColor,
+  ) {
+    return GridView.count(
+      crossAxisCount: 3,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      children: [
+        ...state.images.map((imageData) {
+          return Stack(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  image: DecorationImage(
+                    image: kIsWeb
+                        ? MemoryImage(imageData.bytes!)
+                        : FileImage(imageData.file!) as ImageProvider,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: -6,
+                right: -6,
+                child: IconButton(
+                  onPressed: () => controller.removeImage(imageData.id!),
+                  icon: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Colors.black87,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }),
+        if (state.images.length < 3)
+          GestureDetector(
+            onTap: _showImageSourceDialog,
+            child: Container(
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: borderColor, width: 2, style: BorderStyle.solid),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add_photo_alternate, color: mutedTextColor, size: 32),
+                  const SizedBox(height: 4),
+                  Text(
+                    '追加',
+                    style: TextStyle(color: mutedTextColor, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  IconData _getVisibilityIcon(String visibility) {
+    switch (visibility) {
+      case 'public':
+        return Icons.public;
+      case 'friends':
+        return Icons.group;
+      case 'private':
+        return Icons.lock;
+      default:
+        return Icons.public;
+    }
+  }
+
+  String _getVisibilityLabel(String visibility) {
+    switch (visibility) {
+      case 'public':
+        return '全体に公開';
+      case 'friends':
+        return '親しい友達';
+      case 'private':
+        return '非公開';
+      default:
+        return '全体に公開';
+    }
   }
 }

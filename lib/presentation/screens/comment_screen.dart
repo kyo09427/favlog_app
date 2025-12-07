@@ -478,9 +478,9 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                               const SizedBox(height: 8),
 
                               // サブカテゴリ
-                              if (product.subcategory != null)
+                              if (product.subcategoryTags.isNotEmpty)
                                 Text(
-                                  '#${product.subcategory}',
+                                  '#${product.subcategoryTags.first}',
                                   style: const TextStyle(
                                     fontSize: 14,
                                     color: primaryColor,

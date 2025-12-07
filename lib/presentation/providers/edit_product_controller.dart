@@ -96,7 +96,7 @@ class EditProductController extends StateNotifier<EditProductState> {
           productName: product.name,
           productUrl: product.url ?? '',
           selectedCategory: product.category ?? '',
-          subcategory: product.subcategory ?? '',
+          subcategory: product.subcategoryTags.isNotEmpty ? product.subcategoryTags.first : '',
           existingImageUrl: product.imageUrl,
           originalProduct: product,
         )) {
@@ -290,7 +290,7 @@ class EditProductController extends StateNotifier<EditProductState> {
         name: state.productName,
         url: state.productUrl.isEmpty ? null : state.productUrl,
         category: state.selectedCategory.isEmpty ? null : state.selectedCategory,
-        subcategory: state.subcategory.isEmpty ? null : state.subcategory,
+        subcategoryTags: state.subcategory.isEmpty ? [] : [state.subcategory],
         imageUrl: imageUrl,
       );
 
