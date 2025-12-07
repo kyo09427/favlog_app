@@ -1,4 +1,5 @@
 ﻿import 'package:go_router/go_router.dart';
+import 'package:characters/characters.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -102,8 +103,8 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
   }
 
   String _truncateText(String text, int maxLength) {
-    if (text.length <= maxLength) return text;
-    return '${text.substring(0, maxLength)}...';
+    if (text.characters.length <= maxLength) return text;
+    return '${text.characters.take(maxLength)}...';
   }
 
   Future<void> _handleEdit(BuildContext context) async {

@@ -80,6 +80,8 @@ class SupabaseReviewRepository implements ReviewRepository {
       final Map<String, dynamic> params = {'p_product_ids': productIds};
       if (currentUserId != null) {
         params['p_current_user_id'] = currentUserId;
+        // 関数のオーバーロードを解決するために明示的に値を渡す
+        params['p_visibility'] = 'public';
       }
 
       final response = await _supabaseClient.rpc(

@@ -626,6 +626,20 @@ class _ReviewItemWithStatsState extends ConsumerState<_ReviewItemWithStats> {
   bool _isInitialized = false;
 
   @override
+  void didUpdateWidget(_ReviewItemWithStats oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.review != oldWidget.review) {
+      final commentRepository = ref.read(commentRepositoryProvider);
+      final likeRepository = ref.read(likeRepositoryProvider);
+      final currentUser = ref.read(authRepositoryProvider).getCurrentUser();
+
+      if (currentUser != null) {
+        _loadInitialData(commentRepository, likeRepository, currentUser.id);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final commentRepository = ref.watch(commentRepositoryProvider);
     final likeRepository = ref.watch(likeRepositoryProvider);
