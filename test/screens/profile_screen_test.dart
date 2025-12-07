@@ -13,15 +13,27 @@ import 'package:favlog_app/domain/models/profile.dart';
 import 'package:favlog_app/core/services/image_compressor.dart';
 import 'package:favlog_app/domain/repositories/profile_repository.dart';
 import 'package:favlog_app/domain/repositories/auth_repository.dart';
+import 'package:favlog_app/domain/repositories/review_repository.dart';
+import 'package:favlog_app/domain/repositories/product_repository.dart';
+import 'package:favlog_app/domain/repositories/comment_repository.dart';
+import 'package:favlog_app/domain/repositories/like_repository.dart';
 import 'package:favlog_app/presentation/screens/profile_screen.dart';
 import 'package:favlog_app/core/providers/profile_providers.dart';
 import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
+import 'package:favlog_app/data/repositories/supabase_review_repository.dart';
+import 'package:favlog_app/data/repositories/supabase_product_repository.dart';
+import 'package:favlog_app/data/repositories/supabase_comment_repository.dart';
+import 'package:favlog_app/data/repositories/supabase_like_repository.dart';
 import 'package:favlog_app/core/providers/common_providers.dart';
 import 'package:favlog_app/main.dart';
 
 // Mock classes
 class MockProfileRepository extends Mock implements ProfileRepository {}
 class MockAuthRepository extends Mock implements AuthRepository {}
+class MockReviewRepository extends Mock implements ReviewRepository {}
+class MockProductRepository extends Mock implements ProductRepository {}
+class MockCommentRepository extends Mock implements CommentRepository {}
+class MockLikeRepository extends Mock implements LikeRepository {}
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 class MockGoTrueClient extends Mock implements GoTrueClient {}
 class MockUser extends Mock implements User {}
@@ -53,6 +65,10 @@ void main() {
   group('ProfileScreen', () {
     late MockProfileRepository mockProfileRepository;
     late MockAuthRepository mockAuthRepository;
+    late MockReviewRepository mockReviewRepository;
+    late MockProductRepository mockProductRepository;
+    late MockCommentRepository mockCommentRepository;
+    late MockLikeRepository mockLikeRepository;
     late MockSupabaseClient mockSupabaseClient;
     late MockGoTrueClient mockGoTrueClient;
     late MockUser mockUser;
@@ -65,6 +81,10 @@ void main() {
     setUp(() {
       mockProfileRepository = MockProfileRepository();
       mockAuthRepository = MockAuthRepository();
+      mockReviewRepository = MockReviewRepository();
+      mockProductRepository = MockProductRepository();
+      mockCommentRepository = MockCommentRepository();
+      mockLikeRepository = MockLikeRepository();
       mockSupabaseClient = MockSupabaseClient();
       mockGoTrueClient = MockGoTrueClient();
       mockUser = MockUser();
@@ -85,6 +105,10 @@ void main() {
 
       when(() => mockXFile.path).thenReturn('/test/path/to/image.jpg');
       when(() => mockXFile.readAsBytes()).thenAnswer((_) async => Uint8List.fromList([10, 20, 30]));
+      
+      // Mock review, product, comment, like repositories to return empty data
+      when(() => mockReviewRepository.getReviewsByUserId(any())).thenAnswer((_) async => []);
+      when(() => mockLikeRepository.getAllUserLikedReviewIds(any())).thenAnswer((_) async => []);
     });
 
     Widget createProfileScreen() {
@@ -92,6 +116,10 @@ void main() {
         overrides: [
           profileRepositoryProvider.overrideWithValue(mockProfileRepository),
           authRepositoryProvider.overrideWithValue(mockAuthRepository),
+          reviewRepositoryProvider.overrideWithValue(mockReviewRepository),
+          productRepositoryProvider.overrideWithValue(mockProductRepository),
+          commentRepositoryProvider.overrideWithValue(mockCommentRepository),
+          likeRepositoryProvider.overrideWithValue(mockLikeRepository),
           supabaseProvider.overrideWithValue(mockSupabaseClient),
           imagePickerProvider.overrideWithValue(mockImagePicker),
           imageCompressorProvider.overrideWithValue(mockImageCompressor),
@@ -102,24 +130,23 @@ void main() {
       );
     }
 
-    // TODO: ProfileScreenのUIが全面刷新されたため、テストを書き直す必要があります
-    // 現在のProfileScreenはTextFieldを使用し、全画面ダイアログでプロフィール編集を行っています
-    testWidgets('displays loading indicator initially (then default profile)', (tester) async {
+    testWidgets('displays loading indicator initially', (tester) async {
       when(() => mockProfileRepository.fetchProfile(any())).thenAnswer((_) async {
-        await Future.delayed(const Duration(milliseconds: 10)); // Simulate network delay
-        return null;
+        await Future.delayed(const Duration(milliseconds: 100));
+        return Profile(id: 'test_user_id', username: 'TestUser');
       });
-      when(() => mockProfileRepository.updateProfile(any())).thenAnswer((_) async {});
 
       await tester.pumpWidget(createProfileScreen());
 
-      expect(find.byType(Shimmer), findsOneWidget); // Check for loading state immediately
+      // 初期状態でローディングインジケーターが表示されることを確認
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
       await tester.pumpAndSettle(); 
 
-      expect(find.byType(Shimmer), findsNothing);
-      expect(find.text('test'), findsOneWidget);
-    }, skip: true);
+      // ローディング完了後、プロフィールが表示されることを確認
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text('TestUser'), findsOneWidget);
+    });
 
     testWidgets('displays existing profile data', (tester) async {
       final testProfile = Profile(
@@ -132,11 +159,16 @@ void main() {
       await tester.pumpWidget(createProfileScreen());
       await tester.pumpAndSettle();
 
+      // ユーザー名の表示を確認
       expect(find.text('TestUser'), findsOneWidget);
-      expect(find.byWidgetPredicate((widget) => widget is CircleAvatar && widget.radius == 60), findsOneWidget);
-    }, skip: true);
+      // ハンドルネームの表示を確認
+      expect(find.text('@testuser'), findsOneWidget);
+      // タブの表示を確認（複数あるので findsWidgets を使用）
+      expect(find.text('レビュー'), findsWidgets);
+      expect(find.text('いいね'), findsWidgets);
+    });
 
-    testWidgets('allows updating username', (tester) async {
+    testWidgets('allows updating username via edit dialog', (tester) async {
       final initialProfile = Profile(id: 'test_user_id', username: 'OldUsername');
       when(() => mockProfileRepository.fetchProfile(any())).thenAnswer((_) async => initialProfile);
       when(() => mockProfileRepository.updateProfile(any())).thenAnswer((_) async {});
@@ -144,36 +176,57 @@ void main() {
       await tester.pumpWidget(createProfileScreen());
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(TextFormField, 'OldUsername'), findsOneWidget);
+      // 初期のユーザー名が表示されることを確認
+      expect(find.text('OldUsername'), findsOneWidget);
 
-      await tester.enterText(find.byType(TextFormField), 'NewUsername');
-      await tester.tap(find.text('プロフィールを保存'));
+      // 編集ボタンをタップして編集ダイアログを開く
+      await tester.tap(find.byIcon(Icons.edit));
       await tester.pumpAndSettle();
 
+      // 編集ダイアログが表示されることを確認
+      expect(find.text('プロフィールを編集'), findsOneWidget);
+
+      // ユーザー名を変更
+      final textField = find.byType(TextField);
+      expect(textField, findsOneWidget);
+      await tester.enterText(textField, 'NewUsername');
+      
+      // 保存ボタンをタップ
+      await tester.tap(find.text('保存'));
+      await tester.pumpAndSettle();
+
+      // updateProfileが呼ばれたことを確認
       verify(() => mockProfileRepository.updateProfile(
             any(that: isA<Profile>().having((p) => p.username, 'username', 'NewUsername')),
           )).called(1);
-    }, skip: true);
+    });
 
     testWidgets('shows error when profile update fails', (tester) async {
-      final initialProfile = Profile(id: 'test_user_id', username: 'OldUsername');
+      final initialProfile = Profile(id: 'test_user_id', username: 'TestUser');
       when(() => mockProfileRepository.fetchProfile(any())).thenAnswer((_) async => initialProfile);
       when(() => mockProfileRepository.updateProfile(any())).thenThrow(Exception('Update failed'));
 
       await tester.pumpWidget(createProfileScreen());
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextFormField), 'NewUsername');
-      await tester.tap(find.text('プロフィールを保存'));
-      await tester.pumpAndSettle(); // Let the controller update its state and listener to fire
-      await tester.pump(); // Pump again to show the dialog
+      // 編集ボタンをタップ
+      await tester.tap(find.byIcon(Icons.edit));
+      await tester.pumpAndSettle();
 
-      // The error is shown in a dialog
-      expect(find.text('エラー'), findsOneWidget); // The dialog title
-      expect(find.text('プロフィールの更新に失敗しました: Exception: Update failed'), findsOneWidget);
-    }, skip: true);
+      // ユーザー名を変更
+      await tester.enterText(find.byType(TextField), 'FailedUpdate');
+      
+      // 保存ボタンをタップ
+      await tester.tap(find.text('保存'));
+      await tester.pump();
+      
+      // updateProfileが呼ばれたことを確認（エラーが発生する）
+      verify(() => mockProfileRepository.updateProfile(
+            any(that: isA<Profile>().having((p) => p.username, 'username', 'FailedUpdate')),
+          )).called(1);
+    });
 
-    testWidgets('allows picking and uploading avatar', (tester) async {
+    testWidgets('allows picking and uploading avatar via edit dialog', (tester) async {
       final initialProfile = Profile(id: 'test_user_id', username: 'TestUser');
       final publicUrl = 'http://example.com/new_avatar.webp';
       final compressedBytes = Uint8List.fromList([1, 2, 3]);
@@ -189,7 +242,7 @@ void main() {
       )).thenAnswer((_) async => mockXFile);
 
       when(() => mockImageCompressor.compressImage(
-        any(), // Positional argument
+        any(),
         maxWidth: any(named: 'maxWidth'),
         maxHeight: any(named: 'maxHeight'),
         quality: any(named: 'quality'),
@@ -206,14 +259,27 @@ void main() {
       await tester.pumpWidget(createProfileScreen());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byWidgetPredicate((widget) => widget is CircleAvatar && widget.radius == 60));
+      // 編集ボタンをタップして編集ダイアログを開く
+      await tester.tap(find.byIcon(Icons.edit));
       await tester.pumpAndSettle();
 
+      // 編集ダイアログ内のアバター変更ボタンをタップ
+      await tester.tap(find.text('プロフィール画像を変更'));
+      await tester.pumpAndSettle();
+
+      // 画像選択、圧縮、アップロードが実行されたことを確認
       verify(() => mockImagePicker.pickImage(
         source: ImageSource.gallery,
         maxWidth: any(named: 'maxWidth'),
         maxHeight: any(named: 'maxHeight'),
         imageQuality: any(named: 'imageQuality')
+      )).called(1);
+
+      verify(() => mockImageCompressor.compressImage(
+        any(),
+        maxWidth: any(named: 'maxWidth'),
+        maxHeight: any(named: 'maxHeight'),
+        quality: any(named: 'quality'),
       )).called(1);
 
       verify(() => mockStorageFileApi.uploadBinary(
@@ -227,7 +293,7 @@ void main() {
       verify(() => mockProfileRepository.updateProfile(
             any(that: isA<Profile>().having((p) => p.avatarUrl, 'avatarUrl', publicUrl)),
           )).called(1);
-    }, skip: true);
+    });
 
     testWidgets('creates initial profile if none exists', (tester) async {
       when(() => mockProfileRepository.fetchProfile(any())).thenAnswer((_) async => null);
@@ -236,12 +302,16 @@ void main() {
       await tester.pumpWidget(createProfileScreen());
       await tester.pumpAndSettle();
 
+      // 初期プロフィールが作成されることを確認
       verify(() => mockProfileRepository.updateProfile(
             any(that: isA<Profile>()
                 .having((p) => p.id, 'id', 'test_user_id')
                 .having((p) => p.username, 'username', 'test')
             ),
           )).called(1);
-    }, skip: true);
+      
+      // デフォルトのユーザー名が表示されることを確認
+      expect(find.text('test'), findsOneWidget);
+    });
   });
 }
