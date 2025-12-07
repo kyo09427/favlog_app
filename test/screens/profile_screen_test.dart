@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shimmer/shimmer.dart';
+
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -285,12 +285,12 @@ void main() {
       )).called(1);
 
       verify(() => mockStorageFileApi.uploadBinary(
-            any(that: contains('.webp')),
+            any(that: contains(RegExp(r'\.(webp|jpg)'))),
             compressedBytes,
-            fileOptions: any(named: 'fileOptions', that: isA<FileOptions>().having((fo) => fo.contentType, 'contentType', 'image/webp')),
+            fileOptions: any(named: 'fileOptions', that: isA<FileOptions>().having((fo) => fo.contentType, 'contentType', anyOf('image/webp', 'image/jpeg'))),
           )).called(1);
 
-      verify(() => mockStorageFileApi.getPublicUrl(any(that: contains('.webp')))).called(1);
+      verify(() => mockStorageFileApi.getPublicUrl(any(that: contains(RegExp(r'\.(webp|jpg)'))))).called(1);
 
       verify(() => mockProfileRepository.updateProfile(
             any(that: isA<Profile>().having((p) => p.avatarUrl, 'avatarUrl', publicUrl)),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:io';
 
 
 import '../../domain/models/profile.dart';
@@ -193,8 +194,10 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
       );
 
       // プラットフォームに応じて拡張子とContent-Typeを設定
-      final fileExtension = kIsWeb ? 'jpg' : 'webp';
-      final contentType = kIsWeb ? 'image/jpeg' : 'image/webp';
+      // Windows/LinuxはJPEG、それ以外（Web/Mobile）はWebP
+      final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isFuchsia);
+      final fileExtension = isDesktop ? 'jpg' : 'webp';
+      final contentType = isDesktop ? 'image/jpeg' : 'image/webp';
       final fileName = '${const Uuid().v4()}.$fileExtension';
       final path = '${currentUser.id}/$fileName';
 

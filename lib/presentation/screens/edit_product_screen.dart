@@ -1,12 +1,12 @@
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:shimmer/shimmer.dart';
 import '../../domain/models/product.dart';
 import '../providers/edit_product_controller.dart';
 import '../widgets/error_dialog.dart';
+import '../widgets/edit_product/edit_product_image_picker.dart';
+import '../widgets/edit_product/edit_product_category_selector.dart';
+import '../widgets/edit_product/edit_product_tags_input.dart';
 
 class EditProductScreen extends ConsumerStatefulWidget {
   final Product product;
@@ -24,14 +24,14 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _productNameController;
   late final TextEditingController _productUrlController;
-  late final TextEditingController _tagInputController; // Add this
+  late final TextEditingController _tagInputController;
 
   @override
   void initState() {
     super.initState();
     _productNameController = TextEditingController(text: widget.product.name);
     _productUrlController = TextEditingController(text: widget.product.url ?? '');
-    _tagInputController = TextEditingController(); // Initialize
+    _tagInputController = TextEditingController();
     // Set initial tags from originalProduct
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final controller = ref.read(editProductControllerProvider(widget.product).notifier);
@@ -45,49 +45,8 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
   void dispose() {
     _productNameController.dispose();
     _productUrlController.dispose();
-    _tagInputController.dispose(); // Dispose
+    _tagInputController.dispose();
     super.dispose();
-  }
-
-  void _showImageSourceDialog() {
-    final theme = Theme.of(context);
-    final editProductController = ref.read(editProductControllerProvider(widget.product).notifier);
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: theme.brightness == Brightness.dark
-          ? const Color(0xFF1C1C1E)
-          : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.camera_alt, color: Color(0xFF22A06B)),
-                title: const Text('カメラで撮影'),
-                onTap: () {
-                  context.pop();
-                  editProductController.pickImage(ImageSource.camera);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library, color: Color(0xFF22A06B)),
-                title: const Text('ギャラリーから選択'),
-                onTap: () {
-                  context.pop();
-                  editProductController.pickImage(ImageSource.gallery);
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   @override
@@ -187,168 +146,9 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // 画像セクション
-                      Text(
-                        '商品画像',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: theme.brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      GestureDetector(
-                        onTap: editProductState.isLoading
-                            ? null
-                            : _showImageSourceDialog,
-                        child: Container(
-                          width: double.infinity,
-                          height: 200,
-                          decoration: BoxDecoration(
-                            color: theme.brightness == Brightness.dark
-                                ? Colors.white.withOpacity(0.04)
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: theme.brightness == Brightness.dark
-                                  ? Colors.white24
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          child: editProductState.newImageFile != null
-                              ? Stack(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Image.file(
-                                        editProductState.newImageFile!,
-                                        width: double.infinity,
-                                        height: double.infinity,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                    Positioned(
-                                      top: 8,
-                                      right: 8,
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.black54,
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        child: IconButton(
-                                          icon: const Icon(
-                                            Icons.close,
-                                            color: Colors.white,
-                                            size: 20,
-                                          ),
-                                          onPressed: () {
-                                            editProductController.clearImage();
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : editProductState.existingImageUrl != null
-                                  ? Stack(
-                                      children: [
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(12),
-                                          child: CachedNetworkImage(
-                                            imageUrl: editProductState.existingImageUrl!,
-                                            width: double.infinity,
-                                            height: double.infinity,
-                                            fit: BoxFit.cover,
-                                            placeholder: (context, url) => Shimmer.fromColors(
-                                              baseColor: theme.brightness == Brightness.dark
-                                                  ? Colors.grey[800]!
-                                                  : Colors.grey[300]!,
-                                              highlightColor: theme.brightness == Brightness.dark
-                                                  ? Colors.grey[700]!
-                                                  : Colors.grey[100]!,
-                                              child: Container(color: Colors.white),
-                                            ),
-                                            errorWidget: (context, url, error) => Container(
-                                              color: theme.brightness == Brightness.dark
-                                                  ? Colors.grey[900]
-                                                  : Colors.grey[200],
-                                              child: Icon(
-                                                Icons.image_not_supported_outlined,
-                                                color: theme.brightness == Brightness.dark
-                                                    ? Colors.grey[700]
-                                                    : Colors.grey[500],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Positioned(
-                                          bottom: 8,
-                                          right: 8,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 6,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.black54,
-                                              borderRadius: BorderRadius.circular(20),
-                                            ),
-                                            child: const Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(
-                                                  Icons.edit,
-                                                  color: Colors.white,
-                                                  size: 16,
-                                                ),
-                                                SizedBox(width: 4),
-                                                Text(
-                                                  '画像を変更',
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 12,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  : Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.add_photo_alternate_outlined,
-                                          size: 48,
-                                          color: theme.brightness == Brightness.dark
-                                              ? Colors.grey[600]
-                                              : Colors.grey[400],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          '画像を追加',
-                                          style: TextStyle(
-                                            color: theme.brightness == Brightness.dark
-                                                ? Colors.grey[400]
-                                                : Colors.grey[600],
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'タップして選択',
-                                          style: TextStyle(
-                                            color: theme.brightness == Brightness.dark
-                                                ? Colors.grey[600]
-                                                : Colors.grey[400],
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                        ),
+                      EditProductImagePicker(
+                        state: editProductState,
+                        controller: editProductController,
                       ),
                       const SizedBox(height: 24),
 
@@ -370,7 +170,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                           hintText: '例: 隠れ家カフェ「L\'ombre」',
                           filled: true,
                           fillColor: theme.brightness == Brightness.dark
-                              ? Colors.white.withOpacity(0.04)
+                              ? Colors.white.withValues(alpha: 0.04)
                               : Colors.white,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -436,7 +236,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                           ),
                           filled: true,
                           fillColor: theme.brightness == Brightness.dark
-                              ? Colors.white.withOpacity(0.04)
+                              ? Colors.white.withValues(alpha: 0.04)
                               : Colors.white,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -474,178 +274,18 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                       const SizedBox(height: 24),
 
                       // カテゴリ
-                      Text(
-                        'カテゴリ',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: theme.brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      FormField<String>(
-                        initialValue: editProductState.selectedCategory,
-                        validator: (value) {
-                          if (editProductState.selectedCategory.isEmpty) {
-                            return 'カテゴリを1つ選択してください';
-                          }
-                          return null;
-                        },
-                        builder: (field) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: editProductState.categories
-                                    .map<Widget>((category) {
-                                  final selected =
-                                      editProductState.selectedCategory == category;
-                                  return ChoiceChip(
-                                    label: Text(
-                                      category,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: selected
-                                            ? const Color(0xFF102216)
-                                            : (theme.brightness == Brightness.dark
-                                                ? Colors.white
-                                                : Colors.black87),
-                                      ),
-                                    ),
-                                    selected: selected,
-                                    selectedColor: const Color(0xFF22A06B),
-                                    backgroundColor: theme.brightness == Brightness.dark
-                                        ? Colors.white10
-                                        : Colors.grey.shade100,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                      side: BorderSide(
-                                        color: selected
-                                            ? const Color(0xFF22A06B)
-                                            : (theme.brightness == Brightness.dark
-                                                ? Colors.white24
-                                                : Colors.grey.shade300),
-                                      ),
-                                    ),
-                                    onSelected: editProductState.isLoading
-                                        ? null
-                                        : (_) {
-                                            editProductController
-                                                .updateSelectedCategory(category);
-                                            field.didChange(category);
-                                          },
-                                  );
-                                }).toList(),
-                              ),
-                              if (field.hasError)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4.0),
-                                  child: Text(
-                                    field.errorText!,
-                                    style: const TextStyle(
-                                      color: Colors.redAccent,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          );
-                        },
+                      EditProductCategorySelector(
+                        state: editProductState,
+                        controller: editProductController,
                       ),
                       const SizedBox(height: 24),
 
                       // サブカテゴリ
-                      Text(
-                        'サブカテゴリ（任意）',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: theme.brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black87,
-                        ),
+                      EditProductTagsInput(
+                        state: editProductState,
+                        controller: editProductController,
+                        tagInputController: _tagInputController,
                       ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _tagInputController,
-                        style: TextStyle(color: theme.textTheme.bodyMedium?.color),
-                        decoration: InputDecoration(
-                          hintText: '例: カフェ / スイーツ / 本 など（入力後Enterで追加）',
-                          filled: true,
-                          fillColor: theme.brightness == Brightness.dark
-                              ? Colors.white.withOpacity(0.04)
-                              : Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: theme.brightness == Brightness.dark
-                                  ? Colors.white24
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: theme.brightness == Brightness.dark
-                                  ? Colors.white24
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          focusedBorder: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(12),
-                            ),
-                            borderSide: BorderSide(
-                              color: Color(0xFF22A06B),
-                              width: 1.5,
-                            ),
-                          ),
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.add),
-                            onPressed: () {
-                              if (_tagInputController.text.trim().isNotEmpty) {
-                                editProductController.addSubcategoryTag(_tagInputController.text.trim());
-                                _tagInputController.clear();
-                              }
-                            },
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 15,
-                            vertical: 14,
-                          ),
-                        ),
-                        onSubmitted: (value) {
-                          if (value.trim().isNotEmpty) {
-                            editProductController.addSubcategoryTag(value.trim());
-                            _tagInputController.clear();
-                          }
-                        },
-                      ),
-                      if (editProductState.subcategoryTags.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: editProductState.subcategoryTags.map((tag) {
-                            return Chip(
-                              label: Text('#$tag'),
-                              deleteIcon: const Icon(Icons.close, size: 16),
-                              onDeleted: () => editProductController.removeSubcategoryTag(tag),
-                              backgroundColor: const Color(0xFF22A06B).withOpacity(0.2),
-                              labelStyle: const TextStyle(
-                                color: Color(0xFF22A06B),
-                                fontWeight: FontWeight.w500,
-                              ),
-                              deleteIconColor: const Color(0xFF22A06B),
-                            );
-                          }).toList(),
-                        ),
-                      ],
                       const SizedBox(height: 24),
 
                       // 下部ボタン

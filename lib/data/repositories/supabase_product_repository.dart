@@ -111,6 +111,12 @@ class SupabaseProductRepository implements ProductRepository {
       }
       
       print('Update completed successfully');
+
+      // 画像が変更された場合、古い画像を削除
+      if (existingProduct['image_url'] != null && 
+          existingProduct['image_url'] != product.imageUrl) {
+        await deleteProductImage(existingProduct['image_url'] as String);
+      }
     } on PostgrestException catch (e) {
       print('PostgrestException: ${e.message}');
       print('Details: ${e.details}');
@@ -130,7 +136,15 @@ class SupabaseProductRepository implements ProductRepository {
   @override
   Future<void> deleteProduct(String productId) async {
     try {
+      // 削除前に商品情報を取得して画像URLを確保
+      final product = await getProductById(productId);
+      
       await _supabaseClient.from('products').delete().eq('id', productId);
+
+      // 画像があれば削除
+      if (product.imageUrl != null) {
+        await deleteProductImage(product.imageUrl!);
+      }
     } catch (e) {
       rethrow;
     }

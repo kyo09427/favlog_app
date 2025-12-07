@@ -284,8 +284,10 @@ class EditProductController extends StateNotifier<EditProductState> {
           );
 
           // プラットフォームに応じて拡張子とContent-Typeを設定
-          final fileExtension = kIsWeb ? 'jpg' : 'webp';
-          final contentType = kIsWeb ? 'image/jpeg' : 'image/webp';
+          // Windows/LinuxはJPEG、それ以外（Web/Mobile）はWebP
+          final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isFuchsia);
+          final fileExtension = isDesktop ? 'jpg' : 'webp';
+          final contentType = isDesktop ? 'image/jpeg' : 'image/webp';
 
           // Supabase Storageにアップロード
           imageUrl = await productRepository.uploadProductImage(

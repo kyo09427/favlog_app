@@ -129,10 +129,28 @@ class SupabaseReviewRepository implements ReviewRepository {
   @override
   Future<void> updateReview(Review review) async {
     try {
+      // 更新前のレビューを取得して、削除された画像を特定
+      final oldReview = await getReviewById(review.id);
+      
       await _supabaseClient
           .from('reviews')
           .update(review.toJson())
           .eq('id', review.id);
+
+      // 古いレビューにはあって新しいレビューにはない画像を削除
+      final deletedUrls = oldReview.imageUrls
+          .where((url) => !review.imageUrls.contains(url))
+          .toList();
+
+      if (deletedUrls.isNotEmpty) {
+        try {
+          final fileNames = deletedUrls.map((url) => url.split('/').last).toList();
+          await _supabaseClient.storage.from('product_images').remove(fileNames);
+        } catch (e) {
+          // 画像削除の失敗はメイン処理に影響させない
+          print('Failed to delete old review images: $e');
+        }
+      }
     } catch (e) {
       throw Exception('Failed to update review: $e');
     }
@@ -141,7 +159,20 @@ class SupabaseReviewRepository implements ReviewRepository {
   @override
   Future<void> deleteReview(String reviewId) async {
     try {
+      // 削除対象のレビューを取得（画像URLを取得するため）
+      final review = await getReviewById(reviewId);
+
       await _supabaseClient.from('reviews').delete().eq('id', reviewId);
+
+      // レビューに関連付けられた画像を削除
+      if (review.imageUrls.isNotEmpty) {
+        try {
+          final fileNames = review.imageUrls.map((url) => url.split('/').last).toList();
+          await _supabaseClient.storage.from('product_images').remove(fileNames);
+        } catch (e) {
+          print('Failed to delete review images: $e');
+        }
+      }
     } catch (e) {
       throw Exception('Failed to delete review: $e');
     }

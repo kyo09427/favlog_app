@@ -3,14 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../domain/models/comment.dart';
-import '../../domain/models/review.dart';
-import '../../domain/models/product.dart';
 import '../../data/repositories/supabase_comment_repository.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
-import '../../data/repositories/supabase_review_repository.dart';
-import '../../data/repositories/supabase_product_repository.dart';
 import '../../data/repositories/supabase_like_repository.dart';
 import '../../core/providers/profile_providers.dart';
+import '../widgets/review_info_card.dart';
+import '../providers/comment_screen_provider.dart';
 
 final commentListProvider = FutureProvider.family<List<Comment>, String>((ref, reviewId) async {
   final commentRepository = ref.watch(commentRepositoryProvider);
@@ -274,8 +272,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id;
     final commentsAsync = ref.watch(commentListProvider(widget.reviewId));
-    final reviewRepository = ref.watch(reviewRepositoryProvider);
-    final productRepository = ref.watch(productRepositoryProvider);
+    final reviewDetailsAsync = ref.watch(reviewDetailsProvider(widget.reviewId));
 
     const primaryColor = Color(0xFF13ec5b);
     final backgroundColor = isDark ? const Color(0xFF102216) : const Color(0xFFF6F8F6);
@@ -314,52 +311,84 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
       body: Column(
         children: [
           Expanded(
-            child: FutureBuilder<Review>(
-              future: reviewRepository.getReviewById(widget.reviewId),
-              builder: (context, reviewSnapshot) {
-                if (!reviewSnapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator(color: primaryColor));
-                }
+            child: reviewDetailsAsync.when(
+              data: (details) {
+                final review = details.review;
+                final product = details.product;
+                
+                return ListView(
+                  controller: _scrollController,
+                  children: [
+                    // レビュー情報カード
+                    ReviewInfoCard(
+                      review: review,
+                      product: product,
+                      isLiked: _isLiked,
+                      likeCount: _likeCount,
+                      commentCount: commentsAsync.value?.length ?? 0,
+                      onToggleLike: _toggleLike,
+                      isDark: isDark,
+                    ),
 
-                final review = reviewSnapshot.data!;
+                    // コメントヘッダー
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        commentsAsync.when(
+                          data: (comments) => 'コメント ${comments.length}件',
+                          loading: () => 'コメント',
+                          error: (_, __) => 'コメント 0件',
+                        ),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
 
-                return FutureBuilder<Product>(
-                  future: productRepository.getProductById(review.productId),
-                  builder: (context, productSnapshot) {
-                    if (!productSnapshot.hasData) {
-                      return const Center(child: CircularProgressIndicator(color: primaryColor));
-                    }
-
-                    final product = productSnapshot.data!;
-                    final reviewAuthorProfile = ref.watch(userProfileProvider(review.userId));
-
-                    return ListView(
-                      controller: _scrollController,
-                      children: [
-                        // レビュー情報カード
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: cardColor,
-                            border: Border(
-                              bottom: BorderSide(color: borderColor),
+                    // コメントリスト
+                    commentsAsync.when(
+                      data: (comments) {
+                        if (comments.isEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Center(
+                              child: Text(
+                                'まだコメントがありません',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: mutedTextColor,
+                                ),
+                              ),
                             ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // ユーザー情報
-                              Row(
+                          );
+                        }
+
+                        return Column(
+                          children: comments.map((comment) {
+                            final isOwner = currentUserId == comment.userId;
+                            final commentAuthorProfile = ref.watch(userProfileProvider(comment.userId));
+
+                            return Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  top: BorderSide(color: borderColor),
+                                ),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  reviewAuthorProfile.when(
+                                  // アバター
+                                  commentAuthorProfile.when(
                                     data: (profile) {
                                       final avatarUrl = profile?.avatarUrl;
                                       return Container(
-                                        width: 40,
-                                        height: 40,
+                                        width: 32,
+                                        height: 32,
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
-                                          border: Border.all(color: primaryColor, width: 1),
                                           image: avatarUrl != null && avatarUrl.isNotEmpty
                                               ? DecorationImage(
                                                   image: CachedNetworkImageProvider(avatarUrl),
@@ -369,403 +398,134 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                                           color: Colors.grey[300],
                                         ),
                                         child: avatarUrl == null || avatarUrl.isEmpty
-                                            ? const Icon(Icons.person, size: 20)
+                                            ? const Icon(Icons.person, size: 16)
                                             : null,
                                       );
                                     },
                                     loading: () => Container(
-                                      width: 40,
-                                      height: 40,
+                                      width: 32,
+                                      height: 32,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         color: Colors.grey[300],
                                       ),
                                     ),
                                     error: (_, __) => Container(
-                                      width: 40,
-                                      height: 40,
+                                      width: 32,
+                                      height: 32,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         color: Colors.grey[300],
                                       ),
-                                      child: const Icon(Icons.error, size: 20),
+                                      child: const Icon(Icons.error, size: 16),
                                     ),
                                   ),
+
                                   const SizedBox(width: 12),
+
+                                  // コメント内容
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
+                                        Row(
+                                          children: [
+                                            Text(
+                                              commentAuthorProfile.when(
+                                                data: (p) => p?.username ?? 'ユーザー',
+                                                loading: () => '読み込み中...',
+                                                error: (_, __) => 'ユーザー',
+                                              ),
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold,
+                                                color: textColor,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              _formatDate(comment.createdAt),
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: mutedTextColor,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
                                         Text(
-                                          reviewAuthorProfile.when(
-                                            data: (p) => p?.username ?? 'ユーザー',
-                                            loading: () => '読み込み中...',
-                                            error: (_, __) => 'ユーザー',
-                                          ),
+                                          comment.commentText,
                                           style: TextStyle(
                                             fontSize: 16,
-                                            fontWeight: FontWeight.bold,
                                             color: textColor,
-                                          ),
-                                        ),
-                                        Text(
-                                          '@${reviewAuthorProfile.when(
-                                            data: (p) => p?.username.toLowerCase().replaceAll(' ', '_') ?? 'user',
-                                            loading: () => 'loading',
-                                            error: (_, __) => 'user',
-                                          )}',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: mutedTextColor,
+                                            height: 1.4,
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                ],
-                              ),
 
-                              const SizedBox(height: 16),
-
-                              // 商品名
-                              Text(
-                                product.name,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: textColor,
-                                ),
-                              ),
-
-                              const SizedBox(height: 8),
-
-                              // 評価
-                              Row(
-                                children: [
-                                  ...List.generate(5, (index) {
-                                    if (index < review.rating.floor()) {
-                                      return const Icon(
-                                        Icons.star,
-                                        size: 18,
-                                        color: Color(0xFFFBBF24),
-                                      );
-                                    } else if (index < review.rating && review.rating % 1 >= 0.5) {
-                                      return const Icon(
-                                        Icons.star_half,
-                                        size: 18,
-                                        color: Color(0xFFFBBF24),
-                                      );
-                                    } else {
-                                      return Icon(
-                                        Icons.star,
-                                        size: 18,
-                                        color: isDark ? const Color(0xFF4B5563) : const Color(0xFFD1D5DB),
-                                      );
-                                    }
-                                  }),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    review.rating.toStringAsFixed(1),
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              const SizedBox(height: 8),
-
-                              // サブカテゴリ
-                              if (product.subcategoryTags.isNotEmpty)
-                                Text(
-                                  '#${product.subcategoryTags.first}',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: primaryColor,
-                                  ),
-                                ),
-
-                              const SizedBox(height: 12),
-
-                              // レビューテキスト
-                              Text(
-                                review.reviewText,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: textColor,
-                                  height: 1.5,
-                                ),
-                              ),
-
-                              const SizedBox(height: 12),
-
-                              // いいね・コメント数、投稿日時
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      // いいねボタン
-                                      InkWell(
-                                        onTap: _toggleLike,
-                                        borderRadius: BorderRadius.circular(20),
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  // 自分のコメントの場合、メニューボタンを表示
+                                  if (isOwner)
+                                    PopupMenuButton<String>(
+                                      icon: Icon(Icons.more_vert, size: 20, color: mutedTextColor),
+                                      onSelected: (value) {
+                                        if (value == 'edit') {
+                                          _editComment(comment);
+                                        } else if (value == 'delete') {
+                                          _deleteComment(comment.id);
+                                        }
+                                      },
+                                      itemBuilder: (context) => [
+                                        const PopupMenuItem(
+                                          value: 'edit',
                                           child: Row(
                                             children: [
-                                              Icon(
-                                                _isLiked ? Icons.favorite : Icons.favorite_border,
-                                                size: 20,
-                                                color: _isLiked ? Colors.red : mutedTextColor,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                _likeCount.toString(),
-                                                style: TextStyle(
-                                                  fontSize: 14,
-                                                  color: mutedTextColor,
-                                                ),
-                                              ),
+                                              Icon(Icons.edit, size: 18),
+                                              SizedBox(width: 8),
+                                              Text('編集'),
                                             ],
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      // コメント数
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            Icons.chat_bubble_outline,
-                                            size: 20,
-                                            color: mutedTextColor,
+                                        const PopupMenuItem(
+                                          value: 'delete',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.delete, size: 18, color: Colors.red),
+                                              SizedBox(width: 8),
+                                              Text('削除', style: TextStyle(color: Colors.red)),
+                                            ],
                                           ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            commentsAsync.when(
-                                              data: (comments) => comments.length.toString(),
-                                              loading: () => '...',
-                                              error: (_, __) => '0',
-                                            ),
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: mutedTextColor,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                  Text(
-                                    _formatDate(review.createdAt),
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: mutedTextColor,
+                                        ),
+                                      ],
                                     ),
-                                  ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-
-                        // コメントヘッダー
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Text(
-                            commentsAsync.when(
-                              data: (comments) => 'コメント ${comments.length}件',
-                              loading: () => 'コメント',
-                              error: (_, __) => 'コメント 0件',
-                            ),
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: textColor,
-                            ),
-                          ),
-                        ),
-
-                        // コメントリスト
-                        commentsAsync.when(
-                          data: (comments) {
-                            if (comments.isEmpty) {
-                              return Padding(
-                                padding: const EdgeInsets.all(32),
-                                child: Center(
-                                  child: Text(
-                                    'まだコメントがありません',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: mutedTextColor,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }
-
-                            return Column(
-                              children: comments.map((comment) {
-                                final isOwner = currentUserId == comment.userId;
-                                final commentAuthorProfile = ref.watch(userProfileProvider(comment.userId));
-
-                                return Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      top: BorderSide(color: borderColor),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      // アバター
-                                      commentAuthorProfile.when(
-                                        data: (profile) {
-                                          final avatarUrl = profile?.avatarUrl;
-                                          return Container(
-                                            width: 32,
-                                            height: 32,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              image: avatarUrl != null && avatarUrl.isNotEmpty
-                                                  ? DecorationImage(
-                                                      image: CachedNetworkImageProvider(avatarUrl),
-                                                      fit: BoxFit.cover,
-                                                    )
-                                                  : null,
-                                              color: Colors.grey[300],
-                                            ),
-                                            child: avatarUrl == null || avatarUrl.isEmpty
-                                                ? const Icon(Icons.person, size: 16)
-                                                : null,
-                                          );
-                                        },
-                                        loading: () => Container(
-                                          width: 32,
-                                          height: 32,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: Colors.grey[300],
-                                          ),
-                                        ),
-                                        error: (_, __) => Container(
-                                          width: 32,
-                                          height: 32,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: Colors.grey[300],
-                                          ),
-                                          child: const Icon(Icons.error, size: 16),
-                                        ),
-                                      ),
-
-                                      const SizedBox(width: 12),
-
-                                      // コメント内容
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  commentAuthorProfile.when(
-                                                    data: (p) => p?.username ?? 'ユーザー',
-                                                    loading: () => '読み込み中...',
-                                                    error: (_, __) => 'ユーザー',
-                                                  ),
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: textColor,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Text(
-                                                  _formatDate(comment.createdAt),
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: mutedTextColor,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              comment.commentText,
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                color: textColor,
-                                                height: 1.4,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-
-                                      // 自分のコメントの場合、メニューボタンを表示
-                                      if (isOwner)
-                                        PopupMenuButton<String>(
-                                          icon: Icon(Icons.more_vert, size: 20, color: mutedTextColor),
-                                          onSelected: (value) {
-                                            if (value == 'edit') {
-                                              _editComment(comment);
-                                            } else if (value == 'delete') {
-                                              _deleteComment(comment.id);
-                                            }
-                                          },
-                                          itemBuilder: (context) => [
-                                            const PopupMenuItem(
-                                              value: 'edit',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.edit, size: 18),
-                                                  SizedBox(width: 8),
-                                                  Text('編集'),
-                                                ],
-                                              ),
-                                            ),
-                                            const PopupMenuItem(
-                                              value: 'delete',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.delete, size: 18, color: Colors.red),
-                                                  SizedBox(width: 8),
-                                                  Text('削除', style: TextStyle(color: Colors.red)),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
                             );
-                          },
-                          loading: () => const Padding(
-                            padding: EdgeInsets.all(32),
-                            child: Center(child: CircularProgressIndicator(color: primaryColor)),
-                          ),
-                          error: (error, stack) => Padding(
-                            padding: const EdgeInsets.all(32),
-                            child: Center(
-                              child: Text(
-                                'エラー: $error',
-                                style: const TextStyle(color: Colors.red),
-                              ),
-                            ),
+                          }).toList(),
+                        );
+                      },
+                      loading: () => const Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Center(child: CircularProgressIndicator(color: primaryColor)),
+                      ),
+                      error: (error, stack) => Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Center(
+                          child: Text(
+                            'エラー: $error',
+                            style: const TextStyle(color: Colors.red),
                           ),
                         ),
+                      ),
+                    ),
 
-                        const SizedBox(height: 80), // フッターの高さ分の余白
-                      ],
-                    );
-                  },
+                    const SizedBox(height: 80), // フッターの高さ分の余白
+                  ],
                 );
               },
+              loading: () => const Center(child: CircularProgressIndicator(color: primaryColor)),
+              error: (error, stack) => Center(child: Text('エラーが発生しました: $error')),
             ),
           ),
         ],
