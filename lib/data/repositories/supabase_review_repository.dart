@@ -77,12 +77,11 @@ class SupabaseReviewRepository implements ReviewRepository {
       return {};
     }
     try {
-      final Map<String, dynamic> params = {'p_product_ids': productIds};
-      if (currentUserId != null) {
-        params['p_current_user_id'] = currentUserId;
-        // 関数のオーバーロードを解決するために明示的に値を渡す
-        params['p_visibility'] = 'public';
-      }
+      final Map<String, dynamic> params = {
+        'p_product_ids': productIds,
+        'p_visibility': 'public',
+        'p_current_user_id': currentUserId,
+      };
 
       final response = await _supabaseClient.rpc(
         'get_latest_reviews_by_product_ids',
