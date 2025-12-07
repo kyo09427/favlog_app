@@ -394,9 +394,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
         backgroundColor: theme.brightness == Brightness.dark
             ? const Color(0xFF1B5E20)
             : primaryColor,
-        title: const Text(
-          'FavLog',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/icon/icon.png',
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'FavLog',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+          ],
         ),
         actions: [
           IconButton(

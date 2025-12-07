@@ -177,7 +177,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(24),
                             child: Image.asset(
-                              'assets/images/app_icon.png',
+                              'assets/icon/icon.png',
                               fit: BoxFit.cover,
                             ),
                           ),
