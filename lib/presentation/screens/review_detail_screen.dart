@@ -479,11 +479,13 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: _primary,
         onPressed: () async {
-          await context.push(
-            '/add-review-to-product',
-            extra: displayedProduct,
+          final result = await context.push(
+            '/add-review', // 遷移先を/add-reviewに変更
+            extra: {'product': displayedProduct}, // extraの形式をMap<String, dynamic>に変更
           );
-          reviewDetailController.refreshAll();
+          if (result == true && mounted) {
+            reviewDetailController.refreshAll();
+          }
         },
         child: const Icon(Icons.add),
       ),

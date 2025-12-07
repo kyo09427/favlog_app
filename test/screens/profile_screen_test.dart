@@ -133,7 +133,7 @@ void main() {
     testWidgets('displays loading indicator initially', (tester) async {
       when(() => mockProfileRepository.fetchProfile(any())).thenAnswer((_) async {
         await Future.delayed(const Duration(milliseconds: 100));
-        return Profile(id: 'test_user_id', username: 'TestUser');
+        return Profile(id: 'test_user_id', username: 'TestUser', displayId: 'testuser');
       });
 
       await tester.pumpWidget(createProfileScreen());
@@ -152,6 +152,7 @@ void main() {
       final testProfile = Profile(
         id: 'test_user_id',
         username: 'TestUser',
+        displayId: 'testuser',
         avatarUrl: 'http://example.com/avatar.jpg',
       );
       when(() => mockProfileRepository.fetchProfile(any())).thenAnswer((_) async => testProfile);
@@ -169,7 +170,7 @@ void main() {
     });
 
     testWidgets('allows updating username via edit dialog', (tester) async {
-      final initialProfile = Profile(id: 'test_user_id', username: 'OldUsername');
+      final initialProfile = Profile(id: 'test_user_id', username: 'OldUsername', displayId: 'old_id');
       when(() => mockProfileRepository.fetchProfile(any())).thenAnswer((_) async => initialProfile);
       when(() => mockProfileRepository.updateProfile(any())).thenAnswer((_) async {});
 
@@ -187,9 +188,10 @@ void main() {
       expect(find.text('プロフィールを編集'), findsOneWidget);
 
       // ユーザー名を変更
-      final textField = find.byType(TextField);
-      expect(textField, findsOneWidget);
-      await tester.enterText(textField, 'NewUsername');
+      final textFields = find.byType(TextField);
+      expect(textFields, findsNWidgets(2));
+      final usernameField = textFields.first;
+      await tester.enterText(usernameField, 'NewUsername');
       
       // 保存ボタンをタップ
       await tester.tap(find.text('保存'));
@@ -202,7 +204,7 @@ void main() {
     });
 
     testWidgets('shows error when profile update fails', (tester) async {
-      final initialProfile = Profile(id: 'test_user_id', username: 'TestUser');
+      final initialProfile = Profile(id: 'test_user_id', username: 'TestUser', displayId: 'testuser');
       when(() => mockProfileRepository.fetchProfile(any())).thenAnswer((_) async => initialProfile);
       when(() => mockProfileRepository.updateProfile(any())).thenThrow(Exception('Update failed'));
 
@@ -214,7 +216,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // ユーザー名を変更
-      await tester.enterText(find.byType(TextField), 'FailedUpdate');
+      await tester.enterText(find.byType(TextField).first, 'FailedUpdate');
       
       // 保存ボタンをタップ
       await tester.tap(find.text('保存'));
@@ -227,7 +229,7 @@ void main() {
     });
 
     testWidgets('allows picking and uploading avatar via edit dialog', (tester) async {
-      final initialProfile = Profile(id: 'test_user_id', username: 'TestUser');
+      final initialProfile = Profile(id: 'test_user_id', username: 'TestUser', displayId: 'testuser');
       final publicUrl = 'http://example.com/new_avatar.webp';
       final compressedBytes = Uint8List.fromList([1, 2, 3]);
 

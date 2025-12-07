@@ -24,21 +24,28 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _productNameController;
   late final TextEditingController _productUrlController;
-  late final TextEditingController _subcategoryController;
+  late final TextEditingController _tagInputController; // Add this
 
   @override
   void initState() {
     super.initState();
     _productNameController = TextEditingController(text: widget.product.name);
     _productUrlController = TextEditingController(text: widget.product.url ?? '');
-    _subcategoryController = TextEditingController(text: widget.product.subcategoryTags.isNotEmpty ? widget.product.subcategoryTags.first : '');
+    _tagInputController = TextEditingController(); // Initialize
+    // Set initial tags from originalProduct
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final controller = ref.read(editProductControllerProvider(widget.product).notifier);
+      for (var tag in widget.product.subcategoryTags) {
+        controller.addSubcategoryTag(tag);
+      }
+    });
   }
 
   @override
   void dispose() {
     _productNameController.dispose();
     _productUrlController.dispose();
-    _subcategoryController.dispose();
+    _tagInputController.dispose(); // Dispose
     super.dispose();
   }
 
@@ -564,10 +571,11 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _subcategoryController,
+                      TextField(
+                        controller: _tagInputController,
+                        style: TextStyle(color: theme.textTheme.bodyMedium?.color),
                         decoration: InputDecoration(
-                          hintText: '例: カフェ / スイーツ / 本 など',
+                          hintText: '例: カフェ / スイーツ / 本 など（入力後Enterで追加）',
                           filled: true,
                           fillColor: theme.brightness == Brightness.dark
                               ? Colors.white.withOpacity(0.04)
@@ -597,13 +605,47 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                               width: 1.5,
                             ),
                           ),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.add),
+                            onPressed: () {
+                              if (_tagInputController.text.trim().isNotEmpty) {
+                                editProductController.addSubcategoryTag(_tagInputController.text.trim());
+                                _tagInputController.clear();
+                              }
+                            },
+                          ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 15,
                             vertical: 14,
                           ),
                         ),
-                        onChanged: editProductController.updateSubcategory,
+                        onSubmitted: (value) {
+                          if (value.trim().isNotEmpty) {
+                            editProductController.addSubcategoryTag(value.trim());
+                            _tagInputController.clear();
+                          }
+                        },
                       ),
+                      if (editProductState.subcategoryTags.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: editProductState.subcategoryTags.map((tag) {
+                            return Chip(
+                              label: Text('#$tag'),
+                              deleteIcon: const Icon(Icons.close, size: 16),
+                              onDeleted: () => editProductController.removeSubcategoryTag(tag),
+                              backgroundColor: const Color(0xFF22A06B).withOpacity(0.2),
+                              labelStyle: const TextStyle(
+                                color: Color(0xFF22A06B),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              deleteIconColor: const Color(0xFF22A06B),
+                            );
+                          }).toList(),
+                        ),
+                      ],
                       const SizedBox(height: 24),
 
                       // 下部ボタン

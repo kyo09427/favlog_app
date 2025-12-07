@@ -297,21 +297,34 @@ $$ LANGUAGE plpgsql;
 検索機能のパフォーマンスを最適化するため、以下のSQLを「SQL Editor」で実行し、関連するレビューを一括で取得するためのデータベース関数を作成します。
 
 ```sql
-CREATE OR REPLACE FUNCTION get_latest_reviews_by_product_ids(p_product_ids UUID[])
+CREATE OR REPLACE FUNCTION get_latest_reviews_by_product_ids(
+  p_product_ids UUID[],
+  p_current_user_id UUID DEFAULT NULL
+)
 RETURNS SETOF reviews AS $$
 BEGIN
   RETURN QUERY
-  SELECT r.*
-  FROM reviews r
-  WHERE r.id IN (
-    SELECT id
-    FROM (
-      SELECT id, ROW_NUMBER() OVER(PARTITION BY product_id ORDER BY created_at DESC) as rn
-      FROM reviews
-      WHERE product_id = ANY(p_product_ids)
-    ) t
-    WHERE t.rn = 1
-  );
+  WITH ranked_reviews AS (
+    SELECT *,
+           ROW_NUMBER() OVER(PARTITION BY product_id ORDER BY created_at DESC) as rn
+    FROM reviews
+    WHERE product_id = ANY(p_product_ids)
+  )
+  SELECT *
+  FROM ranked_reviews
+  WHERE rn = 1
+    AND (
+      visibility = 'public'
+      OR (
+        p_current_user_id IS NOT NULL AND (
+          -- TODO: フォロー機能実装時に、ここにフォローしているユーザーのレビューも含まれるようにOR条件を追加する
+          -- 例: (visibility = 'friends' AND user_id IN (SELECT following_id FROM follows WHERE follower_id = p_current_user_id))
+          (visibility = 'friends' AND user_id = p_current_user_id)
+          OR
+          (visibility = 'private' AND user_id = p_current_user_id)
+        )
+      )
+    );
 END;
 $$ LANGUAGE plpgsql;
 ```

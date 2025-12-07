@@ -190,10 +190,11 @@ class HomeScreenController extends StateNotifier<HomeScreenState> {
       }
 
       final productIds = products.map((p) => p.id).toList();
+      final currentUserId = _ref.read(authRepositoryProvider).getCurrentUser()?.id; // Add this line
 
       // Get latest reviews and stats in parallel
       final results = await Future.wait([
-        reviewRepository.getLatestReviewsByProductIds(productIds),
+        reviewRepository.getLatestReviewsByProductIds(productIds, currentUserId: currentUserId), // Modify this line
         reviewRepository.getProductStats(productIds),
       ]);
 

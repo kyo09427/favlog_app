@@ -15,11 +15,9 @@ class SupabaseProductRepository implements ProductRepository {
   SupabaseProductRepository(this._supabaseClient);
 
   @override
-  Future<List<Product>> getProducts({String? category, String? searchQuery}) async {
+  Future<List<Product>> getProducts({String? category, String? searchQuery, List<String>? tags}) async {
     try {
-      var query = _supabaseClient
-          .from('products')
-          .select();
+      var query = _supabaseClient.from('products').select();
 
       if (category != null && category != 'すべて') {
         query = query.eq('category', category);
@@ -28,11 +26,17 @@ class SupabaseProductRepository implements ProductRepository {
       if (searchQuery != null && searchQuery.isNotEmpty) {
         query = query.ilike('name', '%$searchQuery%');
       }
+      
+      if (tags != null && tags.isNotEmpty) {
+        // subcategory_tagsはTEXT[]型なので、containsで複数のタグを含むかをチェック
+        query = query.contains('subcategory_tags', tags);
+      }
 
       final response = await query.order('created_at', ascending: false).limit(100);
+
       return (response as List).map((json) => Product.fromJson(json)).toList();
     } catch (e) {
-      rethrow;
+      throw Exception('Failed to get products: $e');
     }
   }
 

@@ -19,7 +19,7 @@ class EditProductState {
   final String productName;
   final String productUrl;
   final String selectedCategory;
-  final String subcategory;
+  final List<String> subcategoryTags; // subcategoryから変更
   final String? existingImageUrl;
   final File? newImageFile;
   final Uint8List? newImageBytes; // Web用に追加
@@ -33,7 +33,7 @@ class EditProductState {
     required this.productName,
     required this.productUrl,
     required this.selectedCategory,
-    required this.subcategory,
+    this.subcategoryTags = const [], // subcategoryから変更
     this.existingImageUrl,
     this.newImageFile,
     this.newImageBytes,
@@ -48,7 +48,7 @@ class EditProductState {
     String? productName,
     String? productUrl,
     String? selectedCategory,
-    String? subcategory,
+    List<String>? subcategoryTags, // subcategoryから変更
     String? existingImageUrl,
     File? newImageFile,
     Uint8List? newImageBytes,
@@ -64,7 +64,7 @@ class EditProductState {
       productName: productName ?? this.productName,
       productUrl: productUrl ?? this.productUrl,
       selectedCategory: selectedCategory ?? this.selectedCategory,
-      subcategory: subcategory ?? this.subcategory,
+      subcategoryTags: subcategoryTags ?? this.subcategoryTags, // subcategoryから変更
       existingImageUrl: existingImageUrl ?? this.existingImageUrl,
       newImageFile: clearNewImageFile ? null : newImageFile ?? this.newImageFile,
       newImageBytes: clearNewImageBytes ? null : newImageBytes ?? this.newImageBytes,
@@ -96,7 +96,7 @@ class EditProductController extends StateNotifier<EditProductState> {
           productName: product.name,
           productUrl: product.url ?? '',
           selectedCategory: product.category ?? '',
-          subcategory: product.subcategoryTags.isNotEmpty ? product.subcategoryTags.first : '',
+          subcategoryTags: product.subcategoryTags, // subcategoryTagsを初期化
           existingImageUrl: product.imageUrl,
           originalProduct: product,
         )) {
@@ -146,8 +146,8 @@ class EditProductController extends StateNotifier<EditProductState> {
   void updateSelectedCategory(String category) {
     if (_isDisposed) return;
 
-    // カテゴリ変更時はサブカテゴリをクリア
-    state = state.copyWith(selectedCategory: category, subcategory: '');
+    // カテゴリ変更時はサブカテゴリタグをクリア
+    state = state.copyWith(selectedCategory: category, subcategoryTags: []);
 
     // カテゴリが選択されている場合のみサブカテゴリ候補を取得
     if (category.isNotEmpty) {
@@ -182,10 +182,24 @@ class EditProductController extends StateNotifier<EditProductState> {
     }
   }
 
-  /// サブカテゴリを更新
-  void updateSubcategory(String subcategory) {
+  /// サブカテゴリタグを追加
+  void addSubcategoryTag(String tag) {
     if (_isDisposed) return;
-    state = state.copyWith(subcategory: subcategory);
+    final trimmedTag = tag.trim();
+    if (trimmedTag.isEmpty) return;
+
+    // 重複チェック
+    if (state.subcategoryTags.contains(trimmedTag)) return;
+
+    final updatedTags = List<String>.from(state.subcategoryTags)..add(trimmedTag);
+    state = state.copyWith(subcategoryTags: updatedTags);
+  }
+
+  /// サブカテゴリタグを削除
+  void removeSubcategoryTag(String tag) {
+    if (_isDisposed) return;
+    final updatedTags = state.subcategoryTags.where((t) => t != tag).toList();
+    state = state.copyWith(subcategoryTags: updatedTags);
   }
 
   /// ギャラリーから画像を選択
@@ -290,7 +304,7 @@ class EditProductController extends StateNotifier<EditProductState> {
         name: state.productName,
         url: state.productUrl.isEmpty ? null : state.productUrl,
         category: state.selectedCategory.isEmpty ? null : state.selectedCategory,
-        subcategoryTags: state.subcategory.isEmpty ? [] : [state.subcategory],
+        subcategoryTags: state.subcategoryTags, // ここを修正
         imageUrl: imageUrl,
       );
 

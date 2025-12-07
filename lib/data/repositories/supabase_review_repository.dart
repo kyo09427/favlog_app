@@ -15,13 +15,27 @@ class SupabaseReviewRepository implements ReviewRepository {
   SupabaseReviewRepository(this._supabaseClient);
 
   @override
-  Future<List<Review>> getReviews({String? category}) async {
+  Future<List<Review>> getReviews({String? category, String? visibility, String? currentUserId}) async {
     try {
-      final response = await _supabaseClient
+      var query = _supabaseClient
           .from('reviews')
-          .select()
-          .order('created_at', ascending: false)
-          .limit(100);
+          .select();
+
+      if (category != null && category != 'すべて') {
+        query = query.eq('category', category);
+      }
+
+      if (currentUserId != null) {
+        // 現在のユーザーIDに基づいてフィルタリング
+        query = query.or('visibility.eq.public,'
+                        'and(visibility.eq.friends,user_id.eq.$currentUserId),' // フォロー機能未実装のため、一旦自身のみ
+                        'and(visibility.eq.private,user_id.eq.$currentUserId)');
+      } else {
+        // ログインしていないユーザーは公開レビューのみ閲覧可能
+        query = query.eq('visibility', 'public');
+      }
+
+      final response = await query.order('created_at', ascending: false).limit(100);
 
       return (response as List).map((json) => Review.fromJson(json)).toList();
     } catch (e) {
@@ -58,14 +72,19 @@ class SupabaseReviewRepository implements ReviewRepository {
   }
 
   @override
-  Future<Map<String, Review>> getLatestReviewsByProductIds(List<String> productIds) async {
+  Future<Map<String, Review>> getLatestReviewsByProductIds(List<String> productIds, {String? currentUserId}) async {
     if (productIds.isEmpty) {
       return {};
     }
     try {
+      final Map<String, dynamic> params = {'p_product_ids': productIds};
+      if (currentUserId != null) {
+        params['p_current_user_id'] = currentUserId;
+      }
+
       final response = await _supabaseClient.rpc(
         'get_latest_reviews_by_product_ids',
-        params: {'p_product_ids': productIds},
+        params: params,
       );
 
       final reviews = (response as List).map((json) => Review.fromJson(json)).toList();

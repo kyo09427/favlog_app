@@ -50,9 +50,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   void _onTapPopularKeyword(String keyword) {
-    final cleanKeyword = keyword.replaceFirst('#', '');
-    _searchController.text = cleanKeyword;
-    ref.read(searchControllerProvider.notifier).updateSearchQuery(cleanKeyword);
+    _searchController.text = keyword;
+    ref.read(searchControllerProvider.notifier).updateSearchQuery(keyword);
   }
 
   void _onClearSearch() {
@@ -163,16 +162,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             padding: const EdgeInsets.symmetric(horizontal: 4),
                           ),
-                        if (product.subcategoryTags.isNotEmpty)
-                          Chip(
-                            label: Text(
-                              product.subcategoryTags.first,
-                              style: theme.textTheme.bodySmall,
-                            ),
-                            backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                        // subcategoryTagsのリスト全体を表示
+                        ...product.subcategoryTags.map((tag) => Chip(
+                          label: Text(
+                            tag,
+                            style: theme.textTheme.bodySmall,
                           ),
+                          backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                        )),
                       ],
                     ),
                   if (latestReview != null) ...[

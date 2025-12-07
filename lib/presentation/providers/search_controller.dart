@@ -114,10 +114,20 @@ class SearchController extends StateNotifier<SearchScreenState> {
       final productRepository = _ref.read(productRepositoryProvider);
       final reviewRepository = _ref.read(reviewRepositoryProvider);
 
+      List<String>? tagsFilter;
+      String? nameSearchQuery;
+
+      if (query.startsWith('#')) {
+        tagsFilter = [query.substring(1)]; // #を削除してタグとして扱う
+        nameSearchQuery = null; // タグ検索の場合は商品名検索を行わない
+      } else {
+        nameSearchQuery = query;
+        tagsFilter = null;
+      }
+
       // フィルターに応じてカテゴリを設定
       String? categoryFilter;
       if (state.selectedFilter == '商品') {
-        // 商品カテゴリのみ（本、家電、食品、ファッション、ゲーム、映画/音楽、その他）
         categoryFilter = null; // 全カテゴリから商品を検索（サービスを除外するロジックは後述）
       } else if (state.selectedFilter == 'サービス') {
         categoryFilter = 'サービス';
@@ -128,12 +138,12 @@ class SearchController extends StateNotifier<SearchScreenState> {
       List<Product> products;
       if (state.selectedFilter == 'ユーザー') {
         // ユーザー検索は未実装のため空リストを返す
-        // TODO: ユーザー検索機能の実装
         products = [];
       } else {
         products = await productRepository.getProducts(
           category: categoryFilter,
-          searchQuery: query,
+          searchQuery: nameSearchQuery, // 商品名検索クエリを渡す
+          tags: tagsFilter, // タグフィルタを渡す
         );
 
         // '商品'フィルター時は'サービス'カテゴリを除外

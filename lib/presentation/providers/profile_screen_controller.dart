@@ -81,6 +81,7 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
       final newProfile = Profile(
         id: user.id,
         username: user.email?.split('@').first ?? 'User',
+        displayId: user.email?.split('@').first ?? 'user_${const Uuid().v4().substring(0, 8)}',
         avatarUrl: null,
       );
       
@@ -121,6 +122,43 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
     } catch (e, st) {
       if (!_isDisposed) {
         state = AsyncValue.error('プロフィールの更新に失敗しました: $e', st);
+      }
+    }
+  }
+
+  Future<void> updateUserId(String newUserId) async {
+    if (_isDisposed) return;
+    
+    final currentProfile = state.value;
+    if (currentProfile == null) {
+      state = AsyncValue.error('プロフィールが見つかりません', StackTrace.current);
+      return;
+    }
+    
+    if (newUserId.trim().isEmpty) {
+      state = AsyncValue.error('ユーザーIDを入力してください', StackTrace.current);
+      return;
+    }
+
+    // IDの形式チェック（英数字とアンダースコアのみ、など）
+    final validCharacters = RegExp(r'^[a-zA-Z0-9_]+$');
+    if (!validCharacters.hasMatch(newUserId.trim())) {
+      state = AsyncValue.error('ユーザーIDは英数字とアンダースコアのみ使用できます', StackTrace.current);
+      return;
+    }
+    
+    state = const AsyncValue.loading();
+    try {
+      final updatedProfile = currentProfile.copyWith(displayId: newUserId.trim());
+      await _profileRepository.updateProfile(updatedProfile);
+      
+      if (!_isDisposed) {
+        state = AsyncValue.data(updatedProfile);
+      }
+    } catch (e, st) {
+      if (!_isDisposed) {
+        // 重複エラーなどの詳細なハンドリングができるとベスト
+        state = AsyncValue.error('ユーザーIDの更新に失敗しました: $e', st);
       }
     }
   }
@@ -191,6 +229,7 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
         updatedProfile = Profile(
           id: currentUser.id,
           username: currentUser.email?.split('@').first ?? 'User',
+          displayId: currentUser.email?.split('@').first ?? 'user_${const Uuid().v4().substring(0, 8)}',
           avatarUrl: publicUrl,
         );
       }

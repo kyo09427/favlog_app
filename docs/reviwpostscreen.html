@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html class="" lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>レビュー投稿 (順序・投稿ボタン削除)</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+    .material-symbols-outlined {
+      font-variation-settings:
+      'FILL' 1,
+      'wght' 400,
+      'GRAD' 0,
+      'opsz' 24
+    }
+  </style>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#13ec5b",
+            "background-light": "#f6f8f6",
+            "background-dark": "#102216",
+          },
+          fontFamily: {
+            "display": ["Plus Jakarta Sans", "Noto Sans", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      min-height: 100dvh;
+    }
+    .half-star {
+      background: linear-gradient(to right, #13ec5b 50%, #e5e7eb 50%);-webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    html.dark .half-star {
+      background: linear-gradient(to right, #13ec5b 50%, #4b5563 50%);-webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<div class="flex items-center bg-background-light dark:bg-background-dark p-4 pb-2 justify-between sticky top-0 z-10 border-b border-zinc-200 dark:border-white/10">
+<div class="flex w-12 items-center justify-start">
+<button>
+<span class="material-symbols-outlined text-zinc-900 dark:text-zinc-100 text-2xl">close</span>
+</button>
+</div>
+<h2 class="text-zinc-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">レビュー投稿</h2>
+<div class="flex w-12 items-center justify-end">
+</div>
+</div>
+<div class="flex flex-col p-4 space-y-8 pb-24">
+<div class="flex items-center space-x-4">
+<img class="w-20 h-20 object-cover rounded-lg" data-alt="A close-up of a textured green leaf with water droplets." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAF_JEIjjTRlrwvtcu4PlL7NiPc39jjYDo46Eq5803aqGkF12fadQcegsmLbC24F8LF98Fw3sGkPFlg_hiuTbcS8sujx7K0Lsg2cVCaI3lFIOK-E7_ln-rolFo5MqpNXgCfHf90V31_TiAov8GUTXPcNeROovoDM0S9jI3gn2mH9KtSdbYcU3znGmyGARv4DarE0ktbSjT1JF9k1DWafjLdQ9Trg4fqLrd85CjDd1uN_A05ONF_I6UqoTZlrUUBzFw5tvGhWLdK-FuF"/>
+<h3 class="text-zinc-900 dark:text-white text-lg font-bold leading-tight flex-1">ここには商品・サービス名が入ります</h3>
+</div>
+<div>
+<h3 class="text-zinc-900 dark:text-white text-base font-medium leading-tight pb-3">評価</h3>
+<div class="flex items-center gap-1">
+<button><span class="material-symbols-outlined text-primary text-4xl">star</span></button>
+<button><span class="material-symbols-outlined text-primary text-4xl">star</span></button>
+<button><span class="material-symbols-outlined text-primary text-4xl">star</span></button>
+<button><span class="material-symbols-outlined text-4xl half-star">star</span></button>
+<button><span class="material-symbols-outlined text-zinc-300 dark:text-gray-600 text-4xl" style="font-variation-settings: 'FILL' 0;">star</span></button>
+</div>
+</div>
+<div>
+<h3 class="text-zinc-900 dark:text-white text-base font-medium leading-tight pb-3">写真を追加</h3>
+<div class="grid grid-cols-3 gap-3">
+<div class="relative aspect-square">
+<img class="w-full h-full object-cover rounded-lg" data-alt="A close-up of a textured green leaf with water droplets." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAF_JEIjjTRlrwvtcu4PlL7NiPc39jjYDo46Eq5803aqGkF12fadQcegsmLbC24F8LF98Fw3sGkPFlg_hiuTbcS8sujx7K0Lsg2cVCaI3lFIOK-E7_ln-rolFo5MqpNXgCfHf90V31_TiAov8GUTXPcNeROovoDM0S9jI3gn2mH9KtSdbYcU3znGmyGARv4DarE0ktbSjT1JF9k1DWafjLdQ9Trg4fqLrd85CjDd1uN_A05ONF_I6UqoTZlrUUBzFw5tvGhWLdK-FuF"/>
+<button class="absolute -top-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-zinc-800 dark:bg-zinc-300 border-2 border-background-light dark:border-background-dark">
+<span class="material-symbols-outlined text-white dark:text-zinc-900 !text-sm">close</span>
+</button>
+</div>
+<div class="relative aspect-square">
+<img class="w-full h-full object-cover rounded-lg" data-alt="Top-down view of a beautifully presented dish with herbs and spices." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0HR5VOkd6Z1jdNrZBO2u15mChu_azLDVqnMBP3C92_q6ICcXBtv1umtnLVYDWBjasW0JaxE8hWsh_kTTqJOKlt7os0AWg-tmQ0PctODEHdvpO4D3N8IWO6AR9RcodeB9cNtQdOLDtwP1I8xQKBIhhSCGQpQwcbsjBRR1Ip-Oau9YUCQvdTVJXsBIz6DzmdiN9QcMYuQVEyK47SfmVfM1noXgM0zI1gmmFZKt4K2ldDUQHwinYLNOk4tA2dZ3Wi6ZuxoZ1nKYTr5Sg"/>
+<button class="absolute -top-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-zinc-800 dark:bg-zinc-300 border-2 border-background-light dark:border-background-dark">
+<span class="material-symbols-outlined text-white dark:text-zinc-900 !text-sm">close</span>
+</button>
+</div>
+<button class="flex flex-col items-center justify-center aspect-square w-full rounded-lg bg-zinc-100 dark:bg-white/10 border-2 border-dashed border-zinc-300 dark:border-white/20">
+<span class="material-symbols-outlined text-zinc-400 dark:text-zinc-500 text-3xl">add_photo_alternate</span>
+<span class="text-zinc-500 dark:text-zinc-400 text-xs mt-1">追加</span>
+</button>
+</div>
+</div>
+<label class="flex flex-col w-full">
+<p class="text-zinc-900 dark:text-white text-base font-medium leading-normal pb-2">レビュー本文</p>
+<textarea class="form-textarea flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-zinc-900 dark:text-white focus:outline-0 focus:ring-0 border border-zinc-200 dark:border-white/20 bg-zinc-100 dark:bg-white/10 focus:border-primary dark:focus:border-primary h-48 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 p-[15px] text-base font-normal leading-normal" placeholder="良かった点、気になった点など、自由にレビューを書きましょう。"></textarea>
+</label>
+<div>
+<label class="flex flex-col w-full">
+<p class="text-zinc-500 dark:text-zinc-400 text-base font-medium leading-normal pb-2">サブカテゴリ (任意)</p>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-zinc-900 dark:text-white focus:outline-0 focus:ring-0 border border-zinc-200 dark:border-white/20 bg-zinc-100 dark:bg-white/10 focus:border-primary dark:focus:border-primary h-14 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 p-[15px] text-base font-normal leading-normal" placeholder="例：ミステリー小説、ワイヤレスイヤホン" value=""/>
+</label>
+<div class="flex flex-wrap gap-2 mt-3">
+<button class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary/20 dark:bg-primary/30 text-primary dark:text-primary text-sm font-medium">
+<span>#ミステリー小説</span>
+<span class="material-symbols-outlined !text-base -mr-1" style="font-variation-settings: 'FILL' 0, 'wght' 400;">close</span>
+</button>
+<button class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary/20 dark:bg-primary/30 text-primary dark:text-primary text-sm font-medium">
+<span>#SF</span>
+<span class="material-symbols-outlined !text-base -mr-1" style="font-variation-settings: 'FILL' 0, 'wght' 400;">close</span>
+</button>
+</div>
+</div>
+<div>
+<p class="text-zinc-900 dark:text-white text-base font-medium leading-normal pb-2">公開範囲</p>
+<button class="flex items-center justify-between w-full rounded-lg bg-zinc-100 dark:bg-white/10 p-4 h-14">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center h-8 w-8 rounded-full bg-primary/20">
+<span class="material-symbols-outlined text-primary text-lg">group</span>
+</div>
+<p class="text-zinc-900 dark:text-white text-base font-normal">親しい友達</p>
+</div>
+<span class="material-symbols-outlined text-zinc-400 dark:text-zinc-500 !text-xl" style="font-variation-settings: 'FILL' 0, 'wght' 300;">arrow_forward_ios</span>
+</button>
+</div>
+</div>
+<div class="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background-light dark:from-background-dark to-transparent">
+<button class="w-full bg-primary text-background-dark font-bold text-base h-14 flex items-center justify-center shadow-lg shadow-primary/30 rounded-lg">
+        レビューを投稿する
+        </button>
+</div>
+</div>
+</body></html>

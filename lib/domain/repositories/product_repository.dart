@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import '../models/product.dart';
 
 abstract class ProductRepository {
-  Future<List<Product>> getProducts({String? category, String? searchQuery});
+  Future<List<Product>> getProducts({String? category, String? searchQuery, List<String>? tags});
   Future<Product> getProductById(String productId);
   Future<Product> createProduct(Product product);
   Future<void> updateProduct(Product product);
