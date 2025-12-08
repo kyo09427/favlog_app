@@ -29,7 +29,7 @@ import '../../presentation/screens/update_email_sent_screen.dart';
 import '../../presentation/screens/confirm_email_change_screen.dart';
 import '../../presentation/widgets/scaffold_with_nav_bar.dart';
 
-// StreamをリチE��ンしてGoRouterをリフレチE��ュするためのChangeNotifier
+// StreamをリッスンしてGoRouterをリフレッシュするためのChangeNotifier
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
     notifyListeners();
@@ -50,23 +50,24 @@ final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 // GoRouterのインスタンスを提供するRiverpodプロバイダー
 final goRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateChangesProvider);
-
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
-    debugLogDiagnostics: true, // チE��チE��用にログを有効匁E
-    refreshListenable: GoRouterRefreshStream(ref.watch(authRepositoryProvider).authStateChanges),
+    debugLogDiagnostics: true, // デバッグ用にログを有効化
+    refreshListenable:
+        GoRouterRefreshStream(ref.watch(authRepositoryProvider).authStateChanges),
     redirect: (BuildContext context, GoRouterState state) {
+      // `redirect`内では`ref.watch`を使わず、`ref.read`で同期的に状態を読み取る
+      final authState = ref.read(authStateChangesProvider);
       final authValue = authState.value;
       final loggedIn = authValue != null && authValue.session != null;
 
-      // まだ認証状態が確定してぁE��ぁE��合�E何もしなぁE
+      // 認証状態がまだ確定していない（読み込み中など）場合は、何もせずに待機
       if (authState.isLoading || authState.hasError) {
         return null;
       }
 
-      // ログイン不要でアクセスできる公開�Eージ
+      // ログイン不要でアクセスできる公開ページ
       const publicRoutes = [
         '/auth',
         '/password-reset-request',
@@ -77,30 +78,30 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final currentLocation = state.matchedLocation;
       final isPublic = publicRoutes.contains(currentLocation);
 
-      // --- ログイン状態に基づくリダイレクチE---
+      // --- ログイン状態に基づくリダイレクト ---
 
-      // ① ログインしてぁE��ぁE��吁E
+      // ① ログインしていない場合
       if (!loggedIn) {
-        // 公開�Eージ以外�E/authへ
+        // 公開ページ以外なら/authへ
         return isPublic ? null : '/auth';
       }
 
-      // ② ログインしてぁE��場吁E
+      // ② ログインしている場合
 
-      // ②-a メール認証が済んでぁE��ぁE��吁E
+      // ②-a メール認証が済んでいない場合
       final emailVerified = authValue.session?.user.emailConfirmedAt != null;
       if (!emailVerified) {
-        // メール認証ペ�Eジ以外なら、メール認証ペ�Eジへ
+        // メール認証ページ以外なら、メール認証ページへ
         return currentLocation == '/verify-email' ? null : '/verify-email';
       }
 
-      // ②-b メール認証済みの場吁E
-      // ログイン画面めE��ール認証画面にアクセスしよぁE��したら、�EームへリダイレクチE
+      // ②-b メール認証済みの場合
+      // ログイン画面やメール認証画面にアクセスしようとしたら、ホームへリダイレクト
       if (currentLocation == '/auth' || currentLocation == '/verify-email') {
         return '/';
       }
 
-      // 上記�EぁE��れにも該当しなぁE��合�EリダイレクトしなぁE
+      // 上記のいずれにも該当しない場合はリダイレクトしない
       return null;
     },
     routes: [
