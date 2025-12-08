@@ -13,8 +13,8 @@ class SupabaseAuthRepository implements AuthRepository {
   SupabaseAuthRepository(this._supabaseClient);
 
   @override
-  Future<AuthResponse> signUp(String email, String password) async {
-    return _supabaseClient.auth.signUp(email: email, password: password);
+  Future<AuthResponse> signUp(String email, String password, {Map<String, dynamic>? data}) async {
+    return _supabaseClient.auth.signUp(email: email, password: password, data: data);
   }
 
   @override

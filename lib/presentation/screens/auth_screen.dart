@@ -15,6 +15,8 @@ class AuthScreen extends ConsumerStatefulWidget {
 class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _isSignUp = false; // ログインと新規登録を切り替えるフラグ
@@ -23,12 +25,21 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _usernameController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
   Future<void> _signUp() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      await ErrorDialog.show(context, 'メールアドレスとパスワードを入力してください');
+    if (_emailController.text.isEmpty ||
+        _passwordController.text.isEmpty ||
+        _usernameController.text.isEmpty) {
+      await ErrorDialog.show(context, '全ての項目を入力してください');
+      return;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      await ErrorDialog.show(context, 'パスワードが一致しません');
       return;
     }
 
@@ -40,6 +51,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       final response = await authRepository.signUp(
         _emailController.text,
         _passwordController.text,
+        data: {'username': _usernameController.text},
       );
       if (mounted) {
         if (response.user != null) {
@@ -49,6 +61,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               backgroundColor: Color(0xFF13ec5b),
             ),
           );
+          // 登録成功後、入力欄をクリアしてログインモードに切り替える
+          _emailController.clear();
+          _passwordController.clear();
+          _usernameController.clear();
+          _confirmPasswordController.clear();
+          setState(() {
+            _isSignUp = false;
+          });
         } else {
           await ErrorDialog.show(
             context,
@@ -186,6 +206,54 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     ),
                   ),
 
+                  // ユーザー名 (新規登録時のみ)
+                  if (_isSignUp) ...[
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            'ユーザー名',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: textColor,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: _usernameController,
+                          enabled: !_isLoading,
+                          decoration: InputDecoration(
+                            hintText: 'ユーザー名を入力',
+                            hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.all(15),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: borderColor),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: borderColor),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: primaryColor, width: 2),
+                            ),
+                          ),
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: textColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
                   // メールアドレス
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -290,6 +358,55 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       ),
                     ],
                   ),
+
+                  // パスワード再入力 (新規登録時のみ)
+                  if (_isSignUp) ...[
+                    const SizedBox(height: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            'パスワード（確認）',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: textColor,
+                            ),
+                          ),
+                        ),
+                        TextField(
+                          controller: _confirmPasswordController,
+                          obscureText: _obscurePassword,
+                          enabled: !_isLoading,
+                          decoration: InputDecoration(
+                            hintText: 'パスワードを再入力',
+                            hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.all(15),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: borderColor),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: borderColor),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: primaryColor, width: 2),
+                            ),
+                          ),
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: textColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
 
                   const SizedBox(height: 24),
 

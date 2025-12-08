@@ -81,7 +81,7 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
     try {
       final newProfile = Profile(
         id: user.id,
-        username: user.email?.split('@').first ?? 'User',
+        username: user.userMetadata?['username'] ?? user.email?.split('@').first ?? 'User',
         avatarUrl: null,
       );
       
