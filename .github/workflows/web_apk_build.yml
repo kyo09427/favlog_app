@@ -62,6 +62,14 @@ jobs:
         run: flutter pub get
 
       # ===========================================================
+      # .env ファイル作成（APK/Web 共通で必要）
+      # ===========================================================
+      - name: Create .env file
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+
+      # ===========================================================
       #    手動実行時のみ：versionCode 生成 & Android バージョン書き換え
       # ===========================================================
       - name: Generate versionCode
@@ -219,11 +227,6 @@ jobs:
       # ===========================================================
       - name: Enable web
         run: flutter config --enable-web
-
-      - name: Create .env file
-        run: |
-          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
-          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
 
       - name: Build Web
         run: flutter build web --release --base-href /favlog_app/ --no-tree-shake-icons
