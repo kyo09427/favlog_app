@@ -1,11 +1,15 @@
-name: Build Android APK + Deploy Web
+name: Build Android APK + Deploy Web (Ultimate Version)
 
 on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "アプリのバージョン番号（例：1.4.2）"
+        required: true
   push:
     branches: [ main ]
     paths-ignore:
       - '**.md'
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -22,15 +26,15 @@ jobs:
     timeout-minutes: 45
 
     steps:
-    # -------------------------
+    # -------------------------------------------------------
     # Checkout
-    # -------------------------
+    # -------------------------------------------------------
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # -------------------------
+    # -------------------------------------------------------
     # Setup Flutter
-    # -------------------------
+    # -------------------------------------------------------
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
@@ -38,9 +42,9 @@ jobs:
         cache: true
         cache-key: flutter-${{ hashFiles('**/pubspec.lock') }}
 
-    # -------------------------
-    # Setup Java for Android
-    # -------------------------
+    # -------------------------------------------------------
+    # Setup Java & Gradle cache
+    # -------------------------------------------------------
     - name: Setup JDK 17
       uses: actions/setup-java@v4
       with:
@@ -48,9 +52,58 @@ jobs:
         distribution: 'temurin'
         cache: 'gradle'
 
-    # -------------------------
-    # Setup Android Signing
-    # -------------------------
+    # -------------------------------------------------------
+    # Generate versionCode (YYMMDDNN)
+    # -------------------------------------------------------
+    - name: Generate versionCode
+      id: version_gen
+      run: |
+        DATE=$(date +'%y%m%d')
+        # read existing counter file or create
+        COUNTER_FILE=".version_counter"
+        if [ -f "$COUNTER_FILE" ]; then
+          COUNT=$(cat $COUNTER_FILE)
+        else
+          COUNT=0
+        fi
+        COUNT=$((COUNT + 1))
+        printf "%02d" $COUNT > $COUNTER_FILE
+
+        VERSION_CODE="${DATE}$(cat $COUNTER_FILE)"
+        echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+
+    - name: Commit updated counter
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add .version_counter || true
+        git commit -m "Update version counter" || true
+        git push || true
+
+    # -------------------------------------------------------
+    # Update version in Android build.gradle
+    # -------------------------------------------------------
+    - name: Update Android version
+      run: |
+        VERSION="${{ github.event.inputs.version }}"
+        VERSION_CODE="${{ steps.version_gen.outputs.version_code }}"
+        echo "Using versionName=$VERSION / versionCode=$VERSION_CODE"
+
+        sed -i "s/versionName \".*\"/versionName \"$VERSION\"/" android/app/build.gradle
+        sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" android/app/build.gradle
+
+    # -------------------------------------------------------
+    # Update version in pubspec.yaml
+    # -------------------------------------------------------
+    - name: Update pubspec.yaml version
+      run: |
+        VERSION="${{ github.event.inputs.version }}"
+        VERSION_CODE="${{ steps.version_gen.outputs.version_code }}"
+        sed -i "s/^version: .*/version: $VERSION+$VERSION_CODE/" pubspec.yaml
+
+    # -------------------------------------------------------
+    # Android signing
+    # -------------------------------------------------------
     - name: Create Keystore
       run: |
         echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/release.keystore
@@ -62,9 +115,9 @@ jobs:
         echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
         echo "storeFile=release.keystore" >> android/key.properties
 
-    # -------------------------
-    # Environment
-    # -------------------------
+    # -------------------------------------------------------
+    # .env
+    # -------------------------------------------------------
     - name: Create .env file
       run: |
         echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
@@ -73,46 +126,53 @@ jobs:
     - name: Get dependencies
       run: flutter pub get
 
-    # -------------------------
-    # Build Android APK only
-    # -------------------------
+    # -------------------------------------------------------
+    # Build APK
+    # -------------------------------------------------------
     - name: Build APK
       run: flutter build apk --release
 
-    # -------------------------
-    # Create GitHub Release (always publish)
-    # -------------------------
+    # -------------------------------------------------------
+    # Install GitHub CLI
+    # -------------------------------------------------------
+    - name: Install GitHub CLI
+      uses: cli/cli@v2
+
+    # -------------------------------------------------------
+    # Create release notes from commits
+    # -------------------------------------------------------
+    - name: Generate release notes
+      id: relnotes
+      run: |
+        NOTES=$(git log -10 --pretty=format:"- %s")
+        echo "notes<<EOF" >> $GITHUB_OUTPUT
+        echo "$NOTES" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    # -------------------------------------------------------
+    # Create GitHub Release
+    # -------------------------------------------------------
     - name: Create GitHub Release
       id: create_release
-      uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: build-${{ github.run_id }}
-        release_name: Build ${{ github.run_number }} (run ${{ github.run_id }})
-        body: Automated release
-        draft: false
-        prerelease: false
-
-    # -------------------------
-    # Upload APK to Release
-    # -------------------------
-    - name: Upload APK to Release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/app/outputs/flutter-apk/app-release.apk
-        asset_name: FavLog.apk
-        asset_content_type: application/vnd.android.package-archive
-
-    # -------------------------
-    # Save APK download URL
-    # -------------------------
-    - name: Save APK Download URL
       run: |
-        echo "${{ steps.create_release.outputs.html_url }}/download/FavLog.apk" > apk_url.txt
+        TAG="v${{ github.event.inputs.version }}-build-${{ github.run_id }}"
+        NOTES="${{ steps.relnotes.outputs.notes }}"
+
+        gh release create "$TAG" \
+          "build/app/outputs/flutter-apk/app-release.apk#FavLog.apk" \
+          --title "FavLog v${{ github.event.inputs.version }} (build ${{ github.run_id }})" \
+          --notes "$NOTES" \
+          --latest
+
+    # -------------------------------------------------------
+    # Save direct APK URL
+    # -------------------------------------------------------
+    - name: Save direct APK download URL
+      run: |
+        TAG="v${{ github.event.inputs.version }}-build-${{ github.run_id }}"
+        echo "https://github.com/${{ github.repository }}/releases/download/$TAG/FavLog.apk" > apk_url.txt
 
     - name: Upload APK URL artifact
       uses: actions/upload-artifact@v4
@@ -120,33 +180,55 @@ jobs:
         name: apk-url
         path: apk_url.txt
 
-    # -------------------------
-    # Flutter Web Build
-    # -------------------------
+    # -------------------------------------------------------
+    # Flutter Web build
+    # -------------------------------------------------------
     - name: Enable web
       run: flutter config --enable-web
 
     - name: Build web
-      run: flutter build web --release --base-href /favlog_app/ --no-tree-shake-icons
+      run: flutter build web --release --base-href /favlog_app/
 
-    # -------------------------
-    # 404.html → GoRouter 回避用 minimal バージョン
-    # -------------------------
+    # -------------------------------------------------------
+    # Cache-busting (append hash to JS filename)
+    # -------------------------------------------------------
+    - name: Add cache-busting hash to JS
+      run: |
+        FILE=$(ls build/web/main*.js)
+        HASH=$(sha1sum "$FILE" | cut -c1-8)
+        mv "$FILE" "build/web/main.$HASH.js"
+
+        sed -i "s/main.dart.js/main.$HASH.js/" build/web/index.html
+
+    # -------------------------------------------------------
+    # Minify JS/CSS/HTML
+    # -------------------------------------------------------
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Minify built web files
+      run: |
+        npm install -g minify
+        find build/web -name "*.js" -exec minify --output {} {} \;
+        find build/web -name "*.css" -exec minify --output {} {} \;
+        find build/web -name "*.html" -exec minify --output {} {} \;
+
+    # -------------------------------------------------------
+    # 404.html
+    # -------------------------------------------------------
     - name: Create minimal 404.html
       run: |
         cat << 'EOF' > build/web/404.html
         <!DOCTYPE html>
-        <html>
-        <head>
-            <meta http-equiv="refresh" content="0; url=/favlog_app/" />
-        </head>
-        <body></body>
-        </html>
+        <html><head><meta http-equiv="refresh" content="0; url=/favlog_app/"/></head>
+        <body></body></html>
         EOF
 
-    # -------------------------
-    # download.html → 最新 APK ／ fallback 付き
-    # -------------------------
+    # -------------------------------------------------------
+    # download.html
+    # -------------------------------------------------------
     - name: Download APK URL artifact
       uses: actions/download-artifact@v4
       with:
@@ -156,44 +238,23 @@ jobs:
     - name: Create download.html
       run: |
         RELEASE_URL="https://github.com/${{ github.repository }}/releases/latest"
-        APK_URL=""
-
-        if [ -f ./tmp/apk_url.txt ]; then
-          APK_URL=$(cat ./tmp/apk_url.txt)
-        fi
-
-        # Fallback: if APK_URL is empty → redirect to latest releases page
+        APK_URL=$(cat ./tmp/apk_url.txt)
         TARGET_URL=${APK_URL:-$RELEASE_URL}
 
         cat << EOF > build/web/download.html
         <!DOCTYPE html>
-        <html>
-        <head>
-            <meta http-equiv="refresh" content="0; url=${TARGET_URL}" />
-            <title>Downloading...</title>
-        </head>
-        <body>
-            <p>Redirecting...</p>
-        </body>
-        </html>
+        <html><head>
+        <meta http-equiv="refresh" content="0; url=${TARGET_URL}" />
+        <title>Downloading...</title></head>
+        <body><p>Redirecting…</p></body></html>
         EOF
 
-    # -------------------------
+    # -------------------------------------------------------
     # Deploy to GitHub Pages
-    # -------------------------
+    # -------------------------------------------------------
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./build/web
         force_orphan: true
-
-    # -------------------------
-    # Cleanup
-    # -------------------------
-    - name: Clean up secrets
-      if: always()
-      run: |
-        rm -f android/release.keystore
-        rm -f android/key.properties
-        rm -f .env
