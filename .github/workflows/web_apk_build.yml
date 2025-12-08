@@ -1,0 +1,199 @@
+name: Build Android APK + Deploy Web
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: false
+
+jobs:
+  build-android-and-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+    # -------------------------
+    # Checkout
+    # -------------------------
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # -------------------------
+    # Setup Flutter
+    # -------------------------
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable'
+        cache: true
+        cache-key: flutter-${{ hashFiles('**/pubspec.lock') }}
+
+    # -------------------------
+    # Setup Java for Android
+    # -------------------------
+    - name: Setup JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: 'gradle'
+
+    # -------------------------
+    # Setup Android Signing
+    # -------------------------
+    - name: Create Keystore
+      run: |
+        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/release.keystore
+
+    - name: Create key.properties
+      run: |
+        echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" > android/key.properties
+        echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
+        echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
+        echo "storeFile=release.keystore" >> android/key.properties
+
+    # -------------------------
+    # Environment
+    # -------------------------
+    - name: Create .env file
+      run: |
+        echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+        echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+
+    - name: Get dependencies
+      run: flutter pub get
+
+    # -------------------------
+    # Build Android APK only
+    # -------------------------
+    - name: Build APK
+      run: flutter build apk --release
+
+    # -------------------------
+    # Create GitHub Release (always publish)
+    # -------------------------
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: build-${{ github.run_id }}
+        release_name: Build ${{ github.run_number }} (run ${{ github.run_id }})
+        body: Automated release
+        draft: false
+        prerelease: false
+
+    # -------------------------
+    # Upload APK to Release
+    # -------------------------
+    - name: Upload APK to Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: build/app/outputs/flutter-apk/app-release.apk
+        asset_name: FavLog.apk
+        asset_content_type: application/vnd.android.package-archive
+
+    # -------------------------
+    # Save APK download URL
+    # -------------------------
+    - name: Save APK Download URL
+      run: |
+        echo "${{ steps.create_release.outputs.html_url }}/download/FavLog.apk" > apk_url.txt
+
+    - name: Upload APK URL artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: apk-url
+        path: apk_url.txt
+
+    # -------------------------
+    # Flutter Web Build
+    # -------------------------
+    - name: Enable web
+      run: flutter config --enable-web
+
+    - name: Build web
+      run: flutter build web --release --base-href /favlog_app/ --no-tree-shake-icons
+
+    # -------------------------
+    # 404.html → GoRouter 回避用 minimal バージョン
+    # -------------------------
+    - name: Create minimal 404.html
+      run: |
+        cat << 'EOF' > build/web/404.html
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta http-equiv="refresh" content="0; url=/favlog_app/" />
+        </head>
+        <body></body>
+        </html>
+        EOF
+
+    # -------------------------
+    # download.html → 最新 APK ／ fallback 付き
+    # -------------------------
+    - name: Download APK URL artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: apk-url
+        path: ./tmp
+
+    - name: Create download.html
+      run: |
+        RELEASE_URL="https://github.com/${{ github.repository }}/releases/latest"
+        APK_URL=""
+
+        if [ -f ./tmp/apk_url.txt ]; then
+          APK_URL=$(cat ./tmp/apk_url.txt)
+        fi
+
+        # Fallback: if APK_URL is empty → redirect to latest releases page
+        TARGET_URL=${APK_URL:-$RELEASE_URL}
+
+        cat << EOF > build/web/download.html
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta http-equiv="refresh" content="0; url=${TARGET_URL}" />
+            <title>Downloading...</title>
+        </head>
+        <body>
+            <p>Redirecting...</p>
+        </body>
+        </html>
+        EOF
+
+    # -------------------------
+    # Deploy to GitHub Pages
+    # -------------------------
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./build/web
+        force_orphan: true
+
+    # -------------------------
+    # Cleanup
+    # -------------------------
+    - name: Clean up secrets
+      if: always()
+      run: |
+        rm -f android/release.keystore
+        rm -f android/key.properties
+        rm -f .env
