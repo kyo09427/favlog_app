@@ -139,9 +139,7 @@ jobs:
         shell: bash -l {0}
         run: flutter build apk --release
 
-      - name: Install GitHub CLI
-        uses: actions/setup-gh-cli@v3
-
+      # -- Replace GitHub CLI release flow with standard actions --
       - name: Generate release notes
         id: relnotes
         shell: bash -l {0}
@@ -154,25 +152,31 @@ jobs:
 
       - name: Create GitHub Release
         id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ env.VERSION }}-build-${{ github.run_id }}
+          release_name: FavLog v${{ env.VERSION }} (build ${{ github.run_id }})
+          body: ${{ steps.relnotes.outputs.notes }}
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash -l {0}
-        run: |
-          set -euo pipefail
-          TAG="v${VERSION}-build-${{ github.run_id }}"
-          NOTES="${{ steps.relnotes.outputs.notes }}"
 
-          gh release create "$TAG" \
-            "build/app/outputs/flutter-apk/app-release.apk#FavLog.apk" \
-            --title "FavLog v${VERSION} (build ${{ github.run_id }})" \
-            --notes "$NOTES" \
-            --latest
+      - name: Upload APK to Release
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/app/outputs/flutter-apk/app-release.apk
+          asset_name: FavLog.apk
+          asset_content_type: application/vnd.android.package-archive
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Save direct APK download URL
         shell: bash -l {0}
         run: |
           set -euo pipefail
-          TAG="v${VERSION}-build-${{ github.run_id }}"
+          TAG="v${{ env.VERSION }}-build-${{ github.run_id }}"
           echo "https://github.com/${{ github.repository }}/releases/download/$TAG/FavLog.apk" > apk_url.txt
 
       - name: Upload APK URL artifact
@@ -217,10 +221,10 @@ jobs:
         run: |
           set -euo pipefail
           cat > build/web/404.html <<'EOF'
-          <!DOCTYPE html>
-          <html><head><meta http-equiv="refresh" content="0; url=/favlog_app/"/></head>
-          <body></body></html>
-          EOF
+<!DOCTYPE html>
+<html><head><meta http-equiv="refresh" content="0; url=/favlog_app/"/></head>
+<body></body></html>
+EOF
 
       - name: Download APK URL artifact
         uses: actions/download-artifact@v4
@@ -237,12 +241,12 @@ jobs:
           TARGET_URL=${APK_URL:-$RELEASE_URL}
 
           cat > build/web/download.html <<EOF
-          <!DOCTYPE html>
-          <html><head>
-          <meta http-equiv="refresh" content="0; url=${TARGET_URL}" />
-          <title>Downloading...</title></head>
-          <body><p>Redirecting…</p></body></html>
-          EOF
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="refresh" content="0; url=${TARGET_URL}" />
+<title>Downloading...</title></head>
+<body><p>Redirecting…</p></body></html>
+EOF
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
