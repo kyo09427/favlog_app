@@ -133,7 +133,7 @@ void main() {
     testWidgets('displays loading indicator initially', (tester) async {
       when(() => mockProfileRepository.fetchProfile(any())).thenAnswer((_) async {
         await Future.delayed(const Duration(milliseconds: 100));
-        return Profile(id: 'test_user_id', username: 'TestUser', displayId: 'testuser');
+        return Profile(id: 'test_user_id', username: 'TestUser');
       });
 
       await tester.pumpWidget(createProfileScreen());
@@ -152,7 +152,6 @@ void main() {
       final testProfile = Profile(
         id: 'test_user_id',
         username: 'TestUser',
-        displayId: 'testuser',
         avatarUrl: 'http://example.com/avatar.jpg',
       );
       when(() => mockProfileRepository.fetchProfile(any())).thenAnswer((_) async => testProfile);
@@ -162,15 +161,13 @@ void main() {
 
       // ユーザー名の表示を確認
       expect(find.text('TestUser'), findsOneWidget);
-      // ハンドルネームの表示を確認
-      expect(find.text('@testuser'), findsOneWidget);
       // タブの表示を確認（複数あるので findsWidgets を使用）
       expect(find.text('レビュー'), findsWidgets);
       expect(find.text('いいね'), findsWidgets);
     });
 
     testWidgets('allows updating username via edit dialog', (tester) async {
-      final initialProfile = Profile(id: 'test_user_id', username: 'OldUsername', displayId: 'old_id');
+      final initialProfile = Profile(id: 'test_user_id', username: 'OldUsername');
       when(() => mockProfileRepository.fetchProfile(any())).thenAnswer((_) async => initialProfile);
       when(() => mockProfileRepository.updateProfile(any())).thenAnswer((_) async {});
 
@@ -189,7 +186,7 @@ void main() {
 
       // ユーザー名を変更
       final textFields = find.byType(TextField);
-      expect(textFields, findsNWidgets(2));
+      expect(textFields, findsOneWidget);
       final usernameField = textFields.first;
       await tester.enterText(usernameField, 'NewUsername');
       
@@ -204,7 +201,7 @@ void main() {
     });
 
     testWidgets('shows error when profile update fails', (tester) async {
-      final initialProfile = Profile(id: 'test_user_id', username: 'TestUser', displayId: 'testuser');
+      final initialProfile = Profile(id: 'test_user_id', username: 'TestUser');
       when(() => mockProfileRepository.fetchProfile(any())).thenAnswer((_) async => initialProfile);
       when(() => mockProfileRepository.updateProfile(any())).thenThrow(Exception('Update failed'));
 
@@ -229,7 +226,7 @@ void main() {
     });
 
     testWidgets('allows picking and uploading avatar via edit dialog', (tester) async {
-      final initialProfile = Profile(id: 'test_user_id', username: 'TestUser', displayId: 'testuser');
+      final initialProfile = Profile(id: 'test_user_id', username: 'TestUser');
       final publicUrl = 'http://example.com/new_avatar.webp';
       final compressedBytes = Uint8List.fromList([1, 2, 3]);
 

@@ -212,13 +212,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      '@${profile.displayId}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: mutedTextColor,
-                      ),
-                    ),
 
                     const SizedBox(height: 24),
 
@@ -578,7 +571,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
     ProfileScreenController controller,
   ) {
     final usernameController = TextEditingController(text: profile.username);
-    final userIdController = TextEditingController(text: profile.displayId);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final backgroundColor = isDark ? const Color(0xFF102216) : const Color(0xFFF6F8F6);
@@ -759,43 +751,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
 
                     const SizedBox(height: 24),
 
-                    // ユーザーID入力
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'ユーザーID',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: mutedTextColor,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: userIdController,
-                          style: TextStyle(color: textColor),
-                          decoration: InputDecoration(
-                            hintText: 'ユーザーIDを入力',
-                            hintStyle: TextStyle(color: mutedTextColor),
-                            filled: true,
-                            fillColor: cardColor,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: borderColor),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: borderColor),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: primaryColor, width: 2),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
@@ -818,7 +773,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                       onPressed: () async {
                         await controller.updateProfileDetails(
                           username: usernameController.text,
-                          displayId: userIdController.text,
                         );
                         if (context.mounted) {
                           Navigator.pop(context);

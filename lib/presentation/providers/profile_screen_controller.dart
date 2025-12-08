@@ -82,7 +82,6 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
       final newProfile = Profile(
         id: user.id,
         username: user.email?.split('@').first ?? 'User',
-        displayId: user.email?.split('@').first ?? 'user_${const Uuid().v4().substring(0, 8)}',
         avatarUrl: null,
       );
       
@@ -100,7 +99,6 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
 
   Future<void> updateProfileDetails({
     required String username,
-    required String displayId,
   }) async {
     if (_isDisposed) return;
     
@@ -113,7 +111,6 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
     }
     
     final newUsername = username.trim();
-    final newDisplayId = displayId.trim();
     
     if (newUsername.isEmpty) {
       if (!_isDisposed) {
@@ -122,24 +119,8 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
       return;
     }
     
-    if (newDisplayId.isEmpty) {
-      if (!_isDisposed) {
-        state = AsyncValue<Profile?>.error('ユーザーIDを入力してください', StackTrace.current).copyWithPrevious(state);
-      }
-      return;
-    }
-
-    // IDの形式チェック
-    final validCharacters = RegExp(r'^[a-zA-Z0-9_]+$');
-    if (!validCharacters.hasMatch(newDisplayId)) {
-      if (!_isDisposed) {
-        state = AsyncValue<Profile?>.error('ユーザーIDは英数字とアンダースコアのみ使用できます', StackTrace.current).copyWithPrevious(state);
-      }
-      return;
-    }
-
     // 変更がない場合はリターン
-    if (newUsername == currentProfile.username && newDisplayId == currentProfile.displayId) {
+    if (newUsername == currentProfile.username) {
       return;
     }
     
@@ -147,7 +128,6 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
     try {
       final updatedProfile = currentProfile.copyWith(
         username: newUsername,
-        displayId: newDisplayId,
       );
       await _profileRepository.updateProfile(updatedProfile);
       
@@ -229,7 +209,6 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
         updatedProfile = Profile(
           id: currentUser.id,
           username: currentUser.email?.split('@').first ?? 'User',
-          displayId: currentUser.email?.split('@').first ?? 'user_${const Uuid().v4().substring(0, 8)}',
           avatarUrl: publicUrl,
         );
       }
