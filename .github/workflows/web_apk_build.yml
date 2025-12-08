@@ -28,15 +28,9 @@ jobs:
       VERSION: ${{ github.event.inputs.version }}
 
     steps:
-      # -------------------------------------------------------
-      # Checkout
-      # -------------------------------------------------------
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # -------------------------------------------------------
-      # Setup Flutter
-      # -------------------------------------------------------
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -44,9 +38,6 @@ jobs:
           cache: true
           cache-key: flutter-${{ hashFiles('**/pubspec.lock') }}
 
-      # -------------------------------------------------------
-      # Setup JDK & Gradle cache
-      # -------------------------------------------------------
       - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
@@ -54,9 +45,6 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      # -------------------------------------------------------
-      # Cache pub packages
-      # -------------------------------------------------------
       - name: Cache Pub packages
         uses: actions/cache@v4
         with:
@@ -65,9 +53,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pub-
 
-      # -------------------------------------------------------
-      # Generate versionCode (YYMMDDNN)
-      # -------------------------------------------------------
       - name: Generate versionCode
         id: version_gen
         shell: bash -l {0}
@@ -100,9 +85,6 @@ jobs:
             echo "No .version_counter changes to commit"
           fi
 
-      # -------------------------------------------------------
-      # Update Android and pubspec versions
-      # -------------------------------------------------------
       - name: Update Android version
         shell: bash -l {0}
         run: |
@@ -111,7 +93,6 @@ jobs:
           VERSION_CODE="${{ steps.version_gen.outputs.version_code }}"
           echo "Using versionName=$VERSION / versionCode=$VERSION_CODE"
 
-          # Replace versionName and versionCode in android/app/build.gradle
           sed -i "s/versionName \".*\"/versionName \"$VERSION\"/" android/app/build.gradle
           sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" android/app/build.gradle
 
@@ -121,12 +102,8 @@ jobs:
           set -euo pipefail
           VERSION="${VERSION}"
           VERSION_CODE="${{ steps.version_gen.outputs.version_code }}"
-          # Overwrite the version line (keeps other lines intact)
           sed -i "s/^version: .*/version: $VERSION+$VERSION_CODE/" pubspec.yaml
 
-      # -------------------------------------------------------
-      # Android signing
-      # -------------------------------------------------------
       - name: Create Keystore
         shell: bash -l {0}
         run: |
@@ -144,9 +121,6 @@ jobs:
           storeFile=release.keystore
           EOF
 
-      # -------------------------------------------------------
-      # Create .env (overwrite to avoid duplicate entries)
-      # -------------------------------------------------------
       - name: Create .env file
         shell: bash -l {0}
         run: |
@@ -161,22 +135,13 @@ jobs:
         shell: bash -l {0}
         run: flutter pub get
 
-      # -------------------------------------------------------
-      # Build APK
-      # -------------------------------------------------------
       - name: Build APK
         shell: bash -l {0}
         run: flutter build apk --release
 
-      # -------------------------------------------------------
-      # Install GitHub CLI
-      # -------------------------------------------------------
       - name: Install GitHub CLI
         uses: actions/setup-gh-cli@v3
 
-      # -------------------------------------------------------
-      # Create release notes from commits
-      # -------------------------------------------------------
       - name: Generate release notes
         id: relnotes
         shell: bash -l {0}
@@ -187,9 +152,6 @@ jobs:
           echo "$NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      # -------------------------------------------------------
-      # Create GitHub Release and upload APK
-      # -------------------------------------------------------
       - name: Create GitHub Release
         id: create_release
         env:
@@ -206,9 +168,6 @@ jobs:
             --notes "$NOTES" \
             --latest
 
-      # -------------------------------------------------------
-      # Save direct APK URL as artifact
-      # -------------------------------------------------------
       - name: Save direct APK download URL
         shell: bash -l {0}
         run: |
@@ -222,9 +181,6 @@ jobs:
           name: apk-url
           path: apk_url.txt
 
-      # -------------------------------------------------------
-      # Flutter Web build
-      # -------------------------------------------------------
       - name: Enable web
         shell: bash -l {0}
         run: flutter config --enable-web
@@ -233,9 +189,6 @@ jobs:
         shell: bash -l {0}
         run: flutter build web --release --base-href /favlog_app/
 
-      # -------------------------------------------------------
-      # Cache-busting (append hash to JS filename)
-      # -------------------------------------------------------
       - name: Add cache-busting hash to JS
         shell: bash -l {0}
         run: |
@@ -245,9 +198,6 @@ jobs:
           mv "$FILE" "build/web/main.$HASH.js"
           sed -i "s/main.dart.js/main.$HASH.js/" build/web/index.html
 
-      # -------------------------------------------------------
-      # Minify JS/CSS/HTML
-      # -------------------------------------------------------
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -262,22 +212,16 @@ jobs:
           find build/web -type f -name "*.css" -exec minify --output {} {} \;
           find build/web -type f -name "*.html" -exec minify --output {} {} \;
 
-      # -------------------------------------------------------
-      # 404.html (minimal redirect)
-      # -------------------------------------------------------
       - name: Create minimal 404.html
         shell: bash -l {0}
         run: |
           set -euo pipefail
           cat > build/web/404.html <<'EOF'
-<!DOCTYPE html>
-<html><head><meta http-equiv="refresh" content="0; url=/favlog_app/"/></head>
-<body></body></html>
-EOF
+          <!DOCTYPE html>
+          <html><head><meta http-equiv="refresh" content="0; url=/favlog_app/"/></head>
+          <body></body></html>
+          EOF
 
-      # -------------------------------------------------------
-      # download.html (redirects to latest release or direct APK)
-      # -------------------------------------------------------
       - name: Download APK URL artifact
         uses: actions/download-artifact@v4
         with:
@@ -293,16 +237,13 @@ EOF
           TARGET_URL=${APK_URL:-$RELEASE_URL}
 
           cat > build/web/download.html <<EOF
-<!DOCTYPE html>
-<html><head>
-<meta http-equiv="refresh" content="0; url=${TARGET_URL}" />
-<title>Downloading...</title></head>
-<body><p>Redirecting…</p></body></html>
-EOF
+          <!DOCTYPE html>
+          <html><head>
+          <meta http-equiv="refresh" content="0; url=${TARGET_URL}" />
+          <title>Downloading...</title></head>
+          <body><p>Redirecting…</p></body></html>
+          EOF
 
-      # -------------------------------------------------------
-      # Deploy to GitHub Pages
-      # -------------------------------------------------------
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
