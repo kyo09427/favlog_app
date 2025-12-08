@@ -1,4 +1,4 @@
-name: Build Android APK + Deploy Web (Ultimate Version)
+name: Build Android APK + Deploy Web (Refactored)
 
 on:
   workflow_dispatch:
@@ -24,237 +24,288 @@ jobs:
   build-android-and-web:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      VERSION: ${{ github.event.inputs.version }}
 
     steps:
-    # -------------------------------------------------------
-    # Checkout
-    # -------------------------------------------------------
-    - name: Checkout code
-      uses: actions/checkout@v4
+      # -------------------------------------------------------
+      # Checkout
+      # -------------------------------------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    # -------------------------------------------------------
-    # Setup Flutter
-    # -------------------------------------------------------
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        channel: 'stable'
-        cache: true
-        cache-key: flutter-${{ hashFiles('**/pubspec.lock') }}
+      # -------------------------------------------------------
+      # Setup Flutter
+      # -------------------------------------------------------
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+          cache-key: flutter-${{ hashFiles('**/pubspec.lock') }}
 
-    # -------------------------------------------------------
-    # Setup Java & Gradle cache
-    # -------------------------------------------------------
-    - name: Setup JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: 'gradle'
+      # -------------------------------------------------------
+      # Setup JDK & Gradle cache
+      # -------------------------------------------------------
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
 
-    # -------------------------------------------------------
-    # Generate versionCode (YYMMDDNN)
-    # -------------------------------------------------------
-    - name: Generate versionCode
-      id: version_gen
-      run: |
-        DATE=$(date +'%y%m%d')
-        # read existing counter file or create
-        COUNTER_FILE=".version_counter"
-        if [ -f "$COUNTER_FILE" ]; then
-          COUNT=$(cat $COUNTER_FILE)
-        else
-          COUNT=0
-        fi
-        COUNT=$((COUNT + 1))
-        printf "%02d" $COUNT > $COUNTER_FILE
+      # -------------------------------------------------------
+      # Cache pub packages
+      # -------------------------------------------------------
+      - name: Cache Pub packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
 
-        VERSION_CODE="${DATE}$(cat $COUNTER_FILE)"
-        echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+      # -------------------------------------------------------
+      # Generate versionCode (YYMMDDNN)
+      # -------------------------------------------------------
+      - name: Generate versionCode
+        id: version_gen
+        shell: bash -l {0}
+        run: |
+          set -euo pipefail
+          DATE=$(date +'%y%m%d')
+          COUNTER_FILE=".version_counter"
+          if [ -f "$COUNTER_FILE" ]; then
+            COUNT=$(cat "$COUNTER_FILE")
+          else
+            COUNT=0
+          fi
+          COUNT=$((COUNT + 1))
+          printf "%02d" "$COUNT" > "$COUNTER_FILE"
 
-    - name: Commit updated counter
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add .version_counter || true
-        git commit -m "Update version counter" || true
-        git push || true
+          VERSION_CODE="${DATE}$(cat "$COUNTER_FILE")"
+          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
 
-    # -------------------------------------------------------
-    # Update version in Android build.gradle
-    # -------------------------------------------------------
-    - name: Update Android version
-      run: |
-        VERSION="${{ github.event.inputs.version }}"
-        VERSION_CODE="${{ steps.version_gen.outputs.version_code }}"
-        echo "Using versionName=$VERSION / versionCode=$VERSION_CODE"
+      - name: Commit updated counter (if changed)
+        shell: bash -l {0}
+        run: |
+          set -euo pipefail
+          if git status --porcelain | grep -q ".version_counter"; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add .version_counter
+            git commit -m "Update version counter"
+            git push || true
+          else
+            echo "No .version_counter changes to commit"
+          fi
 
-        sed -i "s/versionName \".*\"/versionName \"$VERSION\"/" android/app/build.gradle
-        sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" android/app/build.gradle
+      # -------------------------------------------------------
+      # Update Android and pubspec versions
+      # -------------------------------------------------------
+      - name: Update Android version
+        shell: bash -l {0}
+        run: |
+          set -euo pipefail
+          VERSION="${VERSION}"
+          VERSION_CODE="${{ steps.version_gen.outputs.version_code }}"
+          echo "Using versionName=$VERSION / versionCode=$VERSION_CODE"
 
-    # -------------------------------------------------------
-    # Update version in pubspec.yaml
-    # -------------------------------------------------------
-    - name: Update pubspec.yaml version
-      run: |
-        VERSION="${{ github.event.inputs.version }}"
-        VERSION_CODE="${{ steps.version_gen.outputs.version_code }}"
-        sed -i "s/^version: .*/version: $VERSION+$VERSION_CODE/" pubspec.yaml
+          # Replace versionName and versionCode in android/app/build.gradle
+          sed -i "s/versionName \".*\"/versionName \"$VERSION\"/" android/app/build.gradle
+          sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" android/app/build.gradle
 
-    # -------------------------------------------------------
-    # Android signing
-    # -------------------------------------------------------
-    - name: Create Keystore
-      run: |
-        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/release.keystore
+      - name: Update pubspec.yaml version
+        shell: bash -l {0}
+        run: |
+          set -euo pipefail
+          VERSION="${VERSION}"
+          VERSION_CODE="${{ steps.version_gen.outputs.version_code }}"
+          # Overwrite the version line (keeps other lines intact)
+          sed -i "s/^version: .*/version: $VERSION+$VERSION_CODE/" pubspec.yaml
 
-    - name: Create key.properties
-      run: |
-        echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" > android/key.properties
-        echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
-        echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
-        echo "storeFile=release.keystore" >> android/key.properties
+      # -------------------------------------------------------
+      # Android signing
+      # -------------------------------------------------------
+      - name: Create Keystore
+        shell: bash -l {0}
+        run: |
+          set -euo pipefail
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/release.keystore
 
-    # -------------------------------------------------------
-    # .env
-    # -------------------------------------------------------
-    - name: Create .env file
-      run: |
-        echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
-        echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+      - name: Create key.properties
+        shell: bash -l {0}
+        run: |
+          set -euo pipefail
+          cat > android/key.properties <<EOF
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storeFile=release.keystore
+          EOF
 
-    - name: Get dependencies
-      run: flutter pub get
+      # -------------------------------------------------------
+      # Create .env (overwrite to avoid duplicate entries)
+      # -------------------------------------------------------
+      - name: Create .env file
+        shell: bash -l {0}
+        run: |
+          set -euo pipefail
+          cat > .env <<EOF
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          EOF
+          echo ".env created"
 
-    # -------------------------------------------------------
-    # Build APK
-    # -------------------------------------------------------
-    - name: Build APK
-      run: flutter build apk --release
+      - name: Get dependencies
+        shell: bash -l {0}
+        run: flutter pub get
 
-# -------------------------------------------------------
-# Install GitHub CLI
-# -------------------------------------------------------
-　　　- name: Install GitHub CLI
- 　　　 uses: actions/setup-gh-cli@v3
+      # -------------------------------------------------------
+      # Build APK
+      # -------------------------------------------------------
+      - name: Build APK
+        shell: bash -l {0}
+        run: flutter build apk --release
 
-    # -------------------------------------------------------
-    # Create release notes from commits
-    # -------------------------------------------------------
-    - name: Generate release notes
-      id: relnotes
-      run: |
-        NOTES=$(git log -10 --pretty=format:"- %s")
-        echo "notes<<EOF" >> $GITHUB_OUTPUT
-        echo "$NOTES" >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
+      # -------------------------------------------------------
+      # Install GitHub CLI
+      # -------------------------------------------------------
+      - name: Install GitHub CLI
+        uses: actions/setup-gh-cli@v3
 
-    # -------------------------------------------------------
-    # Create GitHub Release
-    # -------------------------------------------------------
-    - name: Create GitHub Release
-      id: create_release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        TAG="v${{ github.event.inputs.version }}-build-${{ github.run_id }}"
-        NOTES="${{ steps.relnotes.outputs.notes }}"
+      # -------------------------------------------------------
+      # Create release notes from commits
+      # -------------------------------------------------------
+      - name: Generate release notes
+        id: relnotes
+        shell: bash -l {0}
+        run: |
+          set -euo pipefail
+          NOTES=$(git log -10 --pretty=format:"- %s")
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
-        gh release create "$TAG" \
-          "build/app/outputs/flutter-apk/app-release.apk#FavLog.apk" \
-          --title "FavLog v${{ github.event.inputs.version }} (build ${{ github.run_id }})" \
-          --notes "$NOTES" \
-          --latest
+      # -------------------------------------------------------
+      # Create GitHub Release and upload APK
+      # -------------------------------------------------------
+      - name: Create GitHub Release
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash -l {0}
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}-build-${{ github.run_id }}"
+          NOTES="${{ steps.relnotes.outputs.notes }}"
 
-    # -------------------------------------------------------
-    # Save direct APK URL
-    # -------------------------------------------------------
-    - name: Save direct APK download URL
-      run: |
-        TAG="v${{ github.event.inputs.version }}-build-${{ github.run_id }}"
-        echo "https://github.com/${{ github.repository }}/releases/download/$TAG/FavLog.apk" > apk_url.txt
+          gh release create "$TAG" \
+            "build/app/outputs/flutter-apk/app-release.apk#FavLog.apk" \
+            --title "FavLog v${VERSION} (build ${{ github.run_id }})" \
+            --notes "$NOTES" \
+            --latest
 
-    - name: Upload APK URL artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: apk-url
-        path: apk_url.txt
+      # -------------------------------------------------------
+      # Save direct APK URL as artifact
+      # -------------------------------------------------------
+      - name: Save direct APK download URL
+        shell: bash -l {0}
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}-build-${{ github.run_id }}"
+          echo "https://github.com/${{ github.repository }}/releases/download/$TAG/FavLog.apk" > apk_url.txt
 
-    # -------------------------------------------------------
-    # Flutter Web build
-    # -------------------------------------------------------
-    - name: Enable web
-      run: flutter config --enable-web
+      - name: Upload APK URL artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-url
+          path: apk_url.txt
 
-    - name: Build web
-      run: flutter build web --release --base-href /favlog_app/
+      # -------------------------------------------------------
+      # Flutter Web build
+      # -------------------------------------------------------
+      - name: Enable web
+        shell: bash -l {0}
+        run: flutter config --enable-web
 
-    # -------------------------------------------------------
-    # Cache-busting (append hash to JS filename)
-    # -------------------------------------------------------
-    - name: Add cache-busting hash to JS
-      run: |
-        FILE=$(ls build/web/main*.js)
-        HASH=$(sha1sum "$FILE" | cut -c1-8)
-        mv "$FILE" "build/web/main.$HASH.js"
+      - name: Build web
+        shell: bash -l {0}
+        run: flutter build web --release --base-href /favlog_app/
 
-        sed -i "s/main.dart.js/main.$HASH.js/" build/web/index.html
+      # -------------------------------------------------------
+      # Cache-busting (append hash to JS filename)
+      # -------------------------------------------------------
+      - name: Add cache-busting hash to JS
+        shell: bash -l {0}
+        run: |
+          set -euo pipefail
+          FILE=$(ls build/web/main*.js | head -n1)
+          HASH=$(sha1sum "$FILE" | cut -c1-8)
+          mv "$FILE" "build/web/main.$HASH.js"
+          sed -i "s/main.dart.js/main.$HASH.js/" build/web/index.html
 
-    # -------------------------------------------------------
-    # Minify JS/CSS/HTML
-    # -------------------------------------------------------
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
+      # -------------------------------------------------------
+      # Minify JS/CSS/HTML
+      # -------------------------------------------------------
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-    - name: Minify built web files
-      run: |
-        npm install -g minify
-        find build/web -name "*.js" -exec minify --output {} {} \;
-        find build/web -name "*.css" -exec minify --output {} {} \;
-        find build/web -name "*.html" -exec minify --output {} {} \;
+      - name: Minify built web files
+        shell: bash -l {0}
+        run: |
+          set -euo pipefail
+          npm install -g minify
+          find build/web -type f -name "*.js" -exec minify --output {} {} \;
+          find build/web -type f -name "*.css" -exec minify --output {} {} \;
+          find build/web -type f -name "*.html" -exec minify --output {} {} \;
 
-    # -------------------------------------------------------
-    # 404.html
-    # -------------------------------------------------------
-    - name: Create minimal 404.html
-      run: |
-        cat << 'EOF' > build/web/404.html
-        <!DOCTYPE html>
-        <html><head><meta http-equiv="refresh" content="0; url=/favlog_app/"/></head>
-        <body></body></html>
-        EOF
+      # -------------------------------------------------------
+      # 404.html (minimal redirect)
+      # -------------------------------------------------------
+      - name: Create minimal 404.html
+        shell: bash -l {0}
+        run: |
+          set -euo pipefail
+          cat > build/web/404.html <<'EOF'
+<!DOCTYPE html>
+<html><head><meta http-equiv="refresh" content="0; url=/favlog_app/"/></head>
+<body></body></html>
+EOF
 
-    # -------------------------------------------------------
-    # download.html
-    # -------------------------------------------------------
-    - name: Download APK URL artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: apk-url
-        path: ./tmp
+      # -------------------------------------------------------
+      # download.html (redirects to latest release or direct APK)
+      # -------------------------------------------------------
+      - name: Download APK URL artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: apk-url
+          path: ./tmp
 
-    - name: Create download.html
-      run: |
-        RELEASE_URL="https://github.com/${{ github.repository }}/releases/latest"
-        APK_URL=$(cat ./tmp/apk_url.txt)
-        TARGET_URL=${APK_URL:-$RELEASE_URL}
+      - name: Create download.html
+        shell: bash -l {0}
+        run: |
+          set -euo pipefail
+          RELEASE_URL="https://github.com/${{ github.repository }}/releases/latest"
+          APK_URL=$(cat ./tmp/apk_url.txt || true)
+          TARGET_URL=${APK_URL:-$RELEASE_URL}
 
-        cat << EOF > build/web/download.html
-        <!DOCTYPE html>
-        <html><head>
-        <meta http-equiv="refresh" content="0; url=${TARGET_URL}" />
-        <title>Downloading...</title></head>
-        <body><p>Redirecting…</p></body></html>
-        EOF
+          cat > build/web/download.html <<EOF
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="refresh" content="0; url=${TARGET_URL}" />
+<title>Downloading...</title></head>
+<body><p>Redirecting…</p></body></html>
+EOF
 
-    # -------------------------------------------------------
-    # Deploy to GitHub Pages
-    # -------------------------------------------------------
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v4
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./build/web
-        force_orphan: true
+      # -------------------------------------------------------
+      # Deploy to GitHub Pages
+      # -------------------------------------------------------
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+          force_orphan: true
