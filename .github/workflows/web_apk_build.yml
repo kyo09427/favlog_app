@@ -24,10 +24,10 @@ jobs:
   build-android-and-web:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-
+    
     env:
       VERSION: ${{ github.event.inputs.version }}
-
+    
     steps:
       # -------------------------------------------------------
       # Checkout
@@ -75,14 +75,15 @@ jobs:
           set -euo pipefail
           DATE=$(date +'%y%m%d')
           COUNTER_FILE=".version_counter"
+          
           if [ -f "$COUNTER_FILE" ]; then
             COUNT=$(cat "$COUNTER_FILE")
           else
             COUNT=0
           fi
+          
           COUNT=$((COUNT + 1))
           printf "%02d" "$COUNT" > "$COUNTER_FILE"
-
           VERSION_CODE="${DATE}$(cat $COUNTER_FILE)"
           echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
 
@@ -104,7 +105,6 @@ jobs:
           VERSION="${VERSION}"
           VERSION_CODE="${{ steps.version_gen.outputs.version_code }}"
           echo "Setting versionName=$VERSION / versionCode=$VERSION_CODE"
-
           sed -i "s/versionName \".*\"/versionName \"$VERSION\"/" android/app/build.gradle
           sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" android/app/build.gradle
 
@@ -132,31 +132,20 @@ jobs:
           storeFile=release.keystore
           EOF
 
-      - name: Generate .env
-        run: |
-          cat > .env <<EOF
-          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
-          EOF
-
       # -------------------------------------------------------
-      # Get dependencies
+      # Get dependencies & build
       # -------------------------------------------------------
-      - name: flutter pub get
+      - name: Get dependencies
         run: flutter pub get
 
-      # -------------------------------------------------------
-      # Build APK
-      # -------------------------------------------------------
       - name: Build APK
         run: flutter build apk --release
 
       # -------------------------------------------------------
-      # Generate release notes (diff only)
+      # Generate release notes
       # -------------------------------------------------------
       - name: Generate release notes
         id: relnotes
-        shell: bash
         run: |
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ -z "$LAST_TAG" ]; then
@@ -164,7 +153,6 @@ jobs:
           else
             NOTES=$(git log "$LAST_TAG"..HEAD --pretty=format:"- %s")
           fi
-
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo "$NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -180,7 +168,7 @@ jobs:
             const version = process.env.VERSION;
             const tag = `v${version}-build-${process.env.GITHUB_RUN_ID}`;
             const notes = `${{ steps.relnotes.outputs.notes }}`;
-
+            
             const release = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -190,7 +178,7 @@ jobs:
               draft: false,
               prerelease: false
             });
-
+            
             core.setOutput("upload_url", release.data.upload_url);
 
       # -------------------------------------------------------
@@ -260,10 +248,23 @@ jobs:
       # -------------------------------------------------------
       - name: Create 404.html
         run: |
-          cat > build/web/404.html <<'EOF'
-<!DOCTYPE html>
-<html><head><meta http-equiv="refresh" content="0; url=/favlog_app/"></head><body></body></html>
-EOF
+          cat > build/web/404.html << 'HEREDOC'
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Redirecting...</title>
+            <script>
+              const path = window.location.pathname.replace('/favlog_app', '');
+              const target = path === '/404.html' ? '/favlog_app/' : '/favlog_app/' + path.slice(1);
+              window.location.replace(target + window.location.search + window.location.hash);
+            </script>
+          </head>
+          <body>
+            <p>Redirecting…</p>
+          </body>
+          </html>
+          HEREDOC
 
       # -------------------------------------------------------
       # download.html
@@ -279,12 +280,20 @@ EOF
           APK_URL=$(cat ./tmp/apk_url.txt || true)
           FALLBACK="https://github.com/${{ github.repository }}/releases/latest"
           TARGET=${APK_URL:-$FALLBACK}
-
-          cat > build/web/download.html <<EOF
-<!DOCTYPE html>
-<html><head><meta http-equiv="refresh" content="0; url=${TARGET}" /><title>Downloading...</title></head>
-<body><p>Redirecting…</p></body></html>
-EOF
+          
+          cat > build/web/download.html << HEREDOC
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta http-equiv="refresh" content="0;url=${TARGET}">
+            <title>Downloading...</title>
+          </head>
+          <body>
+            <p>Redirecting to download: <a href="${TARGET}">${TARGET}</a></p>
+          </body>
+          </html>
+          HEREDOC
 
       # -------------------------------------------------------
       # Deploy to GitHub Pages
