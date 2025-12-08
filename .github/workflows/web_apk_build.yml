@@ -132,11 +132,11 @@ jobs:
     - name: Build APK
       run: flutter build apk --release
 
-    # -------------------------------------------------------
-    # Install GitHub CLI
-    # -------------------------------------------------------
-    - name: Install GitHub CLI
-      uses: cli/cli@v2
+# -------------------------------------------------------
+# Install GitHub CLI
+# -------------------------------------------------------
+　　　- name: Install GitHub CLI
+ 　　　 uses: actions/setup-gh-cli@v3
 
     # -------------------------------------------------------
     # Create release notes from commits
