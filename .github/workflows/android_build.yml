@@ -1,8 +1,8 @@
-# Androidアプリのリリースビルド
+# Androidアプリのリリースビルド（単一APK／AAB出力 + optional: GitHub Releaseへ自動投稿）
 name: Android Build
 
+# ワークフローを手動実行するための設定
 on:
-  # 手動実行のみ
   workflow_dispatch:
     inputs:
       build_type:
@@ -14,6 +14,20 @@ on:
           - apk
           - aab
           - both
+      # リリース自動作成: no / draft / publish
+      create_release:
+        description: 'GitHub Releaseを作るか（no / draft / publish）'
+        required: true
+        default: 'no'
+        type: choice
+        options:
+          - no
+          - draft
+          - publish
+
+# リリースを作成するためにworkflowに書き込み権限が必要
+permissions:
+  contents: write
 
 jobs:
   build-android:
@@ -29,7 +43,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle' # Gradleキャッシュを有効化
+          cache: 'gradle'
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -57,45 +71,72 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Build APK
+      # ---- ビルド（"単一"のAPK と AABのみ）----
+      # NOTE: `flutter build apk --release` はデフォルトで universal(single) APK を出力します。
+      - name: Build APK (universal)
         if: github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both'
-        run: flutter build apk --release --split-per-abi
+        run: flutter build apk --release
 
-      - name: Build App Bundle
+      - name: Build App Bundle (AAB)
         if: github.event.inputs.build_type == 'aab' || github.event.inputs.build_type == 'both'
         run: flutter build appbundle --release
 
-      - name: Upload APK (arm64-v8a)
+      # ---- アーティファクト (ActionsのArtifacts) ----
+      # Actionsの"Artifacts"は複数ファイルや単一ファイルでもZIP形式で保存されることが多いです。
+      # "単一のapkをそのままダウンロード"にしたい場合は下のReleaseへのアップロードを有効にしてください。
+      - name: Upload APK artifact
         if: github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both'
         uses: actions/upload-artifact@v4
         with:
-          name: FavLog_arm64-v8a.apk
-          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          name: FavLog-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
-      - name: Upload APK (armeabi-v7a)
-        if: github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both'
-        uses: actions/upload-artifact@v4
-        with:
-          name: FavLog_armeabi-v7a.apk
-          path: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-          retention-days: 30
-
-      - name: Upload APK (x86_64)
-        if: github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both'
-        uses: actions/upload-artifact@v4
-        with:
-          name: FavLog_x86_64.apk
-          path: build/app/outputs/flutter-apk/app-x86_64-release.apk
-          retention-days: 30
-
-      - name: Upload App Bundle
+      - name: Upload AAB artifact
         if: github.event.inputs.build_type == 'aab' || github.event.inputs.build_type == 'both'
         uses: actions/upload-artifact@v4
         with:
-          name: FavLog.aab
+          name: FavLog-aab
           path: build/app/outputs/bundle/release/app-release.aab
-          retention-days: 90 # AABは長期保存
+          retention-days: 90
+
+      # ---- (任意) GitHub Release を作成して "生の" APK/AAB をリリースアセットとしてアップロードする ----
+      # create_release input を "no" にするとリリース作成とアセットアップロードはスキップされます。
+      - name: Create GitHub Release
+        id: create_release
+        if: github.event.inputs.create_release != 'no'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # タグは自動生成（build-<run_id>）。必要ならここを inputs 等で置き換えてください。
+          tag_name: build-${{ github.run_id }}
+          release_name: Build ${{ github.run_number }} (run ${{ github.run_id }})
+          body: Automated build uploaded by workflow ${{ github.workflow }}
+          draft: ${{ github.event.inputs.create_release == 'draft' }}
+          prerelease: false
+
+      - name: Upload APK to Release (raw single-file download)
+        if: (github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both') && (github.event.inputs.create_release != 'no')
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/app/outputs/flutter-apk/app-release.apk
+          asset_name: FavLog.apk
+          asset_content_type: application/vnd.android.package-archive
+
+      - name: Upload AAB to Release (raw single-file download)
+        if: (github.event.inputs.build_type == 'aab' || github.event.inputs.build_type == 'both') && (github.event.inputs.create_release != 'no')
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/app/outputs/bundle/release/app-release.aab
+          asset_name: FavLog.aab
+          asset_content_type: application/octet-stream
 
       - name: Clean up secrets
         if: always()
