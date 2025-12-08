@@ -43,6 +43,7 @@ jobs:
           cache: true
 
       - name: Setup JDK 17
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/setup-java@v4
         with:
           java-version: "17"
@@ -56,6 +57,9 @@ jobs:
           key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
           restore-keys: |
             ${{ runner.os }}-pub-
+
+      - name: Install dependencies
+        run: flutter pub get
 
       # ===========================================================
       #    手動実行時のみ：versionCode 生成 & Android バージョン書き換え
@@ -125,9 +129,6 @@ jobs:
           keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
           storeFile=release.keystore
           KEYPROPS
-
-      - name: Install dependencies
-        run: flutter pub get
 
       - name: Build APK
         if: github.event_name == 'workflow_dispatch'
@@ -219,8 +220,13 @@ jobs:
       - name: Enable web
         run: flutter config --enable-web
 
+      - name: Create .env file
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+
       - name: Build Web
-        run: flutter build web --release --base-href /favlog_app/
+        run: flutter build web --release --base-href /favlog_app/ --no-tree-shake-icons
 
       - name: Create 404.html
         run: |
@@ -272,3 +278,5 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
           force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
