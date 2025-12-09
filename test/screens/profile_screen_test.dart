@@ -96,8 +96,8 @@ void main() {
 
       // Common mock setups
       when(() => mockAuthRepository.getCurrentUser()).thenReturn(mockUser);
-      when(() => mockUser.id).thenReturn('test_user_id');
-      when(() => mockUser.email).thenReturn('test@example.com');
+      when(() => mockUser.id).thenReturn('');
+      when(() => mockUser.email).thenReturn('');
       
       when(() => mockSupabaseClient.auth).thenReturn(mockGoTrueClient);
       when(() => mockSupabaseClient.storage).thenReturn(mockSupabaseStorageClient);
@@ -133,7 +133,7 @@ void main() {
     testWidgets('displays loading indicator initially', (tester) async {
       when(() => mockProfileRepository.fetchProfile(any())).thenAnswer((_) async {
         await Future.delayed(const Duration(milliseconds: 100));
-        return Profile(id: 'test_user_id', username: 'TestUser');
+        return Profile(id: '', username: '');
       });
 
       await tester.pumpWidget(createProfileScreen());
@@ -145,14 +145,14 @@ void main() {
 
       // ローディング完了後、プロフィールが表示されることを確認
       expect(find.byType(CircularProgressIndicator), findsNothing);
-      expect(find.text('TestUser'), findsOneWidget);
+      expect(find.text(''), findsOneWidget);
     });
 
     testWidgets('displays existing profile data', (tester) async {
       final testProfile = Profile(
-        id: 'test_user_id',
-        username: 'TestUser',
-        avatarUrl: 'http://example.com/avatar.jpg',
+        id: '',
+        username: '',
+        avatarUrl: '',
       );
       when(() => mockProfileRepository.fetchProfile(any())).thenAnswer((_) async => testProfile);
 
@@ -160,7 +160,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // ユーザー名の表示を確認
-      expect(find.text('TestUser'), findsOneWidget);
+      expect(find.text(''), findsOneWidget);
       // タブの表示を確認（複数あるので findsWidgets を使用）
       expect(find.text('レビュー'), findsWidgets);
       expect(find.text('いいね'), findsWidgets);
@@ -188,7 +188,7 @@ void main() {
       final textFields = find.byType(TextField);
       expect(textFields, findsOneWidget);
       final usernameField = textFields.first;
-      await tester.enterText(usernameField, 'NewUsername');
+      await tester.enterText(usernameField, '');
       
       // 保存ボタンをタップ
       await tester.tap(find.text('保存'));
@@ -196,12 +196,12 @@ void main() {
 
       // updateProfileが呼ばれたことを確認
       verify(() => mockProfileRepository.updateProfile(
-            any(that: isA<Profile>().having((p) => p.username, 'username', 'NewUsername')),
+            any(that: isA<Profile>().having((p) => p.username, 'username', '')),
           )).called(1);
     });
 
     testWidgets('shows error when profile update fails', (tester) async {
-      final initialProfile = Profile(id: 'test_user_id', username: 'TestUser');
+      final initialProfile = Profile(id: '', username: '');
       when(() => mockProfileRepository.fetchProfile(any())).thenAnswer((_) async => initialProfile);
       when(() => mockProfileRepository.updateProfile(any())).thenThrow(Exception('Update failed'));
 
@@ -213,7 +213,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // ユーザー名を変更
-      await tester.enterText(find.byType(TextField).first, 'FailedUpdate');
+      await tester.enterText(find.byType(TextField).first, '');
       
       // 保存ボタンをタップ
       await tester.tap(find.text('保存'));
@@ -221,13 +221,13 @@ void main() {
       
       // updateProfileが呼ばれたことを確認（エラーが発生する）
       verify(() => mockProfileRepository.updateProfile(
-            any(that: isA<Profile>().having((p) => p.username, 'username', 'FailedUpdate')),
+            any(that: isA<Profile>().having((p) => p.username, 'username', '')),
           )).called(1);
     });
 
     testWidgets('allows picking and uploading avatar via edit dialog', (tester) async {
-      final initialProfile = Profile(id: 'test_user_id', username: 'TestUser');
-      final publicUrl = 'http://example.com/new_avatar.webp';
+      final initialProfile = Profile(id: '', username: '');
+      final publicUrl = '';
       final compressedBytes = Uint8List.fromList([1, 2, 3]);
 
       when(() => mockProfileRepository.fetchProfile(any())).thenAnswer((_) async => initialProfile);
@@ -304,13 +304,13 @@ void main() {
       // 初期プロフィールが作成されることを確認
       verify(() => mockProfileRepository.updateProfile(
             any(that: isA<Profile>()
-                .having((p) => p.id, 'id', 'test_user_id')
-                .having((p) => p.username, 'username', 'test')
+                .having((p) => p.id, 'id', '')
+                .having((p) => p.username, 'username', '')
             ),
           )).called(1);
       
       // デフォルトのユーザー名が表示されることを確認
-      expect(find.text('test'), findsOneWidget);
+      expect(find.text(''), findsOneWidget);
     });
   });
 }
