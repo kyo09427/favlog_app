@@ -4,11 +4,6 @@ import '../../data/repositories/supabase_category_repository.dart';
 import '../../domain/repositories/category_repository.dart';
 import '../../main.dart';
 
-// Asset-based repository for categories
-final assetCategoryRepositoryProvider = Provider<CategoryRepository>((ref) {
-  return AssetCategoryRepository();
-});
-
 // Supabase-based repository for categories
 final supabaseCategoryRepositoryProvider = Provider<CategoryRepository>((ref) {
   return SupabaseCategoryRepository(ref.watch(supabaseProvider));

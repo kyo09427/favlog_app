@@ -43,8 +43,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   void _onTapPopularKeyword(String keyword) {
-    _searchController.text = keyword;
-    ref.read(searchControllerProvider.notifier).updateSearchQuery(keyword);
+    final searchQuery = '#$keyword';
+    _searchController.text = searchQuery;
+    ref.read(searchControllerProvider.notifier).performSearch(searchQuery);
   }
 
   void _onClearSearch() {

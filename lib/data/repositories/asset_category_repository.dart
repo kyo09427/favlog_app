@@ -14,4 +14,10 @@ class AssetCategoryRepository implements CategoryRepository {
     final data = await json.decode(response);
     return List<String>.from(data['categories']);
   }
+
+  @override
+  Future<List<String>> getPopularKeywords() async {
+    // This repository does not support popular keywords, so return an empty list.
+    return [];
+  }
 }
