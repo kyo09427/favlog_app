@@ -56,16 +56,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: true, // デバッグ用にログを有効化
     refreshListenable:
         GoRouterRefreshStream(ref.watch(authRepositoryProvider).authStateChanges),
-    redirect: (BuildContext context, GoRouterState state) {
-      // `redirect`内では`ref.watch`を使わず、`ref.read`で同期的に状態を読み取る
-      final authState = ref.read(authStateChangesProvider);
-      final authValue = authState.value;
-      final loggedIn = authValue != null && authValue.session != null;
-
-      // 認証状態がまだ確定していない（読み込み中など）場合は、何もせずに待機
-      if (authState.isLoading || authState.hasError) {
-        return null;
-      }
+    redirect: (BuildContext context, GoRouterState state) async {
+      final authState = await ref.watch(authStateChangesProvider.future);
+      final loggedIn = authState != null && authState.session != null;
 
       // ログイン不要でアクセスできる公開ページ
       const publicRoutes = [
@@ -88,8 +81,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 
       // ② ログインしている場合
 
+      // authStateがnullでないことはloggedInチェックで保証されている
+      final user = authState!.session!.user;
+
       // ②-a メール認証が済んでいない場合
-      final emailVerified = authValue.session?.user.emailConfirmedAt != null;
+      final emailVerified = user.emailConfirmedAt != null;
       if (!emailVerified) {
         // メール認証ページ以外なら、メール認証ページへ
         return currentLocation == '/verify-email' ? null : '/verify-email';
