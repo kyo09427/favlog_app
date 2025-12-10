@@ -362,7 +362,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 );
                               },
                             )
-                          : searchState.searchQuery.isNotEmpty
+                          : searchState.hasSearched
                               ? Center(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
