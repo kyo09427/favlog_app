@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../data/repositories/supabase_auth_repository.dart';
 import '../../data/repositories/supabase_product_repository.dart';
 import '../../data/repositories/supabase_review_repository.dart';
 import '../../domain/models/product.dart';
@@ -59,9 +62,24 @@ final searchControllerProvider =
 class SearchController extends StateNotifier<SearchScreenState> {
   final Ref _ref;
   Timer? _debounce;
+  SharedPreferences? _prefs;
+  static const _searchHistoryKey = 'search_history';
 
   SearchController(this._ref) : super(SearchScreenState()) {
-    _loadSearchHistory();
+    _init();
+  }
+
+  Future<void> _init() async {
+    _prefs = await SharedPreferences.getInstance();
+    final history = _prefs?.getStringList(_searchHistoryKey) ?? [];
+    state = state.copyWith(searchHistory: history);
+
+    // 認証状態の変更を監視し、ログアウト時に履歴を削除
+    _ref.read(authRepositoryProvider).authStateChanges.listen((data) {
+      if (data.event == AuthChangeEvent.signedOut) {
+        clearAllHistory();
+      }
+    });
   }
 
   @override
@@ -70,30 +88,9 @@ class SearchController extends StateNotifier<SearchScreenState> {
     super.dispose();
   }
 
-  // 検索履歴の読み込み（簡易実装：メモリ内のみ）
-  void _loadSearchHistory() {
-    // TODO: SharedPreferencesなどで永続化する場合はここで読み込み
-    state = state.copyWith(searchHistory: [
-      'オーガニックコーヒー',
-      'ワイヤレスイヤホン',
-      '新宿 カフェ',
-    ]);
-  }
-
-  // 検索クエリの更新（デバウンス付き）
-  void updateSearchQuery(String query) {
+  // 検索クエリの状態を更新（検索は実行しない）
+  void setSearchQuery(String query) {
     state = state.copyWith(searchQuery: query);
-    
-    _debounce?.cancel();
-    
-    if (query.isEmpty) {
-      state = state.copyWith(searchResults: [], isLoading: false);
-      return;
-    }
-
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      performSearch(query);
-    });
   }
 
   // フィルターの選択
@@ -106,9 +103,13 @@ class SearchController extends StateNotifier<SearchScreenState> {
 
   // 検索の実行
   Future<void> performSearch(String query) async {
-    if (query.isEmpty) return;
+    _debounce?.cancel(); // 連続実行を防ぐ
+    final trimmedQuery = query.trim();
+    if (trimmedQuery.isEmpty) return;
 
-    state = state.copyWith(isLoading: true, error: null);
+    // 検索実行時にクエリをstateにセットし、ローディング開始
+    state =
+        state.copyWith(searchQuery: trimmedQuery, isLoading: true, error: null);
 
     try {
       final productRepository = _ref.read(productRepositoryProvider);
@@ -117,11 +118,11 @@ class SearchController extends StateNotifier<SearchScreenState> {
       List<String>? tagsFilter;
       String? nameSearchQuery;
 
-      if (query.startsWith('#')) {
-        tagsFilter = [query.substring(1)]; // #を削除してタグとして扱う
+      if (trimmedQuery.startsWith('#')) {
+        tagsFilter = [trimmedQuery.substring(1)]; // #を削除してタグとして扱う
         nameSearchQuery = null; // タグ検索の場合は商品名検索を行わない
       } else {
-        nameSearchQuery = query;
+        nameSearchQuery = trimmedQuery;
         tagsFilter = null;
       }
 
@@ -172,13 +173,18 @@ class SearchController extends StateNotifier<SearchScreenState> {
       );
 
       // 検索履歴に追加
-      _addToSearchHistory(query);
+      _addToSearchHistory(trimmedQuery);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: '検索に失敗しました: ${e.toString()}',
       );
     }
+  }
+
+  Future<void> _saveSearchHistory(List<String> history) async {
+    await _prefs?.setStringList(_searchHistoryKey, history);
+    state = state.copyWith(searchHistory: history);
   }
 
   // 検索履歴に追加
@@ -191,33 +197,29 @@ class SearchController extends StateNotifier<SearchScreenState> {
     // 先頭に追加
     history.insert(0, query);
     
-    // 最大10件まで保持
-    if (history.length > 10) {
+    // 最大5件まで保持
+    if (history.length > 5) {
       history.removeLast();
     }
 
-    state = state.copyWith(searchHistory: history);
-    
-    // TODO: SharedPreferencesなどで永続化
+    _saveSearchHistory(history);
   }
 
   // 検索履歴をすべてクリア
   void clearAllHistory() {
-    state = state.copyWith(searchHistory: []);
-    // TODO: SharedPreferencesなどで永続化
+    _saveSearchHistory([]);
   }
 
   // 検索履歴から1件削除
   void removeHistoryItem(int index) {
     final history = List<String>.from(state.searchHistory);
     history.removeAt(index);
-    state = state.copyWith(searchHistory: history);
-    // TODO: SharedPreferencesなどで永続化
+    _saveSearchHistory(history);
   }
 
   // 検索履歴から検索を実行
   void searchFromHistory(String query) {
-    updateSearchQuery(query);
+    performSearch(query);
   }
 
   // 検索をクリア
