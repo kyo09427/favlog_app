@@ -114,7 +114,7 @@ class SearchController extends StateNotifier<SearchScreenState> {
 
     // 検索実行時にクエリをstateにセットし、ローディング開始
     state = state.copyWith(
-        searchQuery: trimmedQuery,
+        searchQuery: query,
         isLoading: true,
         error: null,
         hasSearched: true);
