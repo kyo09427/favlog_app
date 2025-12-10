@@ -24,6 +24,7 @@ class SearchScreenState {
   final List<String> searchHistory;
   final bool isLoading;
   final String? error;
+  final bool hasSearched; // 検索が実行されたかどうか
 
   SearchScreenState({
     this.searchQuery = '',
@@ -32,6 +33,7 @@ class SearchScreenState {
     this.searchHistory = const [],
     this.isLoading = false,
     this.error,
+    this.hasSearched = false,
   });
 
   SearchScreenState copyWith({
@@ -41,6 +43,7 @@ class SearchScreenState {
     List<String>? searchHistory,
     bool? isLoading,
     String? error,
+    bool? hasSearched,
   }) {
     return SearchScreenState(
       searchQuery: searchQuery ?? this.searchQuery,
@@ -49,6 +52,7 @@ class SearchScreenState {
       searchHistory: searchHistory ?? this.searchHistory,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      hasSearched: hasSearched ?? this.hasSearched,
     );
   }
 }
@@ -108,8 +112,11 @@ class SearchController extends StateNotifier<SearchScreenState> {
     if (trimmedQuery.isEmpty) return;
 
     // 検索実行時にクエリをstateにセットし、ローディング開始
-    state =
-        state.copyWith(searchQuery: trimmedQuery, isLoading: true, error: null);
+    state = state.copyWith(
+        searchQuery: trimmedQuery,
+        isLoading: true,
+        error: null,
+        hasSearched: true);
 
     try {
       final productRepository = _ref.read(productRepositoryProvider);
@@ -229,6 +236,7 @@ class SearchController extends StateNotifier<SearchScreenState> {
       searchResults: [],
       isLoading: false,
       error: null,
+      hasSearched: false,
     );
   }
 }
