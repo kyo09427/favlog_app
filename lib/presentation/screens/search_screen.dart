@@ -495,7 +495,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             ),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(999),
-                              color: Colors.green.withOpacity(0.15),
+                              color: Colors.green.withAlpha((255 * 0.15).round()),
                             ),
                             child: Text(
                               keyword,

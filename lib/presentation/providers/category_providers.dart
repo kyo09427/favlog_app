@@ -1,17 +1,13 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/repositories/supabase_category_repository.dart';
 import '../../domain/repositories/category_repository.dart';
 
-part 'category_providers.g.dart';
-
-@riverpod
-CategoryRepository categoryRepository(CategoryRepositoryRef ref) {
+final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
   return SupabaseCategoryRepository(Supabase.instance.client);
-}
+});
 
-@riverpod
-Future<List<String>> popularKeywords(PopularKeywordsRef ref) {
+final popularKeywordsProvider = FutureProvider<List<String>>((ref) {
   final categoryRepository = ref.watch(categoryRepositoryProvider);
   return categoryRepository.getPopularKeywords();
-}
+});

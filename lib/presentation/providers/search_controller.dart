@@ -67,10 +67,6 @@ class SearchController extends StateNotifier<SearchScreenState> {
     _loadSearchHistory();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 
   // 検索履歴の読み込み（簡易実装：メモリ内のみ）
   void _loadSearchHistory() {
@@ -213,7 +209,8 @@ class SearchController extends StateNotifier<SearchScreenState> {
 
   // 検索履歴から検索を実行
   void searchFromHistory(String query) {
-    updateSearchQuery(query);
+    setSearchQuery(query);
+    performSearch(query);
   }
 
   // 検索をクリア

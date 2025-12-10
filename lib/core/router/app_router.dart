@@ -58,7 +58,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         GoRouterRefreshStream(ref.watch(authRepositoryProvider).authStateChanges),
     redirect: (BuildContext context, GoRouterState state) async {
       final authState = await ref.watch(authStateChangesProvider.future);
-      final loggedIn = authState != null && authState.session != null;
+      final loggedIn = authState.session != null;
 
       // ログイン不要でアクセスできる公開ページ
       const publicRoutes = [
@@ -82,7 +82,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       // ② ログインしている場合
 
       // authStateがnullでないことはloggedInチェックで保証されている
-      final user = authState!.session!.user;
+      final user = authState.session!.user;
 
       // ②-a メール認証が済んでいない場合
       final emailVerified = user.emailConfirmedAt != null;

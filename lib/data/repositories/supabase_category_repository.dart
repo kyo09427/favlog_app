@@ -24,12 +24,12 @@ class SupabaseCategoryRepository implements CategoryRepository {
         return [];
       }
 
-      final keywords = result.map((e) => '#\${e['keyword']}').toList();
+      final keywords = result.map((e) => '#\${e["keyword"]}').toList();
       return keywords;
 
     } catch (e) {
-      // TODO: より詳細なエラーハンドリングを実装
-      print('Failed to fetch popular keywords: $e');
+      // For now, we'll just rethrow the error.
+      // In a real application, you would want to log this to a service.
       rethrow;
     }
   }
