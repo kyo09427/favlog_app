@@ -40,7 +40,7 @@ void main() {
   Widget createAddReviewScreen({Product? selectedProduct}) {
     return ProviderScope(
       overrides: [
-        assetCategoryRepositoryProvider.overrideWithValue(mockCategoryRepository),
+        categoryRepositoryProvider.overrideWithValue(mockCategoryRepository),
         productRepositoryProvider.overrideWithValue(mockProductRepository),
         reviewRepositoryProvider.overrideWithValue(mockReviewRepository),
         authRepositoryProvider.overrideWithValue(mockAuthRepository),
