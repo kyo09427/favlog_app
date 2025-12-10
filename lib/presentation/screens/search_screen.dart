@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
+import '../providers/category_providers.dart';
 import '../providers/search_controller.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -15,14 +16,6 @@ class SearchScreen extends ConsumerStatefulWidget {
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   late final TextEditingController _searchController;
   final List<String> _filters = ['すべて', '商品', 'サービス', 'ユーザー'];
-
-  final List<String> _popularKeywords = [
-    '#キャンプ',
-    '#ガジェット',
-    '#インテリア',
-    '#手土産',
-    '#子育てグッズ',
-  ];
 
   @override
   void initState() {
@@ -254,8 +247,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       vertical: 0,
                     ),
                   ),
+                  onSubmitted: (value) {
+                    searchController.performSearch(value);
+                  },
                   onChanged: (value) {
-                    searchController.updateSearchQuery(value);
+                    // 検索クエリの状態のみを更新し、検索は実行しない
+                    searchController.setSearchQuery(value);
                   },
                 ),
               ),
@@ -377,7 +374,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                     ],
                                   ),
                                 )
-                              : _buildHistoryAndKeywords(theme, searchState),
+                              : _buildHistoryAndKeywords(theme, searchState, ref),
             ),
           ],
         ),
@@ -386,7 +383,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  Widget _buildHistoryAndKeywords(ThemeData theme, SearchScreenState searchState) {
+  Widget _buildHistoryAndKeywords(ThemeData theme, SearchScreenState searchState, WidgetRef ref) {
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -478,32 +475,50 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _popularKeywords.map((keyword) {
-                return GestureDetector(
-                  onTap: () => _onTapPopularKeyword(keyword),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(999),
-                      color: Colors.green.withValues(alpha: 0.15),
-                    ),
-                    child: Text(
-                      keyword,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: Colors.green[600],
-                      ),
+            child: ref.watch(popularKeywordsProvider).when(
+                  data: (keywords) {
+                    if (keywords.isEmpty) {
+                      return const Center(
+                        child: Text('人気のキーワードはありません。'),
+                      );
+                    }
+                    return Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: keywords.map((keyword) {
+                        return GestureDetector(
+                          onTap: () => _onTapPopularKeyword(keyword),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(999),
+                              color: Colors.green.withAlpha(40),
+                            ),
+                            child: Text(
+                              '#$keyword',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: Colors.green[600],
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  },
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: CircularProgressIndicator(),
                     ),
                   ),
-                );
-              }).toList(),
-            ),
+                  error: (err, stack) => Center(
+                    child: Text('キーワードの取得に失敗しました: $err'),
+                  ),
+                ),
           ),
         ],
       ),

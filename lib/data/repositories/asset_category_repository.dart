@@ -3,7 +3,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/repositories/category_repository.dart';
 
-final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
+final assetCategoryRepositoryProvider = Provider<CategoryRepository>((ref) {
   return AssetCategoryRepository();
 });
 
