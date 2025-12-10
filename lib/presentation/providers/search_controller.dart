@@ -62,17 +62,11 @@ final searchControllerProvider =
 
 class SearchController extends StateNotifier<SearchScreenState> {
   final Ref _ref;
-  Timer? _debounce;
 
   SearchController(this._ref) : super(SearchScreenState()) {
     _loadSearchHistory();
   }
 
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    super.dispose();
-  }
 
   // 検索履歴の読み込み（簡易実装：メモリ内のみ）
   void _loadSearchHistory() {
@@ -84,20 +78,9 @@ class SearchController extends StateNotifier<SearchScreenState> {
     ]);
   }
 
-  // 検索クエリの更新（デバウンス付き）
-  void updateSearchQuery(String query) {
+  // 検索クエリをStateにセットするだけ
+  void setSearchQuery(String query) {
     state = state.copyWith(searchQuery: query);
-    
-    _debounce?.cancel();
-    
-    if (query.isEmpty) {
-      state = state.copyWith(searchResults: [], isLoading: false);
-      return;
-    }
-
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      performSearch(query);
-    });
   }
 
   // フィルターの選択
@@ -226,7 +209,8 @@ class SearchController extends StateNotifier<SearchScreenState> {
 
   // 検索履歴から検索を実行
   void searchFromHistory(String query) {
-    updateSearchQuery(query);
+    setSearchQuery(query);
+    performSearch(query);
   }
 
   // 検索をクリア

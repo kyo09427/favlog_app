@@ -357,7 +357,9 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                                 value: visibility,
                                 groupValue: state.visibility,
                                 onChanged: (value) {
-                                  if (value != null) controller.updateVisibility(value);
+                                  if (value != null) {
+                                    controller.updateVisibility(value);
+                                  }
                                 },
                                 title: Row(
                                   children: [

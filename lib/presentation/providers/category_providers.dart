@@ -1,7 +1,23 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:favlog_app/data/repositories/asset_category_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../data/repositories/asset_category_repository.dart';
+import '../../data/repositories/supabase_category_repository.dart';
+import '../../domain/repositories/category_repository.dart';
 
-final categoriesProvider = FutureProvider<List<String>>((ref) async {
+final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
+  return AssetCategoryRepository();
+});
+
+final supabaseCategoryRepositoryProvider = Provider<CategoryRepository>((ref) {
+  return SupabaseCategoryRepository(Supabase.instance.client);
+});
+
+final categoriesProvider = FutureProvider<List<String>>((ref) {
   final categoryRepository = ref.watch(categoryRepositoryProvider);
-  return ['すべて', ...await categoryRepository.getCategories()];
+  return categoryRepository.getCategories();
+});
+
+final popularKeywordsProvider = FutureProvider<List<String>>((ref) {
+  final categoryRepository = ref.watch(supabaseCategoryRepositoryProvider);
+  return categoryRepository.getPopularKeywords();
 });
