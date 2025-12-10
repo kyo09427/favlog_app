@@ -117,7 +117,7 @@ class EditProductController extends StateNotifier<EditProductState> {
     if (_isDisposed) return;
 
     try {
-      final categoryRepository = _ref.read(assetCategoryRepositoryProvider);
+      final categoryRepository = _ref.read(categoryRepositoryProvider);
       final fetchedCategories = await categoryRepository.getCategories();
 
       if (!_isDisposed) {
