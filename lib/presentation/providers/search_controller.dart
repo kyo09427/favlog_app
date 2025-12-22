@@ -21,6 +21,7 @@ class SearchScreenState {
   final List<String> searchHistory;
   final bool isLoading;
   final String? error;
+  final bool hasSearched; // 検索が実行されたかどうか
 
   SearchScreenState({
     this.searchQuery = '',
@@ -29,6 +30,7 @@ class SearchScreenState {
     this.searchHistory = const [],
     this.isLoading = false,
     this.error,
+    this.hasSearched = false,
   });
 
   SearchScreenState copyWith({
@@ -38,6 +40,7 @@ class SearchScreenState {
     List<String>? searchHistory,
     bool? isLoading,
     String? error,
+    bool? hasSearched,
   }) {
     return SearchScreenState(
       searchQuery: searchQuery ?? this.searchQuery,
@@ -46,6 +49,7 @@ class SearchScreenState {
       searchHistory: searchHistory ?? this.searchHistory,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      hasSearched: hasSearched ?? this.hasSearched,
     );
   }
 }
@@ -58,17 +62,11 @@ final searchControllerProvider =
 
 class SearchController extends StateNotifier<SearchScreenState> {
   final Ref _ref;
-  Timer? _debounce;
 
   SearchController(this._ref) : super(SearchScreenState()) {
     _loadSearchHistory();
   }
 
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    super.dispose();
-  }
 
   // 検索履歴の読み込み（簡易実装：メモリ内のみ）
   void _loadSearchHistory() {
@@ -80,20 +78,9 @@ class SearchController extends StateNotifier<SearchScreenState> {
     ]);
   }
 
-  // 検索クエリの更新（デバウンス付き）
-  void updateSearchQuery(String query) {
+  // 検索クエリをStateにセットするだけ
+  void setSearchQuery(String query) {
     state = state.copyWith(searchQuery: query);
-    
-    _debounce?.cancel();
-    
-    if (query.isEmpty) {
-      state = state.copyWith(searchResults: [], isLoading: false);
-      return;
-    }
-
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      performSearch(query);
-    });
   }
 
   // フィルターの選択
@@ -108,7 +95,12 @@ class SearchController extends StateNotifier<SearchScreenState> {
   Future<void> performSearch(String query) async {
     if (query.isEmpty) return;
 
-    state = state.copyWith(isLoading: true, error: null);
+    // 検索実行時にクエリをstateにセットし、ローディング開始
+    state = state.copyWith(
+        searchQuery: query,
+        isLoading: true,
+        error: null,
+        hasSearched: true);
 
     try {
       final productRepository = _ref.read(productRepositoryProvider);
@@ -217,7 +209,8 @@ class SearchController extends StateNotifier<SearchScreenState> {
 
   // 検索履歴から検索を実行
   void searchFromHistory(String query) {
-    updateSearchQuery(query);
+    setSearchQuery(query);
+    performSearch(query);
   }
 
   // 検索をクリア
@@ -227,6 +220,7 @@ class SearchController extends StateNotifier<SearchScreenState> {
       searchResults: [],
       isLoading: false,
       error: null,
+      hasSearched: false,
     );
   }
 }

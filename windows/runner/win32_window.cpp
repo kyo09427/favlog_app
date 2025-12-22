@@ -144,8 +144,6 @@ bool Win32Window::Create(const std::wstring& title,
     return false;
   }
 
-  UpdateTheme(window);
-
   return OnCreate();
 }
 
