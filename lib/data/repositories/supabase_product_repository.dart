@@ -186,16 +186,19 @@ class SupabaseProductRepository implements ProductRepository {
     try {
       final response = await _supabaseClient
           .from('products')
-          .select('subcategory')
-          .eq('category', category)
-          .not('subcategory', 'is', null);
+          .select('subcategory_tags')
+          .eq('category', category);
 
-      final subcategories = (response as List)
-          .map((json) => json['subcategory'] as String)
-          .toSet()
-          .toList();
+      // subcategory_tagsは配列なので、すべてのタグをフラット化して重複を削除
+      final subcategories = <String>{};
+      for (var json in response as List) {
+        final tags = json['subcategory_tags'];
+        if (tags != null && tags is List) {
+          subcategories.addAll(tags.cast<String>());
+        }
+      }
           
-      return subcategories;
+      return subcategories.toList();
     } catch (e) {
       rethrow;
     }

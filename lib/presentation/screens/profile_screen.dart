@@ -583,222 +583,258 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
     Navigator.of(context).push(
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (context) => Scaffold(
-          backgroundColor: backgroundColor,
-          body: Column(
-            children: [
-              // ヘッダー
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  border: Border(
-                    bottom: BorderSide(color: borderColor),
-                  ),
-                ),
-                child: SafeArea(
-                  bottom: false,
-                  child: Row(
-                    children: [
-                      // 戻るボタン
-                      SizedBox(
-                        width: 48,
-                        height: 48,
-                        child: IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: Icon(
-                            Icons.arrow_back_ios_new,
-                            color: textColor,
-                            size: 24,
-                          ),
-                        ),
-                      ),
-                      // タイトル
-                      Expanded(
-                        child: Text(
-                          'プロフィールを編集',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      const SizedBox(width: 48),
-                    ],
-                  ),
-                ),
-              ),
+        builder: (context) => Consumer(
+          builder: (context, ref, child) {
+            final profileState = ref.watch(profileScreenControllerProvider);
+            final currentProfile = profileState.valueOrNull ?? profile;
+            final isLoading = profileState.isLoading;
 
-              // コンテンツ
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    // アバター表示と変更ボタン
-                    Column(
-                      children: [
-                        // アバター画像
-                        Stack(
-                          children: [
-                            Container(
-                              width: 128,
-                              height: 128,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: primaryColor, width: 2),
-                                image: profile.avatarUrl != null
-                                    ? DecorationImage(
-                                        image: CachedNetworkImageProvider(profile.avatarUrl!),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : null,
-                                color: Colors.grey[300],
+            // エラーハンドリング
+            ref.listen<AsyncValue<Profile?>>(profileScreenControllerProvider, (previous, next) {
+              if (!next.isLoading && next.hasError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('エラー: ${next.error}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            });
+
+            return Scaffold(
+              backgroundColor: backgroundColor,
+              body: Column(
+                children: [
+                  // ヘッダー
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: backgroundColor,
+                      border: Border(
+                        bottom: BorderSide(color: borderColor),
+                      ),
+                    ),
+                    child: SafeArea(
+                      bottom: false,
+                      child: Row(
+                        children: [
+                          // 戻るボタン
+                          SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: IconButton(
+                              onPressed: () => Navigator.pop(context),
+                              icon: Icon(
+                                Icons.arrow_back_ios_new,
+                                color: textColor,
+                                size: 24,
                               ),
-                              child: profile.avatarUrl == null
-                                  ? Icon(Icons.person, size: 64, color: Colors.grey[600])
-                                  : null,
                             ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                decoration: const BoxDecoration(
-                                  color: primaryColor,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black26,
-                                      blurRadius: 4,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: IconButton(
-                                  onPressed: () {
-                                    controller.pickAndUploadAvatar();
-                                  },
-                                  icon: const Icon(
-                                    Icons.edit,
-                                    color: Colors.black,
-                                    size: 20,
+                          ),
+                          // タイトル
+                          Expanded(
+                            child: Text(
+                              'プロフィールを編集',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          const SizedBox(width: 48),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // コンテンツ
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        // アバター表示と変更ボタン
+                        Column(
+                          children: [
+                            // アバター画像
+                            Stack(
+                              children: [
+                                Container(
+                                  width: 128,
+                                  height: 128,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: primaryColor, width: 2),
+                                    image: currentProfile.avatarUrl != null
+                                        ? DecorationImage(
+                                            image: CachedNetworkImageProvider(currentProfile.avatarUrl!),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : null,
+                                    color: Colors.grey[300],
                                   ),
-                                  padding: EdgeInsets.zero,
+                                  child: currentProfile.avatarUrl == null
+                                      ? Icon(Icons.person, size: 64, color: Colors.grey[600])
+                                      : null,
+                                ),
+                                // ローディングインジケーター
+                                if (isLoading)
+                                  Container(
+                                    width: 128,
+                                    height: 128,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.black.withValues(alpha: 0.5),
+                                    ),
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                        color: primaryColor,
+                                        strokeWidth: 3,
+                                      ),
+                                    ),
+                                  ),
+                                Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: const BoxDecoration(
+                                      color: primaryColor,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black26,
+                                          blurRadius: 4,
+                                          offset: Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: IconButton(
+                                      onPressed: isLoading ? null : () {
+                                        controller.pickAndUploadAvatar();
+                                      },
+                                      icon: const Icon(
+                                        Icons.edit,
+                                        color: Colors.black,
+                                        size: 20,
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            TextButton(
+                              onPressed: isLoading ? null : () {
+                                controller.pickAndUploadAvatar();
+                              },
+                              child: Text(
+                                isLoading ? 'アップロード中...' : 'プロフィール画像を変更',
+                                style: TextStyle(
+                                  color: isLoading ? mutedTextColor : primaryColor,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        TextButton(
-                          onPressed: () {
-                            controller.pickAndUploadAvatar();
+
+                        const SizedBox(height: 32),
+
+                        // ユーザー名入力
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'ユーザー名',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: mutedTextColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: usernameController,
+                              style: TextStyle(color: textColor),
+                              decoration: InputDecoration(
+                                hintText: 'ユーザー名を入力',
+                                hintStyle: TextStyle(color: mutedTextColor),
+                                filled: true,
+                                fillColor: cardColor,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: borderColor),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: borderColor),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: primaryColor, width: 2),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 24),
+
+                      ],
+                    ),
+                  ),
+
+                  // 保存ボタン（下部固定）
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: backgroundColor,
+                      border: Border(
+                        top: BorderSide(color: borderColor),
+                      ),
+                    ),
+                    child: SafeArea(
+                      top: false,
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: isLoading ? null : () async {
+                            await controller.updateProfileDetails(
+                              username: usernameController.text,
+                            );
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                            }
                           },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            foregroundColor: Colors.black,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                           child: const Text(
-                            'プロフィール画像を変更',
+                            '保存',
                             style: TextStyle(
-                              color: primaryColor,
                               fontSize: 16,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // ユーザー名入力
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'ユーザー名',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: mutedTextColor,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: usernameController,
-                          style: TextStyle(color: textColor),
-                          decoration: InputDecoration(
-                            hintText: 'ユーザー名を入力',
-                            hintStyle: TextStyle(color: mutedTextColor),
-                            filled: true,
-                            fillColor: cardColor,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: borderColor),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: borderColor),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: primaryColor, width: 2),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 24),
-
-                  ],
-                ),
-              ),
-
-              // 保存ボタン（下部固定）
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  border: Border(
-                    top: BorderSide(color: borderColor),
-                  ),
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        await controller.updateProfileDetails(
-                          username: usernameController.text,
-                        );
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.black,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        '保存',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
