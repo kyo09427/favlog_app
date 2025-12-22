@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/theme_provider.dart';
+import '../../core/providers/notification_providers.dart';
+import '../../data/repositories/supabase_auth_repository.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -56,6 +58,16 @@ class SettingsScreen extends ConsumerWidget {
             textColor: textColor,
           ),
           const SizedBox(height: 24),
+          _buildNotificationSettingsSection(
+            context,
+            ref,
+            cardColor: cardColor,
+            borderColor: borderColor,
+            textColor: textColor,
+            mutedTextColor: mutedTextColor,
+            primaryColor: primaryColor,
+          ),
+          const SizedBox(height: 24),
           _buildSettingsSection(
             context,
             title: 'アカウント',
@@ -86,6 +98,137 @@ class SettingsScreen extends ConsumerWidget {
             cardColor: cardColor,
             borderColor: borderColor,
             textColor: textColor,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationSettingsSection(
+    BuildContext context,
+    WidgetRef ref, {
+    required Color cardColor,
+    required Color borderColor,
+    required Color textColor,
+    required Color mutedTextColor,
+    required Color primaryColor,
+  }) {
+    final authRepository = ref.watch(authRepositoryProvider);
+    final currentUser = authRepository.getCurrentUser();
+    
+    if (currentUser == null) {
+      return const SizedBox.shrink();
+    }
+
+    final settingsAsync = ref.watch(userSettingsProvider);
+    
+    return settingsAsync.when(
+      data: (settings) => _buildSettingsSection(
+        context,
+        title: '通知設定',
+        children: [
+          _buildNotificationToggle(
+            context: context,
+            ref: ref,
+            title: '新しいレビューの通知',
+            description: '新しいレビューが投稿されたときに通知を受け取る',
+            value: settings.enableNewReviewNotifications,
+            onChanged: (value) async {
+              final updateSettings = ref.read(updateUserSettingsProvider);
+              await updateSettings(settings.copyWith(
+                enableNewReviewNotifications: value,
+              ));
+            },
+            textColor: textColor,
+            mutedTextColor: mutedTextColor,
+            primaryColor: primaryColor,
+          ),
+          _buildNotificationToggle(
+            context: context,
+            ref: ref,
+            title: 'いいねの通知',
+            description: '自分のレビューにいいねがついたときに通知を受け取る',
+            value: settings.enableLikeNotifications,
+            onChanged: (value) async {
+              final updateSettings = ref.read(updateUserSettingsProvider);
+              await updateSettings(settings.copyWith(
+                enableLikeNotifications: value,
+              ));
+            },
+            textColor: textColor,
+            mutedTextColor: mutedTextColor,
+            primaryColor: primaryColor,
+          ),
+          _buildNotificationToggle(
+            context: context,
+            ref: ref,
+            title: 'コメントの通知',
+            description: '自分のレビューにコメントがついたときに通知を受け取る',
+            value: settings.enableCommentNotifications,
+            onChanged: (value) async {
+              final updateSettings = ref.read(updateUserSettingsProvider);
+              await updateSettings(settings.copyWith(
+                enableCommentNotifications: value,
+              ));
+            },
+            textColor: textColor,
+            mutedTextColor: mutedTextColor,
+            primaryColor: primaryColor,
+          ),
+        ],
+        cardColor: cardColor,
+        borderColor: borderColor,
+        textColor: textColor,
+      ),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildNotificationToggle({
+    required BuildContext context,
+    required WidgetRef ref,
+    required String title,
+    required String description,
+    required bool value,
+    required Future<void> Function(bool) onChanged,
+    required Color textColor,
+    required Color mutedTextColor,
+    required Color primaryColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: TextStyle(
+                    color: mutedTextColor,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: (newValue) async {
+              await onChanged(newValue);
+            },
+            activeColor: primaryColor,
           ),
         ],
       ),

@@ -27,6 +27,7 @@ import '../../presentation/screens/update_password_screen.dart';
 import '../../presentation/screens/update_email_request_screen.dart';
 import '../../presentation/screens/update_email_sent_screen.dart';
 import '../../presentation/screens/confirm_email_change_screen.dart';
+import '../../presentation/screens/notifications_screen.dart';
 import '../../presentation/widgets/scaffold_with_nav_bar.dart';
 
 // StreamをリッスンしてGoRouterをリフレッシュするためのChangeNotifier
@@ -264,6 +265,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/confirm-email-change',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const ConfirmEmailChangeScreen(),
+      ),
+      // 通知画面
+      GoRoute(
+        path: '/notifications',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const NotificationsScreen(),
       ),
     ],
   );

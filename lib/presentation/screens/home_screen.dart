@@ -12,6 +12,7 @@ import 'package:favlog_app/domain/models/review_stats.dart';
 import 'package:favlog_app/data/repositories/supabase_comment_repository.dart';
 import 'package:favlog_app/data/repositories/supabase_like_repository.dart';
 import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
+import 'package:favlog_app/core/providers/notification_providers.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -419,11 +420,58 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.white),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('通知機能は準備中です')),
+          Consumer(
+            builder: (context, ref, child) {
+              final unreadCountAsync = ref.watch(unreadNotificationCountProvider);
+              
+              return unreadCountAsync.when(
+                data: (count) => Stack(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.notifications_none, color: Colors.white),
+                      onPressed: () {
+                        context.push('/notifications');
+                      },
+                    ),
+                    if (count > 0)
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            count > 99 ? '99+' : count.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                loading: () => IconButton(
+                  icon: const Icon(Icons.notifications_none, color: Colors.white),
+                  onPressed: () {
+                    context.push('/notifications');
+                  },
+                ),
+                error: (_, __) => IconButton(
+                  icon: const Icon(Icons.notifications_none, color: Colors.white),
+                  onPressed: () {
+                    context.push('/notifications');
+                  },
+                ),
               );
             },
           ),
@@ -434,7 +482,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                 context: context,
                 builder: (context) => AlertDialog(
                   title: const Text('ログアウト'),
-                  content: const Text('本当にログアウトしますか?'),
+               content: const Text('本当にログアウトしますか?'),
                   actions: [
                     TextButton(
                       onPressed: () => context.pop(false),
