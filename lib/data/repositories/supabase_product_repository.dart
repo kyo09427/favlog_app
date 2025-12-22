@@ -23,8 +23,19 @@ class SupabaseProductRepository implements ProductRepository {
         query = query.eq('category', category);
       }
 
+      // スペース区切りの複数ワードでAND検索
       if (searchQuery != null && searchQuery.isNotEmpty) {
-        query = query.ilike('name', '%$searchQuery%');
+        final keywords = searchQuery.trim().split(RegExp(r'\s+'));
+        
+        // 最初のキーワードでデータベース検索（商品名、カテゴリ、サブカテゴリ）
+        if (keywords.isNotEmpty && keywords.first.isNotEmpty) {
+          final firstKeyword = keywords.first;
+          query = query.or(
+            'name.ilike.%$firstKeyword%,'
+            'category.ilike.%$firstKeyword%,'
+            'subcategory_tags.cs.{$firstKeyword}'
+          );
+        }
       }
       
       if (tags != null && tags.isNotEmpty) {
@@ -33,8 +44,28 @@ class SupabaseProductRepository implements ProductRepository {
       }
 
       final response = await query.order('created_at', ascending: false).limit(100);
+      var products = (response as List).map((json) => Product.fromJson(json)).toList();
 
-      return (response as List).map((json) => Product.fromJson(json)).toList();
+      // 2つ目以降のキーワードでクライアント側フィルタリング（AND条件）
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        final keywords = searchQuery.trim().split(RegExp(r'\s+'));
+        
+        for (int i = 1; i < keywords.length; i++) {
+          final keyword = keywords[i].toLowerCase();
+          if (keyword.isEmpty) continue;
+          
+          products = products.where((product) {
+            final matchesName = product.name.toLowerCase().contains(keyword);
+            final matchesCategory = product.category?.toLowerCase().contains(keyword) ?? false;
+            final matchesSubcategory = product.subcategoryTags.any(
+              (tag) => tag.toLowerCase().contains(keyword)
+            );
+            return matchesName || matchesCategory || matchesSubcategory;
+          }).toList();
+        }
+      }
+
+      return products;
     } catch (e) {
       throw Exception('Failed to get products: $e');
     }
