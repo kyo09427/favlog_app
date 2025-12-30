@@ -24,8 +24,75 @@ class SupabaseLikeRepository implements LikeRepository {
         'user_id': userId,
         'review_id': reviewId,
       });
+      
+      // 通知の生成（いいね追加時）
+      await _createLikeNotification(reviewId, userId);
     } catch (e) {
       throw Exception('いいねの追加に失敗しました: $e');
+    }
+  }
+
+  /// いいね追加時に通知を作成
+  Future<void> _createLikeNotification(String reviewId, String likerId) async {
+    try {
+      print('❤️ いいね通知生成開始: レビューID=$reviewId');
+      
+      // レビュー情報を取得してレビュー投稿者を特定
+      final reviewResponse = await _supabaseClient
+          .from('reviews')
+          .select('user_id, product_id')
+          .eq('id', reviewId)
+          .single();
+      
+      final reviewOwnerId = reviewResponse['user_id'] as String;
+      final productId = reviewResponse['product_id'] as String;
+      
+      // 自分のレビューに自分でいいねした場合は通知しない
+      if (reviewOwnerId == likerId) {
+        print('⚠️ 自分へのいいねのため通知スキップ');
+        return;
+      }
+      
+      // 商品名を取得
+      String productName = '商品';
+      try {
+        final productResponse = await _supabaseClient
+            .from('products')
+            .select('name')
+            .eq('id', productId)
+            .single();
+        productName = productResponse['name'] as String? ?? '商品';
+      } catch (e) {
+        print('⚠️ 商品名の取得失敗: $e');
+      }
+      
+      // レビュー投稿者の通知設定を確認
+      final settingsResponse = await _supabaseClient
+          .from('user_settings')
+          .select('enable_like_notifications')
+          .eq('id', reviewOwnerId)
+          .maybeSingle();
+      
+      // 設定が存在しない場合はデフォルトでtrue
+      final enableNotifications = settingsResponse == null 
+          ? true 
+          : (settingsResponse['enable_like_notifications'] as bool? ?? true);
+      
+      if (enableNotifications) {
+        await _supabaseClient.from('notifications').insert({
+          'user_id': reviewOwnerId,
+          'type': 'like',
+          'title': 'いいねされました',
+          'body': '${productName}のレビューにいいねされました',
+          'related_review_id': reviewId,
+          'related_user_id': likerId,
+        });
+        print('✅ いいね通知送信成功');
+      } else {
+        print('⚠️ いいね通知が無効のためスキップ');
+      }
+    } catch (e) {
+      print('❌ いいね通知生成失敗: $e');
     }
   }
 

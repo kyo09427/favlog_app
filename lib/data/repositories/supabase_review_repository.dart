@@ -120,8 +120,85 @@ class SupabaseReviewRepository implements ReviewRepository {
   Future<void> createReview(Review review) async {
     try {
       await _supabaseClient.from('reviews').insert(review.toJson());
+      
+      // 通知の生成（新規レビュー投稿時）
+      await _createNewReviewNotifications(review);
     } catch (e) {
       throw Exception('Failed to create review: $e');
+    }
+  }
+
+  /// 新規レビュー投稿時に通知を作成
+  Future<void> _createNewReviewNotifications(Review review) async {
+    try {
+      print('🔔 通知生成開始: レビューID=${review.id}');
+      
+      // 商品情報を取得
+      String productName = '商品';
+      try {
+        final productResponse = await _supabaseClient
+            .from('products')
+            .select('name')
+            .eq('id', review.productId)
+            .single();
+        productName = productResponse['name'] as String? ?? '商品';
+        print('✅ 商品名取得成功: $productName');
+      } catch (e) {
+        print('⚠️ 商品名の取得失敗: $e');
+        // 商品名の取得失敗時はデフォルト値を使用
+      }
+
+      // 全ユーザーのリストを取得（投稿者以外）
+      final allUsersResponse = await _supabaseClient
+          .from('profiles')
+          .select('id')
+          .neq('id', review.userId);
+      
+      final allUserIds = (allUsersResponse as List)
+          .map((user) => user['id'] as String)
+          .toList();
+      
+      print('📋 通知対象ユーザー数: ${allUserIds.length}');
+      
+      if (allUserIds.isEmpty) {
+        print('⚠️ 通知対象ユーザーなし');
+        return;
+      }
+
+      // 各ユーザーの通知設定を確認
+      int notificationsSent = 0;
+      for (final userId in allUserIds) {
+        try {
+          final settingsResponse = await _supabaseClient
+              .from('user_settings')
+              .select('enable_new_review_notifications')
+              .eq('id', userId)
+              .maybeSingle();
+          
+          // 設定が存在しない場合はデフォルトでtrue、存在する場合は設定値を使用
+          final enableNotifications = settingsResponse == null 
+              ? true 
+              : (settingsResponse['enable_new_review_notifications'] as bool? ?? true);
+          
+          if (enableNotifications) {
+            // 通知を作成
+            await _supabaseClient.from('notifications').insert({
+              'user_id': userId,
+              'type': 'new_review',
+              'title': '新しいレビューが投稿されました',
+              'body': '${productName}のレビューが投稿されました',
+              'related_review_id': review.id,
+              'related_user_id': review.userId,
+            });
+            notificationsSent++;
+          }
+        } catch (e) {
+          print('❌ ユーザー $userId への通知作成失敗: $e');
+        }
+      }
+      print('✅ 通知送信完了: $notificationsSent件');
+    } catch (e) {
+      print('❌ 通知生成全体の失敗: $e');
     }
   }
 

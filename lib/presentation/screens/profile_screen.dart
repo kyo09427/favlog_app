@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:badges/badges.dart' as badges;
 
 import '../../domain/models/profile.dart';
 import '../../domain/models/review.dart';
@@ -18,6 +19,7 @@ import '../../data/repositories/supabase_product_repository.dart';
 import '../../data/repositories/supabase_comment_repository.dart';
 import '../../data/repositories/supabase_like_repository.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
+import '../../core/providers/notification_providers.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -166,6 +168,50 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                 ),
                 centerTitle: true,
                 actions: [
+                  // 通知アイコン
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final unreadCountAsync = ref.watch(unreadNotificationCountProvider);
+                      
+                      return unreadCountAsync.when(
+                        data: (unreadCount) {
+                          if (unreadCount > 0) {
+                            return badges.Badge(
+                              badgeContent: Text(
+                                unreadCount > 99 ? '99+' : unreadCount.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              badgeStyle: const badges.BadgeStyle(
+                                badgeColor: Colors.red,
+                                padding: EdgeInsets.all(4),
+                              ),
+                              position: badges.BadgePosition.topEnd(top: 0, end: 3),
+                              child: IconButton(
+                                icon: Icon(Icons.notifications, color: textColor),
+                                onPressed: () => context.push('/notifications'),
+                              ),
+                            );
+                          }
+                          return IconButton(
+                            icon: Icon(Icons.notifications_none, color: textColor),
+                            onPressed: () => context.push('/notifications'),
+                          );
+                        },
+                        loading: () => IconButton(
+                          icon: Icon(Icons.notifications_none, color: textColor),
+                          onPressed: () => context.push('/notifications'),
+                        ),
+                        error: (_, __) => IconButton(
+                          icon: Icon(Icons.notifications_none, color: textColor),
+                          onPressed: () => context.push('/notifications'),
+                        ),
+                      );
+                    },
+                  ),
                   IconButton(
                     icon: Icon(Icons.edit, color: textColor),
                     onPressed: () {
