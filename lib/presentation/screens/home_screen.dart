@@ -466,7 +466,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                     context.push('/notifications');
                   },
                 ),
-                error: (_, __) => IconButton(
+                error: (_, _) => IconButton(
                   icon: const Icon(Icons.notifications_none, color: Colors.white),
                   onPressed: () {
                     context.push('/notifications');

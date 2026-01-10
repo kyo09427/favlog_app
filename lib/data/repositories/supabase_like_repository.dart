@@ -35,7 +35,7 @@ class SupabaseLikeRepository implements LikeRepository {
   /// いいね追加時に通知を作成
   Future<void> _createLikeNotification(String reviewId, String likerId) async {
     try {
-      print('❤️ いいね通知生成開始: レビューID=$reviewId');
+
       
       // レビュー情報を取得してレビュー投稿者を特定
       final reviewResponse = await _supabaseClient
@@ -49,7 +49,7 @@ class SupabaseLikeRepository implements LikeRepository {
       
       // 自分のレビューに自分でいいねした場合は通知しない
       if (reviewOwnerId == likerId) {
-        print('⚠️ 自分へのいいねのため通知スキップ');
+
         return;
       }
       
@@ -62,8 +62,7 @@ class SupabaseLikeRepository implements LikeRepository {
             .eq('id', productId)
             .single();
         productName = productResponse['name'] as String? ?? '商品';
-      } catch (e) {
-        print('⚠️ 商品名の取得失敗: $e');
+      } catch (_) {
       }
       
       // レビュー投稿者の通知設定を確認
@@ -83,16 +82,15 @@ class SupabaseLikeRepository implements LikeRepository {
           'user_id': reviewOwnerId,
           'type': 'like',
           'title': 'いいねされました',
-          'body': '${productName}のレビューにいいねされました',
+          'body': '$productNameのレビューにいいねされました',
           'related_review_id': reviewId,
           'related_user_id': likerId,
         });
-        print('✅ いいね通知送信成功');
+
       } else {
-        print('⚠️ いいね通知が無効のためスキップ');
+
       }
-    } catch (e) {
-      print('❌ いいね通知生成失敗: $e');
+    } catch (_) {
     }
   }
 

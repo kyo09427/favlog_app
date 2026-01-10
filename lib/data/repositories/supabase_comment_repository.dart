@@ -62,7 +62,7 @@ class SupabaseCommentRepository implements CommentRepository {
   /// コメント追加時に通知を作成
   Future<void> _createCommentNotification(Comment comment) async {
     try {
-      print('💬 コメント通知生成開始: レビューID=${comment.reviewId}');
+
       
       // レビュー情報を取得してレビュー投稿者を特定
       final reviewResponse = await _supabaseClient
@@ -76,7 +76,7 @@ class SupabaseCommentRepository implements CommentRepository {
       
       // 自分のレビューに自分でコメントした場合は通知しない
       if (reviewOwnerId == comment.userId) {
-        print('⚠️ 自分へのコメントのため通知スキップ');
+
         return;
       }
       
@@ -89,8 +89,7 @@ class SupabaseCommentRepository implements CommentRepository {
             .eq('id', productId)
             .single();
         productName = productResponse['name'] as String? ?? '商品';
-      } catch (e) {
-        print('⚠️ 商品名の取得失敗: $e');
+      } catch (_) {
       }
       
       // レビュー投稿者の通知設定を確認
@@ -110,16 +109,14 @@ class SupabaseCommentRepository implements CommentRepository {
           'user_id': reviewOwnerId,
           'type': 'comment',
           'title': 'コメントが追加されました',
-          'body': '${productName}のレビューにコメントが追加されました',
+          'body': '$productNameのレビューにコメントが追加されました',
           'related_review_id': comment.reviewId,
           'related_user_id': comment.userId,
         });
-        print('✅ コメント通知送信成功');
+
       } else {
-        print('⚠️ コメント通知が無効のためスキップ');
       }
-    } catch (e) {
-      print('❌ コメント通知生成失敗: $e');
+    } catch (_) {
     }
   }
 

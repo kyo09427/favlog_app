@@ -176,7 +176,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           if (!notification.isRead) {
             await markAsRead(notification.id);
           }
-          if (notification.relatedReviewId != null && context.mounted) {
+          if (!mounted) return;
+          if (notification.relatedReviewId != null) {
             context.push('/review/${notification.relatedReviewId}');
           }
         },

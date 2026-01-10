@@ -181,7 +181,7 @@ class SettingsScreen extends ConsumerWidget {
         textColor: textColor,
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 

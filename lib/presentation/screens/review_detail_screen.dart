@@ -184,7 +184,7 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (bool didPop) {
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
         if (!didPop) {
           // デバイスの戻るボタンが押されたときにホーム画面に遷移
           context.go('/');

@@ -50,7 +50,6 @@ class SupabaseProfileRepository implements ProfileRepository {
             .insert(profile.toJson());
       }
     } catch (e) {
-      print('Profile update error: $e');
       rethrow;
     }
   }

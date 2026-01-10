@@ -85,7 +85,7 @@ jobs:
             COUNT=0
           fi
 
-          COUNT=$((COUNT+1))
+          COUNT=$((10#$COUNT+1))
           printf "%02d" "$COUNT" > "$COUNTER_FILE"
 
           VERSION_CODE="${DATE}$(cat "$COUNTER_FILE")"

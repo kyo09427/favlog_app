@@ -40,7 +40,7 @@ class SupabaseNotificationRepository implements NotificationRepository {
           .eq('is_read', false)
           .count(CountOption.exact);
 
-      return response.count ?? 0;
+      return response.count;
     } catch (e) {
       throw Exception('Failed to get unread count: $e');
     }

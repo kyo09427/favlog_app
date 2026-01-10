@@ -205,7 +205,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                           icon: Icon(Icons.notifications_none, color: textColor),
                           onPressed: () => context.push('/notifications'),
                         ),
-                        error: (_, __) => IconButton(
+                        error: (_, _) => IconButton(
                           icon: Icon(Icons.notifications_none, color: textColor),
                           onPressed: () => context.push('/notifications'),
                         ),

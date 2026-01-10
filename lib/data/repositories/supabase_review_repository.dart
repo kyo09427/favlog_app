@@ -131,7 +131,7 @@ class SupabaseReviewRepository implements ReviewRepository {
   /// 新規レビュー投稿時に通知を作成
   Future<void> _createNewReviewNotifications(Review review) async {
     try {
-      print('🔔 通知生成開始: レビューID=${review.id}');
+
       
       // 商品情報を取得
       String productName = '商品';
@@ -142,9 +142,8 @@ class SupabaseReviewRepository implements ReviewRepository {
             .eq('id', review.productId)
             .single();
         productName = productResponse['name'] as String? ?? '商品';
-        print('✅ 商品名取得成功: $productName');
-      } catch (e) {
-        print('⚠️ 商品名の取得失敗: $e');
+
+      } catch (_) {
         // 商品名の取得失敗時はデフォルト値を使用
       }
 
@@ -158,15 +157,14 @@ class SupabaseReviewRepository implements ReviewRepository {
           .map((user) => user['id'] as String)
           .toList();
       
-      print('📋 通知対象ユーザー数: ${allUserIds.length}');
+
       
       if (allUserIds.isEmpty) {
-        print('⚠️ 通知対象ユーザーなし');
+
         return;
       }
 
       // 各ユーザーの通知設定を確認
-      int notificationsSent = 0;
       for (final userId in allUserIds) {
         try {
           final settingsResponse = await _supabaseClient
@@ -186,19 +184,16 @@ class SupabaseReviewRepository implements ReviewRepository {
               'user_id': userId,
               'type': 'new_review',
               'title': '新しいレビューが投稿されました',
-              'body': '${productName}のレビューが投稿されました',
+              'body': '$productNameのレビューが投稿されました',
               'related_review_id': review.id,
               'related_user_id': review.userId,
             });
-            notificationsSent++;
           }
-        } catch (e) {
-          print('❌ ユーザー $userId への通知作成失敗: $e');
+        } catch (_) {
         }
       }
-      print('✅ 通知送信完了: $notificationsSent件');
-    } catch (e) {
-      print('❌ 通知生成全体の失敗: $e');
+
+    } catch (_) {
     }
   }
 
