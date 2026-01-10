@@ -23,10 +23,35 @@ class SupabaseProfileRepository implements ProfileRepository {
 
   @override
   Future<void> updateProfile(Profile profile) async {
-    await _supabaseClient.from('profiles').upsert(
-      profile.toJson(),
-      onConflict: 'id', // Use 'id' as the conflict target for upsert
-    );
-    // If no exception is thrown, it means success.
+    try {
+      // まず既存のプロフィールを確認
+      final existing = await _supabaseClient
+          .from('profiles')
+          .select()
+          .eq('id', profile.id)
+          .maybeSingle();
+
+      if (existing != null) {
+        // 既存プロフィールがある場合は更新
+        // 明示的に必要なフィールドのみを送信
+        final updateData = {
+          'username': profile.username,
+          'avatar_url': profile.avatarUrl,
+        };
+        
+        await _supabaseClient
+            .from('profiles')
+            .update(updateData)
+            .eq('id', profile.id);
+      } else {
+        // 新規作成
+        await _supabaseClient
+            .from('profiles')
+            .insert(profile.toJson());
+      }
+    } catch (e) {
+      print('Profile update error: $e');
+      rethrow;
+    }
   }
 }
