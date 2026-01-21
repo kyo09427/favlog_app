@@ -87,6 +87,14 @@ FavLogは、クローズドなコミュニティ（友人、家族、同僚な�
 - **既読管理**: 通知の既読/未読状態を管理
 - **通知バッジ**: 未読通知数を視覚的に表示
 
+#### 📢 お知らせ機能
+- **管理者専用**: 管理者のみがお知らせを作成・編集・削除可能
+- **カテゴリ分類**: アップデート、メンテナンス、お知らせの3種類
+- **優先度設定**: 高・中・低の3段階
+- **公開時間指定**: お知らせの公開日時を指定可能（JST対応）
+- **未読管理**: ユーザーごとに未読お知らせ数を表示
+- **既読機能**: お知らせ詳細画面を開くと自動的に既読にマーク
+
 ### 3. 検索・フィルタリング
 
 #### カテゴリフィルタリング
@@ -107,6 +115,9 @@ FavLogは、クローズドなコミュニティ（友人、家族、同僚な�
 - **ユーザー名設定**: 一意のユーザー名
 - **アバター画像**: プロフィール画像のアップロード・更新
 - **自動削除**: 既存アバターの自動削除機能
+- **レビュー一覧**: 自分が投稿したレビューを表示
+- **いいね一覧**: 自分がいいねしたレビューを表示
+- **パフォーマンス最適化**: Riverpodプロバイダーによるデータキャッシュで高速表示
 
 ### 5. 認証機能
 
@@ -192,11 +203,14 @@ erDiagram
     users ||--o{ comments : posts
     users ||--o{ notifications : receives
     users ||--|| user_settings : has
+    users ||--o{ announcement_reads : marks
     
     products ||--o{ reviews : has
     reviews ||--o{ likes : receives
     reviews ||--o{ comments : receives
     reviews ||--o{ notifications : triggers
+    
+    announcements ||--o{ announcement_reads : has
     
     products {
         uuid id PK
@@ -215,6 +229,31 @@ erDiagram
         uuid product_id FK
         text review_text
         real rating
+        timestamptz created_at
+    }
+    
+    profiles {
+        uuid id PK
+        text username
+        text avatar_url
+        boolean is_admin
+        timestamptz created_at
+    }
+    
+    announcements {
+        uuid id PK
+        text title
+        text content
+        text category
+        integer priority
+        timestamptz published_at
+        timestamptz created_at
+    }
+    
+    announcement_reads {
+        uuid id PK
+        uuid user_id FK
+        uuid announcement_id FK
         timestamptz created_at
     }
     
@@ -316,7 +355,7 @@ SUPABASE_ANON_KEY=eyJ...
 
 主なステップ：
 - Supabaseプロジェクトの作成
-- データベーステーブルの作成（products, profiles, reviews, likes, comments, notifications, user_settings）
+- データベーステーブルの作成（products, profiles, reviews, likes, comments, notifications, user_settings, announcements, announcement_reads）
 - RLSポリシーの設定
 - Storageバケットの作成（product_images, avatars）
 
@@ -346,6 +385,8 @@ FavLogアプリでは、Supabaseの**Row Level Security（行レベルセキュ�
 | **comments** | 作成者のみ編集/削除可能 | `auth.uid() = user_id` |
 | **notifications** | 自分の通知のみ閲覧/更新/削除可能 | `auth.uid() = user_id` |
 | **user_settings** | 自分の設定のみ閲覧/更新可能 | `auth.uid() = id` |
+| **announcements** | 全ユーザー閲覧可能、管理者のみ作成/編集/削除 | `is_admin = TRUE` |
+| **announcement_reads** | 自分の既読情報のみ閲覧/追加/削除可能 | `auth.uid() = user_id` |
 
 #### セキュリティチェックリスト
 
@@ -425,7 +466,7 @@ FavLogアプリでは、Supabaseの**Row Level Security（行レベルセキュ�
 - **アプリ名**: FavLog (Favorite Log)
 - **制作者**: kyo09427 / shu5555
 - **リポジトリ**: https://github.com/kyo09427/favlog_app
-- **バージョン**: 1.6.4
+- **バージョン**: 1.8.0
 
 ---
 

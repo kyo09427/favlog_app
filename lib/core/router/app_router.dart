@@ -28,7 +28,12 @@ import '../../presentation/screens/update_email_request_screen.dart';
 import '../../presentation/screens/update_email_sent_screen.dart';
 import '../../presentation/screens/confirm_email_change_screen.dart';
 import '../../presentation/screens/notifications_screen.dart';
+import '../../presentation/screens/announcements_screen.dart';
+import '../../presentation/screens/announcement_detail_screen.dart';
+import '../../presentation/screens/create_announcement_screen.dart';
+import '../../presentation/screens/edit_announcement_screen.dart';
 import '../../presentation/widgets/scaffold_with_nav_bar.dart';
+import '../../domain/models/announcement.dart';
 
 // StreamをリッスンしてGoRouterをリフレッシュするためのChangeNotifier
 class GoRouterRefreshStream extends ChangeNotifier {
@@ -271,6 +276,36 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/notifications',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const NotificationsScreen(),
+      ),
+      // お知らせ一覧画面
+      GoRoute(
+        path: '/announcements',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AnnouncementsScreen(),
+      ),
+      // お知らせ作成画面（パス変数を含むルートより前に定義）
+      GoRoute(
+        path: '/announcements/create',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CreateAnnouncementScreen(),
+      ),
+      // お知らせ詳細画面
+      GoRoute(
+        path: '/announcements/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return AnnouncementDetailScreen(announcementId: id);
+        },
+      ),
+      // お知らせ編集画面
+      GoRoute(
+        path: '/announcements/:id/edit',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final announcement = state.extra! as Announcement;
+          return EditAnnouncementScreen(announcement: announcement);
+        },
       ),
     ],
   );

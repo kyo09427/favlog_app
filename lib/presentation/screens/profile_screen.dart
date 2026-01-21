@@ -12,6 +12,7 @@ import '../../domain/repositories/product_repository.dart';
 import '../../domain/repositories/comment_repository.dart';
 import '../../domain/repositories/like_repository.dart';
 import '../providers/profile_screen_controller.dart';
+import '../providers/profile_data_providers.dart';
 import '../widgets/error_dialog.dart';
 import '../widgets/review_item.dart';
 import '../../data/repositories/supabase_review_repository.dart';
@@ -91,11 +92,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
       await reviewRepository.deleteReview(reviewId);
       
       if (mounted) {
+        // プロバイダーを無効化してキャッシュを更新
+        final authRepository = ref.read(authRepositoryProvider);
+        final currentUserId = authRepository.getCurrentUser()?.id;
+        if (currentUserId != null) {
+          ref.invalidate(userReviewsProvider(currentUserId));
+          ref.invalidate(userLikedReviewIdsProvider(currentUserId));
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('レビューを削除しました')),
         );
-        // 画面を更新
-        setState(() {});
       }
     } catch (e) {
       if (mounted) {
@@ -262,10 +269,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                     const SizedBox(height: 24),
 
                     // レビュー数統計
-                    FutureBuilder<List<Review>>(
-                      future: reviewRepository.getReviewsByUserId(currentUserId),
-                      builder: (context, snapshot) {
-                        final reviewCount = snapshot.hasData ? snapshot.data!.length : 0;
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final reviewsAsync = ref.watch(userReviewsProvider(currentUserId));
+                        final reviewCount = reviewsAsync.valueOrNull?.length ?? 0;
                         
                         return Container(
                           margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -403,31 +410,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
     required Color textColor,
     required Color mutedTextColor,
   }) {
-    final reviewRepository = ref.watch(reviewRepositoryProvider);
-    final productRepository = ref.watch(productRepositoryProvider);
-    final commentRepository = ref.watch(commentRepositoryProvider);
-    final likeRepository = ref.watch(likeRepositoryProvider);
+    final reviewsAsync = ref.watch(userReviewsProvider(currentUserId));
 
-    return FutureBuilder<List<Review>>(
-      future: reviewRepository.getReviewsByUserId(currentUserId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(color: Color(0xFF13ec5b)),
-          );
-        }
-
-        if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              'レビューの読み込みに失敗しました',
-              style: TextStyle(color: textColor),
-            ),
-          );
-        }
-
-        final reviews = snapshot.data ?? [];
-
+    return reviewsAsync.when(
+      data: (reviews) {
         if (reviews.isEmpty) {
           return Center(
             child: Column(
@@ -453,16 +439,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
           separatorBuilder: (context, index) => const Divider(height: 32),
           itemBuilder: (context, index) {
             final review = reviews[index];
-            return _buildReviewItemWrapper(
+            return _buildReviewItemOptimized(
               review: review,
-              productRepository: productRepository,
-              commentRepository: commentRepository,
-              likeRepository: likeRepository,
               currentUserId: currentUserId,
             );
           },
         );
       },
+      loading: () => const Center(
+        child: CircularProgressIndicator(color: Color(0xFF13ec5b)),
+      ),
+      error: (error, stack) => Center(
+        child: Text(
+          'レビューの読み込みに失敗しました',
+          style: TextStyle(color: textColor),
+        ),
+      ),
     );
   }
 
@@ -471,31 +463,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
     required Color textColor,
     required Color mutedTextColor,
   }) {
+    final likedReviewIdsAsync = ref.watch(userLikedReviewIdsProvider(currentUserId));
     final reviewRepository = ref.watch(reviewRepositoryProvider);
-    final productRepository = ref.watch(productRepositoryProvider);
-    final commentRepository = ref.watch(commentRepositoryProvider);
-    final likeRepository = ref.watch(likeRepositoryProvider);
 
-    return FutureBuilder<List<String>>(
-      future: likeRepository.getAllUserLikedReviewIds(currentUserId),
-      builder: (context, likedReviewIdsSnapshot) {
-        if (likedReviewIdsSnapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(color: Color(0xFF13ec5b)),
-          );
-        }
-
-        if (likedReviewIdsSnapshot.hasError) {
-          return Center(
-            child: Text(
-              'いいねしたレビューの読み込みに失敗しました',
-              style: TextStyle(color: textColor),
-            ),
-          );
-        }
-
-        final likedReviewIds = likedReviewIdsSnapshot.data ?? [];
-
+    return likedReviewIdsAsync.when(
+      data: (likedReviewIds) {
         if (likedReviewIds.isEmpty) {
           return Center(
             child: Column(
@@ -525,15 +497,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
               future: reviewRepository.getReviewById(reviewId),
               builder: (context, reviewSnapshot) {
                 if (!reviewSnapshot.hasData) {
-                  return const SizedBox();
+                  return const SizedBox.shrink();
                 }
                 
                 final review = reviewSnapshot.data!;
-                return _buildReviewItemWrapper(
+                return _buildReviewItemOptimized(
                   review: review,
-                  productRepository: productRepository,
-                  commentRepository: commentRepository,
-                  likeRepository: likeRepository,
                   currentUserId: currentUserId,
                 );
               },
@@ -541,73 +510,64 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
           },
         );
       },
+      loading: () => const Center(
+        child: CircularProgressIndicator(color: Color(0xFF13ec5b)),
+      ),
+      error: (error, stack) => Center(
+        child: Text(
+          'いいねしたレビューの読み込みに失敗しました',
+          style: TextStyle(color: textColor),
+        ),
+      ),
     );
   }
 
-  Widget _buildReviewItemWrapper({
+  /// プロバイダーを使用した最適化されたレビューアイテム表示
+  Widget _buildReviewItemOptimized({
     required Review review,
-    required ProductRepository productRepository,
-    required CommentRepository commentRepository,
-    required LikeRepository likeRepository,
     required String currentUserId,
   }) {
-    return FutureBuilder<Product>(
-      future: productRepository.getProductById(review.productId),
-      builder: (context, productSnapshot) {
-        if (!productSnapshot.hasData) {
-          return const SizedBox();
-        }
+    // 商品情報を取得
+    final productAsync = ref.watch(productProvider(review.productId));
+    // レビュー統計を取得
+    final statsAsync = ref.watch(reviewStatsProvider(review.id));
+    // いいね状態を取得
+    final isLikedAsync = ref.watch(reviewLikeStatusProvider((reviewId: review.id, userId: currentUserId)));
 
-        final product = productSnapshot.data!;
+    // いずれかがローディング中の場合
+    if (productAsync.isLoading ||statsAsync.isLoading || isLikedAsync.isLoading) {
+      return const SizedBox.shrink();
+    }
 
-        return FutureBuilder<List<dynamic>>(
-          future: Future.wait([
-            commentRepository.getCommentsByReviewId(review.id),
-            likeRepository.getLikeCounts([review.id]),
-            likeRepository.hasUserLiked(review.id, currentUserId),
-          ]),
-          builder: (context, statsSnapshot) {
-            int commentCount = 0;
-            int likeCount = 0;
-            bool isLiked = _likedReviews[review.id] ?? false;
+    // いずれかにエラーがある場合
+    if (productAsync.hasError || statsAsync.hasError || isLikedAsync.hasError) {
+      return const SizedBox.shrink();
+    }
 
-            if (statsSnapshot.hasData) {
-              final comments = statsSnapshot.data![0] as List;
-              final likes = statsSnapshot.data![1] as Map<String, int>;
-              final liked = statsSnapshot.data![2] as bool;
-              commentCount = comments.length;
-              likeCount = likes[review.id] ?? 0;
-              if (!_likedReviews.containsKey(review.id)) {
-                isLiked = liked;
-              }
-            }
+    final product = productAsync.value;
+    final stats = statsAsync.value;
+    final isLiked = _likedReviews[review.id] ?? (isLikedAsync.value ?? false);
 
-            final stats = ReviewStats(
-              reviewId: review.id,
-              likeCount: likeCount,
-              commentCount: commentCount,
-            );
+    if (product == null || stats == null) {
+      return const SizedBox.shrink();
+    }
 
-            return ReviewItem(
-              product: product,
-              review: review,
-              stats: stats,
-              isLiked: isLiked,
-              onLikeToggle: () => _toggleLike(review.id, isLiked),
-              onCommentTap: () {
-                context.push(
-                  '/comment',
-                  extra: {
-                    'reviewId': review.id,
-                    'productName': product.name,
-                  },
-                );
-              },
-              onDelete: () => _deleteReview(review.id),
-            );
+    return ReviewItem(
+      product: product,
+      review: review,
+      stats: stats,
+      isLiked: isLiked,
+      onLikeToggle: () => _toggleLike(review.id, isLiked),
+      onCommentTap: () {
+        context.push(
+          '/comment',
+          extra: {
+            'reviewId': review.id,
+            'productName': product.name,
           },
         );
       },
+      onDelete: () => _deleteReview(review.id),
     );
   }
 
