@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/theme_provider.dart';
 import '../../core/providers/notification_providers.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
@@ -89,6 +90,39 @@ class SettingsScreen extends ConsumerWidget {
                 icon: Icons.email_outlined,
                 onTap: () {
                   context.push('/update-email-request');
+                },
+                primaryColor: primaryColor,
+                textColor: textColor,
+                mutedTextColor: mutedTextColor,
+              ),
+            ],
+            cardColor: cardColor,
+            borderColor: borderColor,
+            textColor: textColor,
+          ),
+          const SizedBox(height: 24),
+          _buildSettingsSection(
+            context,
+            title: 'サポート',
+            children: [
+              _buildSettingsItem(
+                context,
+                title: 'お問い合わせフォーム',
+                icon: Icons.contact_support_outlined,
+                onTap: () async {
+                  final url = Uri.parse('https://forms.gle/5ZfCAKHD8hZLRT647');
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  } else {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('お問い合わせフォームを開けませんでした'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
                 },
                 primaryColor: primaryColor,
                 textColor: textColor,

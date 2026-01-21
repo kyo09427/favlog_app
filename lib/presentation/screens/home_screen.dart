@@ -40,17 +40,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final controller = ref.read(homeScreenControllerProvider.notifier);
-        final state = ref.read(homeScreenControllerProvider);
-        controller.fetchProducts(
-          category: state.selectedCategory,
-          searchQuery: state.searchQuery,
-          forceUpdate: true,
-        );
-      }
-    });
+    // 不要な再取得を削除 - PageStorageの動作を妨げないため
   }
 
   void _onScroll() {
@@ -126,6 +116,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
       highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
       child: ListView.builder(
+        key: const PageStorageKey('home_list'),
         controller: _scrollController,
         itemCount: 5,
         itemBuilder: (context, index) {
@@ -181,8 +172,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          // context.push()ではなくcontext.go()を使用してURLを更新
-          context.go('/product/${product.id}');
+          // context.push()を使用してナビゲーションスタックを保持
+          context.push('/product/${product.id}');
         },
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -553,6 +544,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                           builder: (context, constraints) {
                             if (constraints.maxWidth > 600) {
                               return GridView.builder(
+                                key: const PageStorageKey('home_grid'),
                                 controller: _scrollController,
                                 padding: const EdgeInsets.all(8),
                                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -571,6 +563,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                               );
                             } else {
                               return ListView.builder(
+                                key: const PageStorageKey('home_list'),
                                 controller: _scrollController,
                                 itemCount: homeScreenState.products.length,
                                 itemBuilder: (context, index) {
