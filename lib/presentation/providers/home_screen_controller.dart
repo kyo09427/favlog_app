@@ -306,12 +306,12 @@ class HomeScreenController extends StateNotifier<HomeScreenState> {
   void selectCategory(String category) {
     if (_isDisposed) return;
 
-    // 同じカテゴリが選択された場合は何もしない
-    if (category == state.selectedCategory) return;
+    // 同じカテゴリが選択された場合は「すべて」にリセット
+    final newCategory = (category == state.selectedCategory) ? 'すべて' : category;
 
     // forceUpdate: trueで強制的に取得
     fetchProducts(
-      category: category,
+      category: newCategory,
       searchQuery: state.searchQuery,
       forceUpdate: true,
     );
