@@ -11,6 +11,7 @@ on:
     branches: [ main ]
     paths-ignore:
       - "**.md"
+      - "docs/**"
 
 permissions:
   contents: write
@@ -18,76 +19,36 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-deploy
-  cancel-in-progress: false
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  # ===========================================================
+  # 準備ジョブ：バージョンコード生成や共通セットアップ
+  # ===========================================================
+  prepare:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-
-    env:
-      VERSION: ${{ github.event.inputs.version || 'auto' }}
-      IS_MANUAL: ${{ github.event_name == 'workflow_dispatch' }}
-
+    outputs:
+      version_code: ${{ steps.version_gen.outputs.version_code }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Setup JDK 17
-        if: github.event_name == 'workflow_dispatch'
-        uses: actions/setup-java@v4
-        with:
-          java-version: "17"
-          distribution: "temurin"
-          cache: "gradle"
-
-      - name: Cache Pub packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.pub-cache
-          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pub-
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      # ===========================================================
-      # .env ファイル作成（APK/Web 共通で必要）
-      # ===========================================================
-      - name: Create .env file
-        run: |
-          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
-          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
-
-      # ===========================================================
-      #    手動実行時のみ：versionCode 生成 & Android バージョン書き換え
-      # ===========================================================
       - name: Generate versionCode
         id: version_gen
         if: github.event_name == 'workflow_dispatch'
         run: |
           DATE=$(date +'%y%m%d')
           COUNTER_FILE=".version_counter"
-
           if [ -f "$COUNTER_FILE" ]; then
             COUNT=$(cat "$COUNTER_FILE")
           else
             COUNT=0
           fi
-
           COUNT=$((10#$COUNT+1))
           printf "%02d" "$COUNT" > "$COUNTER_FILE"
-
           VERSION_CODE="${DATE}$(cat "$COUNTER_FILE")"
           echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
           echo "Generated versionCode: $VERSION_CODE"
@@ -99,38 +60,54 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add .version_counter
-            git commit -m "Update version counter"
+            git commit -m "Update version counter [skip ci]"
             git push || true
           fi
 
-      - name: Update Android version (KTS)
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          VERSION_CODE="${{ steps.version_gen.outputs.version_code }}"
-          VERSION="${{ github.event.inputs.version }}"
+  # ===========================================================
+  # APK ビルドジョブ（手動実行時のみ）
+  # ===========================================================
+  build-apk:
+    needs: prepare
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-          echo "Updating to versionName=$VERSION, versionCode=$VERSION_CODE"
-          
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: "gradle"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Create .env file
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+
+      - name: Update versions
+        run: |
+          VERSION_CODE="${{ needs.prepare.outputs.version_code }}"
+          VERSION="${{ github.event.inputs.version }}"
           sed -i "s/versionName = .*/versionName = \"$VERSION\"/" android/app/build.gradle.kts
           sed -i "s/versionCode = .*/versionCode = $VERSION_CODE/" android/app/build.gradle.kts
-
-      - name: Update pubspec.yaml version
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          VERSION_CODE="${{ steps.version_gen.outputs.version_code }}"
-          VERSION="${{ github.event.inputs.version }}"
           sed -i "s/^version: .*/version: $VERSION+$VERSION_CODE/" pubspec.yaml
 
-      # ===========================================================
-      #    手動実行時のみ APK をビルドする
-      # ===========================================================
-      - name: Create Keystore
-        if: github.event_name == 'workflow_dispatch'
-        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/release.keystore
-
-      - name: Create key.properties
-        if: github.event_name == 'workflow_dispatch'
+      - name: Create Keystore & Properties
         run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/release.keystore
           cat > android/key.properties << 'KEYPROPS'
           storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
@@ -139,17 +116,12 @@ jobs:
           KEYPROPS
 
       - name: Build APK
-        if: github.event_name == 'workflow_dispatch'
         run: flutter build apk --release
 
-      # ===========================================================
-      # RELEASE 作成（手動のみ）
-      # ===========================================================
       - name: Generate release notes
-        if: github.event_name == 'workflow_dispatch'
         id: relnotes
         run: |
-          NOTES=$(git log -10 --pretty=format:"- %s" || echo "Initial release")
+          NOTES=$(git log -10 --pretty=format:"- %s" || echo "New release build")
           {
             echo "notes<<EOFNOTES"
             echo "$NOTES"
@@ -157,16 +129,14 @@ jobs:
           } >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
-        if: github.event_name == 'workflow_dispatch'
         id: create_release
         uses: actions/github-script@v7
         with:
           script: |
             const version = '${{ github.event.inputs.version }}';
-            const versionCode = '${{ steps.version_gen.outputs.version_code }}';
+            const versionCode = '${{ needs.prepare.outputs.version_code }}';
             const tag = `v${version}-${versionCode}`;
             const notes = `${{ steps.relnotes.outputs.notes }}`;
-            
             const release = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -176,72 +146,34 @@ jobs:
               draft: false,
               prerelease: false
             });
-            
             core.setOutput("upload_url", release.data.upload_url);
             core.setOutput("tag_name", tag);
 
       - name: Upload APK to Release
-        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: build/app/outputs/flutter-apk/app-release.apk
-          asset_name: FavLog-Build-${{ steps.version_gen.outputs.version_code }}.apk
+          asset_name: FavLog-Build-${{ needs.prepare.outputs.version_code }}.apk
           asset_content_type: application/vnd.android.package-archive
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # APK URL をダウンロード HTML 用に保存（手動の場合）
-      - name: Save APK direct URL
-        if: github.event_name == 'workflow_dispatch'
+      - name: Prepare Assets for Deploy
         run: |
           TAG="${{ steps.create_release.outputs.tag_name }}"
-          APK_NAME="FavLog-Build-${{ steps.version_gen.outputs.version_code }}.apk"
-          echo "https://github.com/${{ github.repository }}/releases/download/$TAG/$APK_NAME" > apk_url.txt
-
-      # ===========================================================
-      #    自動実行時（push） → 最新 Release の APK を download.html に使う
-      # ===========================================================
-      - name: Get latest release APK URL (auto mode)
-        if: github.event_name != 'workflow_dispatch'
-        run: |
-          LATEST_URL=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest \
-            | grep -o 'https://[^"]*\.apk' | head -n1)
-          
-          if [ -z "$LATEST_URL" ]; then
-            echo "https://github.com/${{ github.repository }}/releases/latest" > apk_url.txt
-          else
-            echo "$LATEST_URL" > apk_url.txt
-          fi
-          
-          echo "APK URL: $(cat apk_url.txt)"
-
-      - name: Upload APK URL artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk-url
-          path: apk_url.txt
-
-      # ===========================================================
-      # version.json 生成（手動実行時のみ）
-      # ===========================================================
-      - name: Generate version.json
-        if: github.event_name == 'workflow_dispatch'
-        run: |
+          VERSION_CODE="${{ needs.prepare.outputs.version_code }}"
           VERSION="${{ github.event.inputs.version }}"
-          VERSION_CODE="${{ steps.version_gen.outputs.version_code }}"
-          TAG="${{ steps.create_release.outputs.tag_name }}"
           APK_NAME="FavLog-Build-${VERSION_CODE}.apk"
-          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${APK_NAME}"
+          APK_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${APK_NAME}"
+          echo "$APK_URL" > apk_url.txt
           
-          # リリースノートを取得（最新10件のコミットログ）
+          # version.json 生成
           RELEASE_NOTES=$(git log -10 --pretty=format:"- %s")
-          
-          # jqを使用してversion.jsonを生成
           jq -n \
             --arg v "$VERSION" \
             --arg vc "$VERSION_CODE" \
-            --arg dl "$DOWNLOAD_URL" \
+            --arg dl "$APK_URL" \
             --arg rn "$RELEASE_NOTES" \
             '{
               version: $v,
@@ -251,25 +183,43 @@ jobs:
               minSupportedVersion: "0.0.1",
               forceUpdate: false
             }' > version.json
-          
-          echo "Generated version.json:"
-          cat version.json
 
-      - name: Upload version.json artifact
-        if: github.event_name == 'workflow_dispatch'
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: version-json
-          path: version.json
+          name: apk-assets
+          path: |
+            apk_url.txt
+            version.json
 
-      # ===========================================================
-      # WEB BUILD（手動 / 自動 共通）
-      # ===========================================================
-      - name: Enable web
-        run: flutter config --enable-web
+  # ===========================================================
+  # Web ビルドジョブ
+  # ===========================================================
+  build-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Create .env file
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
 
       - name: Build Web
-        run: flutter build web --release --base-href /favlog_app/ --no-tree-shake-icons
+        run: |
+          flutter config --enable-web
+          flutter build web --release --base-href /favlog_app/ --no-tree-shake-icons
 
       - name: Create 404.html
         run: |
@@ -285,44 +235,52 @@ jobs:
               window.location.replace(target + window.location.search + window.location.hash);
             </script>
           </head>
-          <body>
-            <p>Redirecting…</p>
+          <body><p>Redirecting…</p></body>
           </html>
           HEREDOC404
 
-      - name: Download APK URL
+      - name: Upload Web Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: build/web
+
+  # ===========================================================
+  # デプロイジョブ
+  # ===========================================================
+  deploy:
+    needs: [build-web, build-apk]
+    if: always() && needs.build-web.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Web Build
         uses: actions/download-artifact@v4
         with:
-          name: apk-url
-          path: ./tmp
+          name: web-build
+          path: web-dist
 
-      - name: Create download.html
+      - name: Try Download APK Assets
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: apk-assets
+          path: apk-dist
+
+      - name: Finalize build/web content
         run: |
-          APK_URL=$(cat ./tmp/apk_url.txt)
+          mkdir -p final-dist
+          cp -r web-dist/* final-dist/
           
-          cat > build/web/download.html << HEREDOCDL
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <meta http-equiv="refresh" content="0;url=${APK_URL}">
-            <title>Downloading...</title>
-          </head>
-          <body>
-            <p>Redirecting to download: <a href="${APK_URL}">${APK_URL}</a></p>
-          </html>
-          HEREDOCDL
-
-      - name: Copy version.json to build/web
-        run: |
-          if [ -f "version.json" ]; then
-            cp version.json build/web/
+          if [ -d "apk-dist" ]; then
+            APK_URL=$(cat apk-dist/apk_url.txt)
+            cp apk-dist/version.json final-dist/
           else
-            # If version.json doesn't exist (e.g. push event), try to generate one from latest release
+            # Push時の自動対応：最新のリリースから情報を補完
+            echo "Fetching latest release info for push deploy..."
             LATEST_RELEASE=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest)
             VERSION=$(echo "$LATEST_RELEASE" | grep -oP '"tag_name":\s*"\Kv[^"]*' | sed 's/^v//' | cut -d'-' -f1 || echo "0.0.0")
             VERSION_CODE=$(echo "$LATEST_RELEASE" | grep -oP '"tag_name":\s*"v.*-\K[0-9]+' || echo "0")
-            APK_URL=$(cat ./tmp/apk_url.txt)
+            APK_URL=$(echo "$LATEST_RELEASE" | grep -o 'https://[^"]*\.apk' | head -n1 || echo "")
             
             jq -n \
               --arg v "$VERSION" \
@@ -332,19 +290,30 @@ jobs:
                 version: $v,
                 versionCode: ($vc|tonumber),
                 downloadUrl: $dl,
-                releaseNotes: "Latest version build",
+                releaseNotes: "Automatic build update",
                 minSupportedVersion: "0.0.1",
                 forceUpdate: false
-              }' > build/web/version.json
+              }' > final-dist/version.json
           fi
-          echo "Final version.json for deployment:"
-          cat build/web/version.json
+          
+          # download.html 生成
+          cat > final-dist/download.html << HEREDOCDL
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta http-equiv="refresh" content="0;url=${APK_URL}">
+            <title>Downloading...</title>
+          </head>
+          <body><p>Redirecting to download: <a href="${APK_URL}">${APK_URL}</a></p></body>
+          </html>
+          HEREDOCDL
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/web
+          publish_dir: ./final-dist
           force_orphan: true
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
