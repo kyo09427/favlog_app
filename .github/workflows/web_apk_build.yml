@@ -235,19 +235,22 @@ jobs:
           DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${APK_NAME}"
           
           # リリースノートを取得（最新10件のコミットログ）
-          RELEASE_NOTES=$(git log -10 --pretty=format:"- %s" | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}')
+          RELEASE_NOTES=$(git log -10 --pretty=format:"- %s")
           
-          # version.jsonを生成
-          cat > version.json << EOF
-          {
-            "version": "${VERSION}",
-            "versionCode": ${VERSION_CODE},
-            "downloadUrl": "${DOWNLOAD_URL}",
-            "releaseNotes": "${RELEASE_NOTES}",
-            "minSupportedVersion": "0.0.1",
-            "forceUpdate": false
-          }
-          EOF
+          # jqを使用してversion.jsonを生成
+          jq -n \
+            --arg v "$VERSION" \
+            --arg vc "$VERSION_CODE" \
+            --arg dl "$DOWNLOAD_URL" \
+            --arg rn "$RELEASE_NOTES" \
+            '{
+              version: $v,
+              versionCode: ($vc|tonumber),
+              downloadUrl: $dl,
+              releaseNotes: $rn,
+              minSupportedVersion: "0.0.1",
+              forceUpdate: false
+            }' > version.json
           
           echo "Generated version.json:"
           cat version.json
@@ -284,7 +287,6 @@ jobs:
           </head>
           <body>
             <p>Redirecting…</p>
-          </body>
           </html>
           HEREDOC404
 
@@ -308,7 +310,6 @@ jobs:
           </head>
           <body>
             <p>Redirecting to download: <a href="${APK_URL}">${APK_URL}</a></p>
-          </body>
           </html>
           HEREDOCDL
 
@@ -323,16 +324,18 @@ jobs:
             VERSION_CODE=$(echo "$LATEST_RELEASE" | grep -oP '"tag_name":\s*"v.*-\K[0-9]+' || echo "0")
             APK_URL=$(cat ./tmp/apk_url.txt)
             
-            cat > build/web/version.json << EOF
-            {
-              "version": "${VERSION}",
-              "versionCode": ${VERSION_CODE},
-              "downloadUrl": "${APK_URL}",
-              "releaseNotes": "Latest version build",
-              "minSupportedVersion": "0.0.1",
-              "forceUpdate": false
-            }
-            EOF
+            jq -n \
+              --arg v "$VERSION" \
+              --arg vc "$VERSION_CODE" \
+              --arg dl "$APK_URL" \
+              '{
+                version: $v,
+                versionCode: ($vc|tonumber),
+                downloadUrl: $dl,
+                releaseNotes: "Latest version build",
+                minSupportedVersion: "0.0.1",
+                forceUpdate: false
+              }' > build/web/version.json
           fi
           echo "Final version.json for deployment:"
           cat build/web/version.json
