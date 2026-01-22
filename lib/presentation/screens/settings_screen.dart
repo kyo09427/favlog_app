@@ -6,6 +6,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../providers/theme_provider.dart';
 import '../../core/providers/notification_providers.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
+import '../../providers/update_provider.dart';
+import '../../utils/update_ui_helper.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -14,12 +16,18 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
-    final backgroundColor = isDark ? const Color(0xFF102216) : const Color(0xFFF6F8F6);
+
+    final backgroundColor = isDark
+        ? const Color(0xFF102216)
+        : const Color(0xFFF6F8F6);
     final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-    final mutedTextColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-    final borderColor = isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
+    final mutedTextColor = isDark
+        ? const Color(0xFF9CA3AF)
+        : const Color(0xFF6B7280);
+    final borderColor = isDark
+        ? const Color(0xFF374151)
+        : const Color(0xFFE5E7EB);
     const primaryColor = Color(0xFF13EC5B);
 
     return Scaffold(
@@ -52,6 +60,29 @@ class SettingsScreen extends ConsumerWidget {
                   _getThemeModeLabel(ref.watch(themeModeProvider)),
                   style: TextStyle(color: mutedTextColor, fontSize: 14),
                 ),
+              ),
+              _buildSettingsItem(
+                context,
+                title: 'アップデートを確認',
+                icon: Icons.system_update,
+                onTap: () => _checkForUpdatesManually(context, ref),
+                primaryColor: primaryColor,
+                textColor: textColor,
+                mutedTextColor: mutedTextColor,
+                trailing: ref
+                    .watch(currentVersionProvider)
+                    .when(
+                      data: (version) => Text(
+                        'v$version',
+                        style: TextStyle(color: mutedTextColor, fontSize: 14),
+                      ),
+                      loading: () => const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      error: (_, __) => const SizedBox.shrink(),
+                    ),
               ),
             ],
             cardColor: cardColor,
@@ -149,13 +180,13 @@ class SettingsScreen extends ConsumerWidget {
   }) {
     final authRepository = ref.watch(authRepositoryProvider);
     final currentUser = authRepository.getCurrentUser();
-    
+
     if (currentUser == null) {
       return const SizedBox.shrink();
     }
 
     final settingsAsync = ref.watch(userSettingsProvider);
-    
+
     return settingsAsync.when(
       data: (settings) => _buildSettingsSection(
         context,
@@ -169,9 +200,9 @@ class SettingsScreen extends ConsumerWidget {
             value: settings.enableNewReviewNotifications,
             onChanged: (value) async {
               final updateSettings = ref.read(updateUserSettingsProvider);
-              await updateSettings(settings.copyWith(
-                enableNewReviewNotifications: value,
-              ));
+              await updateSettings(
+                settings.copyWith(enableNewReviewNotifications: value),
+              );
             },
             textColor: textColor,
             mutedTextColor: mutedTextColor,
@@ -185,9 +216,9 @@ class SettingsScreen extends ConsumerWidget {
             value: settings.enableLikeNotifications,
             onChanged: (value) async {
               final updateSettings = ref.read(updateUserSettingsProvider);
-              await updateSettings(settings.copyWith(
-                enableLikeNotifications: value,
-              ));
+              await updateSettings(
+                settings.copyWith(enableLikeNotifications: value),
+              );
             },
             textColor: textColor,
             mutedTextColor: mutedTextColor,
@@ -201,9 +232,9 @@ class SettingsScreen extends ConsumerWidget {
             value: settings.enableCommentNotifications,
             onChanged: (value) async {
               final updateSettings = ref.read(updateUserSettingsProvider);
-              await updateSettings(settings.copyWith(
-                enableCommentNotifications: value,
-              ));
+              await updateSettings(
+                settings.copyWith(enableCommentNotifications: value),
+              );
             },
             textColor: textColor,
             mutedTextColor: mutedTextColor,
@@ -249,10 +280,7 @@ class SettingsScreen extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: TextStyle(
-                    color: mutedTextColor,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: mutedTextColor, fontSize: 13),
                 ),
               ],
             ),
@@ -300,18 +328,20 @@ class SettingsScreen extends ConsumerWidget {
           ),
           child: Column(
             children: children
-                .map((item) => Column(
-                      children: [
-                        item,
-                        if (item != children.last)
-                          Divider(
-                            color: borderColor,
-                            height: 1,
-                            indent: 16,
-                            endIndent: 16,
-                          ),
-                      ],
-                    ))
+                .map(
+                  (item) => Column(
+                    children: [
+                      item,
+                      if (item != children.last)
+                        Divider(
+                          color: borderColor,
+                          height: 1,
+                          indent: 16,
+                          endIndent: 16,
+                        ),
+                    ],
+                  ),
+                )
                 .toList(),
           ),
         ),
@@ -343,19 +373,17 @@ class SettingsScreen extends ConsumerWidget {
                 style: TextStyle(color: textColor, fontSize: 16),
               ),
             ),
-            if (trailing != null) ...[
-              trailing,
-              const SizedBox(width: 8),
-            ],
+            if (trailing != null) ...[trailing, const SizedBox(width: 8)],
             Icon(Icons.arrow_forward_ios, color: mutedTextColor, size: 18),
           ],
         ),
       ),
     );
   }
+
   void _showThemeSelectionDialog(BuildContext context, WidgetRef ref) {
     final currentTheme = ref.read(themeModeProvider);
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -363,7 +391,6 @@ class SettingsScreen extends ConsumerWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-
             RadioListTile<ThemeMode>(
               title: const Text('ライトモード'),
               value: ThemeMode.light,
@@ -418,7 +445,84 @@ class SettingsScreen extends ConsumerWidget {
       case ThemeMode.dark:
         return 'ダークモード';
       case ThemeMode.system:
-        return '自動（システム設定）';
+        return '自動(システム設定)';
+    }
+  }
+
+  /// 手動でアップデートをチェック
+  Future<void> _checkForUpdatesManually(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    // ローディングダイアログを表示
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final updateService = ref.read(updateServiceProvider);
+
+      // 更新が利用可能かチェック
+      final isAvailable = await updateService.isUpdateAvailable();
+
+      // ローディングダイアログを閉じる
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+
+      if (!isAvailable) {
+        // 最新版の場合
+        if (context.mounted) {
+          final currentVersion = await updateService.getCurrentVersion();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('最新版です (v$currentVersion)'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+        return;
+      }
+
+      // 最新バージョン情報を取得
+      final latestVersion = await updateService.fetchLatestVersion();
+      if (latestVersion == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('バージョン情報の取得に失敗しました'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // 強制更新が必要かチェック
+      final isForceUpdate = await updateService.isForceUpdateRequired();
+
+      // ダイアログを表示
+      if (context.mounted) {
+        UpdateUiHelper.showUpdateDialog(
+          context: context,
+          ref: ref,
+          versionInfo: latestVersion,
+          isForceUpdate: isForceUpdate,
+        );
+      }
+    } catch (e) {
+      // エラーが発生した場合
+      if (context.mounted) {
+        Navigator.of(context).pop(); // ローディングダイアログを閉じる
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('エラーが発生しました: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

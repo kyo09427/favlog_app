@@ -8,6 +8,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:favlog_app/core/router/app_router.dart';
 import 'package:favlog_app/presentation/providers/theme_provider.dart';
+import 'package:favlog_app/providers/update_provider.dart';
+import 'package:favlog_app/models/version_info.dart';
+import 'package:favlog_app/utils/update_ui_helper.dart';
 
 // Define a Riverpod provider for SupabaseClient
 final supabaseProvider = Provider<SupabaseClient>((ref) {
@@ -17,15 +20,18 @@ final supabaseProvider = Provider<SupabaseClient>((ref) {
 Future<void> main() async {
   usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   String? supabaseUrl;
   String? supabaseAnonKey;
 
   // Attempt to get environment variables passed via --dart-define (used in CI/CD)
   const String dartDefineSupabaseUrl = String.fromEnvironment('SUPABASE_URL');
-  const String dartDefineSupabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  const String dartDefineSupabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+  );
 
-  if (dartDefineSupabaseUrl.isNotEmpty && dartDefineSupabaseAnonKey.isNotEmpty) {
+  if (dartDefineSupabaseUrl.isNotEmpty &&
+      dartDefineSupabaseAnonKey.isNotEmpty) {
     supabaseUrl = dartDefineSupabaseUrl;
     supabaseAnonKey = dartDefineSupabaseAnonKey;
   } else {
@@ -40,14 +46,13 @@ Future<void> main() async {
   }
 
   if (supabaseUrl == null || supabaseAnonKey == null) {
-    throw Exception('Supabase URL or Anon Key is not provided. Please ensure it\'s set via --dart-define or in .env file.');
+    throw Exception(
+      'Supabase URL or Anon Key is not provided. Please ensure it\'s set via --dart-define or in .env file.',
+    );
   }
 
-  await Supabase.initialize(
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
-  );
-  
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -68,6 +73,10 @@ class _MyAppState extends ConsumerState<MyApp> {
     super.initState();
     _initDeepLinks();
     _initAuthListener();
+    // アプリ起動後にバージョンチェックを実行
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForUpdates();
+    });
   }
 
   @override
@@ -97,9 +106,14 @@ class _MyAppState extends ConsumerState<MyApp> {
     } catch (e) {
       debugPrint('Deep link error: $e');
       // エラーの種類に応じて適切な処理を行う
-      if (e.toString().contains('otp_expired') || e.toString().contains('invalid')) {
+      if (e.toString().contains('otp_expired') ||
+          e.toString().contains('invalid')) {
         // リンクが期限切れまたは無効の場合
-        final context = ref.read(goRouterProvider).routerDelegate.navigatorKey.currentContext;
+        final context = ref
+            .read(goRouterProvider)
+            .routerDelegate
+            .navigatorKey
+            .currentContext;
         if (context != null && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -116,14 +130,20 @@ class _MyAppState extends ConsumerState<MyApp> {
   }
 
   void _initAuthListener() {
-    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((
+      data,
+    ) {
       final AuthChangeEvent event = data.event;
       if (event == AuthChangeEvent.passwordRecovery) {
         ref.read(goRouterProvider).go('/reset-password');
       } else if (event == AuthChangeEvent.userUpdated) {
         // メールアドレス変更完了時など
         // SnackBarを表示してユーザーに通知する
-        final context = ref.read(goRouterProvider).routerDelegate.navigatorKey.currentContext;
+        final context = ref
+            .read(goRouterProvider)
+            .routerDelegate
+            .navigatorKey
+            .currentContext;
         if (context != null && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -134,6 +154,57 @@ class _MyAppState extends ConsumerState<MyApp> {
         }
       }
     });
+  }
+
+  /// アプリ起動時のバージョンチェック
+  Future<void> _checkForUpdates() async {
+    try {
+      final updateService = ref.read(updateServiceProvider);
+
+      // 最終チェックから24時間以上経過している場合のみチェック
+      final shouldCheck = await updateService.shouldCheckForUpdate();
+      if (!shouldCheck) {
+        return;
+      }
+
+      // 更新が利用可能かチェック
+      final isAvailable = await updateService.isUpdateAvailable();
+      if (!isAvailable) {
+        // 最終チェック日時を更新
+        await updateService.updateLastCheckTime();
+        return;
+      }
+
+      // 最新バージョン情報を取得
+      final latestVersion = await updateService.fetchLatestVersion();
+      if (latestVersion == null) {
+        return;
+      }
+
+      // 強制更新が必要かチェック
+      final isForceUpdate = await updateService.isForceUpdateRequired();
+
+      // 最終チェック日時を更新
+      await updateService.updateLastCheckTime();
+
+      // ダイアログを表示
+      if (mounted) {
+        _showUpdateDialog(latestVersion, isForceUpdate);
+      }
+    } catch (e) {
+      debugPrint('Error checking for updates: $e');
+    }
+  }
+
+  /// アップデートダイアログを表示
+  void _showUpdateDialog(VersionInfo versionInfo, bool isForceUpdate) {
+    if (!mounted) return;
+    UpdateUiHelper.showUpdateDialog(
+      context: context,
+      ref: ref,
+      versionInfo: versionInfo,
+      isForceUpdate: isForceUpdate,
+    );
   }
 
   @override
@@ -164,11 +235,31 @@ class _MyAppState extends ConsumerState<MyApp> {
           surfaceTintColor: Colors.transparent, // Disable Material 3 tint
         ),
         textTheme: const TextTheme(
-          headlineSmall: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
-          titleLarge: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
-          titleMedium: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
-          bodyMedium: TextStyle(fontSize: 14.0, height: 1.5, color: Color(0xFF1F2937)),
-          bodySmall: TextStyle(fontSize: 12.0, height: 1.5, color: Color(0xFF6B7280)),
+          headlineSmall: TextStyle(
+            fontSize: 24.0,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
+          titleLarge: TextStyle(
+            fontSize: 18.0,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
+          titleMedium: TextStyle(
+            fontSize: 16.0,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
+          bodyMedium: TextStyle(
+            fontSize: 14.0,
+            height: 1.5,
+            color: Color(0xFF1F2937),
+          ),
+          bodySmall: TextStyle(
+            fontSize: 12.0,
+            height: 1.5,
+            color: Color(0xFF6B7280),
+          ),
           labelLarge: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold),
         ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
@@ -198,11 +289,31 @@ class _MyAppState extends ConsumerState<MyApp> {
           surfaceTintColor: Colors.transparent,
         ),
         textTheme: const TextTheme(
-          headlineSmall: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold, color: Colors.white),
-          titleLarge: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Colors.white),
-          titleMedium: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Colors.white),
-          bodyMedium: TextStyle(fontSize: 14.0, height: 1.5, color: Colors.white),
-          bodySmall: TextStyle(fontSize: 12.0, height: 1.5, color: Color(0xFF9CA3AF)),
+          headlineSmall: TextStyle(
+            fontSize: 24.0,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+          titleLarge: TextStyle(
+            fontSize: 18.0,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+          titleMedium: TextStyle(
+            fontSize: 16.0,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+          bodyMedium: TextStyle(
+            fontSize: 14.0,
+            height: 1.5,
+            color: Colors.white,
+          ),
+          bodySmall: TextStyle(
+            fontSize: 12.0,
+            height: 1.5,
+            color: Color(0xFF9CA3AF),
+          ),
           labelLarge: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold),
         ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(

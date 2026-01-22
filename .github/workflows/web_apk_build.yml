@@ -223,6 +223,43 @@ jobs:
           path: apk_url.txt
 
       # ===========================================================
+      # version.json 生成（手動実行時のみ）
+      # ===========================================================
+      - name: Generate version.json
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          VERSION_CODE="${{ steps.version_gen.outputs.version_code }}"
+          TAG="${{ steps.create_release.outputs.tag_name }}"
+          APK_NAME="FavLog-Build-${VERSION_CODE}.apk"
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${APK_NAME}"
+          
+          # リリースノートを取得（最新10件のコミットログ）
+          RELEASE_NOTES=$(git log -10 --pretty=format:"- %s" | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}')
+          
+          # version.jsonを生成
+          cat > version.json << EOF
+          {
+            "version": "${VERSION}",
+            "versionCode": ${VERSION_CODE},
+            "downloadUrl": "${DOWNLOAD_URL}",
+            "releaseNotes": "${RELEASE_NOTES}",
+            "minSupportedVersion": "0.0.1",
+            "forceUpdate": false
+          }
+          EOF
+          
+          echo "Generated version.json:"
+          cat version.json
+
+      - name: Upload version.json artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: version-json
+          path: version.json
+
+      # ===========================================================
       # WEB BUILD（手動 / 自動 共通）
       # ===========================================================
       - name: Enable web
@@ -274,6 +311,31 @@ jobs:
           </body>
           </html>
           HEREDOCDL
+
+      - name: Copy version.json to build/web
+        run: |
+          if [ -f "version.json" ]; then
+            cp version.json build/web/
+          else
+            # If version.json doesn't exist (e.g. push event), try to generate one from latest release
+            LATEST_RELEASE=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest)
+            VERSION=$(echo "$LATEST_RELEASE" | grep -oP '"tag_name":\s*"\Kv[^"]*' | sed 's/^v//' | cut -d'-' -f1 || echo "0.0.0")
+            VERSION_CODE=$(echo "$LATEST_RELEASE" | grep -oP '"tag_name":\s*"v.*-\K[0-9]+' || echo "0")
+            APK_URL=$(cat ./tmp/apk_url.txt)
+            
+            cat > build/web/version.json << EOF
+            {
+              "version": "${VERSION}",
+              "versionCode": ${VERSION_CODE},
+              "downloadUrl": "${APK_URL}",
+              "releaseNotes": "Latest version build",
+              "minSupportedVersion": "0.0.1",
+              "forceUpdate": false
+            }
+            EOF
+          fi
+          echo "Final version.json for deployment:"
+          cat build/web/version.json
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

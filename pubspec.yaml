@@ -29,6 +29,9 @@ dependencies:
   riverpod_annotation: ^2.3.5
   timeago: ^3.7.0  # 相対時刻表示用に追加
   badges: ^3.1.2  # 通知バッジ用に追加
+  package_info_plus: ^8.0.0  # アプリバージョン情報取得用
+  http: ^1.2.0  # version.json取得用
+  ota_update: ^6.0.0  # APKダウンロード&インストール用
 
 dev_dependencies:
   flutter_test:
