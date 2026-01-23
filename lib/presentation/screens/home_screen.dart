@@ -24,7 +24,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   final ScrollController _scrollController = ScrollController();
-  
+
   @override
   void initState() {
     super.initState();
@@ -45,7 +45,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= 
+    if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent * 0.9) {
       // TODO: ページネーション実装時にここで次ページを読み込む
     }
@@ -54,7 +54,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   Widget _buildThumbnail(dynamic imageUrl, {double size = 96}) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final String? url = (imageUrl is String && imageUrl.isNotEmpty) ? imageUrl : null;
+    final String? url = (imageUrl is String && imageUrl.isNotEmpty)
+        ? imageUrl
+        : null;
 
     if (url == null) {
       return Container(
@@ -112,7 +114,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   Widget _buildLoadingShimmer() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Shimmer.fromColors(
       baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
       highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
@@ -155,7 +157,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   }
 
   Widget _buildProductCard(
-      BuildContext context, ProductWithReviewAndStats item) {
+    BuildContext context,
+    ProductWithReviewAndStats item,
+  ) {
     final theme = Theme.of(context);
     final product = item.product;
     final latestReview = item.latestReview;
@@ -165,9 +169,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: theme.dividerColor.withValues(alpha: 0.2),
-        ),
+        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.2)),
       ),
       elevation: 0,
       child: InkWell(
@@ -199,7 +201,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 8),
-                        if (product.category != null || product.subcategoryTags.isNotEmpty)
+                        if (product.category != null ||
+                            product.subcategoryTags.isNotEmpty)
                           Wrap(
                             spacing: 6,
                             runSpacing: 6,
@@ -207,14 +210,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                               if (product.category != null)
                                 _buildChip(
                                   product.category!,
-                                  theme.colorScheme.primary.withValues(alpha: 0.8),
+                                  theme.colorScheme.primary.withValues(
+                                    alpha: 0.8,
+                                  ),
                                   Colors.white,
                                   theme,
                                 ),
                               if (product.subcategoryTags.isNotEmpty)
                                 _buildChip(
                                   product.subcategoryTags.first,
-                                  theme.colorScheme.secondary.withValues(alpha: 0.8),
+                                  theme.colorScheme.secondary.withValues(
+                                    alpha: 0.8,
+                                  ),
                                   Colors.white,
                                   theme,
                                 ),
@@ -253,14 +260,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               ),
               const SizedBox(height: 8),
               if (latestReview != null)
-                _ReviewItemWithStats(
-                  product: product,
-                  review: latestReview,
-                )
+                _ReviewItemWithStats(product: product, review: latestReview)
               else
                 const Text(
                   'まだレビューがありません。',
-                  style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+                  style: TextStyle(
+                    fontStyle: FontStyle.italic,
+                    color: Colors.grey,
+                  ),
                 ),
             ],
           ),
@@ -269,7 +276,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     );
   }
 
-  Widget _buildChip(String label, Color bgColor, Color textColor, ThemeData theme) {
+  Widget _buildChip(
+    String label,
+    Color bgColor,
+    Color textColor,
+    ThemeData theme,
+  ) {
     return Chip(
       label: Text(
         label,
@@ -314,8 +326,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                 shape: StadiumBorder(
                   side: BorderSide(
                     color: isSelected
-                      ? theme.colorScheme.primary
-                      : (isDark ? Colors.grey[700]! : Colors.grey[300]!),
+                        ? theme.colorScheme.primary
+                        : (isDark ? Colors.grey[700]! : Colors.grey[300]!),
                   ),
                 ),
               ),
@@ -339,10 +351,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
         height: 48,
         alignment: Alignment.center,
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        child: Text(
-          'カテゴリ読込エラー',
-          style: TextStyle(color: Colors.red[300]),
-        ),
+        child: Text('カテゴリ読込エラー', style: TextStyle(color: Colors.red[300])),
       ),
     );
   }
@@ -350,37 +359,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   @override
   Widget build(BuildContext context) {
     final homeScreenState = ref.watch(homeScreenControllerProvider);
-    final homeScreenController = ref.read(homeScreenControllerProvider.notifier);
+    final homeScreenController = ref.read(
+      homeScreenControllerProvider.notifier,
+    );
     final categoriesAsyncValue = ref.watch(categoriesProvider);
     final theme = Theme.of(context);
     final primaryColor = const Color(0xFF4CAF50);
 
-    ref.listen<HomeScreenState>(
-      homeScreenControllerProvider,
-      (previous, next) {
-        if (next.error != null && next.error != previous?.error) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(next.error!),
-                backgroundColor: Colors.red,
-                action: SnackBarAction(
-                  label: '再試行',
-                  textColor: Colors.white,
-                  onPressed: () {
-                    homeScreenController.fetchProducts(
-                      category: next.selectedCategory,
-                      searchQuery: next.searchQuery,
-                      forceUpdate: true,
-                    );
-                  },
-                ),
+    ref.listen<HomeScreenState>(homeScreenControllerProvider, (previous, next) {
+      if (next.error != null && next.error != previous?.error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(next.error!),
+              backgroundColor: Colors.red,
+              action: SnackBarAction(
+                label: '再試行',
+                textColor: Colors.white,
+                onPressed: () {
+                  homeScreenController.fetchProducts(
+                    category: next.selectedCategory,
+                    searchQuery: next.searchQuery,
+                    forceUpdate: true,
+                  );
+                },
               ),
-            );
-          }
+            ),
+          );
         }
-      },
-    );
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -390,7 +398,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
         leading: Consumer(
           builder: (context, ref, child) {
             final unreadCountAsync = ref.watch(unreadAnnouncementCountProvider);
-            
+
             return unreadCountAsync.when(
               data: (count) => Stack(
                 children: [
@@ -433,7 +441,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   context.push('/announcements');
                 },
               ),
-              error: (_, __) => IconButton(
+              error: (err, stack) => IconButton(
                 icon: const Icon(Icons.campaign, color: Colors.white),
                 onPressed: () {
                   context.push('/announcements');
@@ -453,29 +461,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                 border: Border.all(color: Colors.white, width: 2),
               ),
               child: ClipOval(
-                child: Image.asset(
-                  'assets/icon/icon.png',
-                  fit: BoxFit.cover,
-                ),
+                child: Image.asset('assets/icon/icon.png', fit: BoxFit.cover),
               ),
             ),
             const SizedBox(width: 12),
             const Text(
               'FavLog',
-              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ],
         ),
         actions: [
           Consumer(
             builder: (context, ref, child) {
-              final unreadCountAsync = ref.watch(unreadNotificationCountProvider);
-              
+              final unreadCountAsync = ref.watch(
+                unreadNotificationCountProvider,
+              );
+
               return unreadCountAsync.when(
                 data: (count) => Stack(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.notifications_none, color: Colors.white),
+                      icon: const Icon(
+                        Icons.notifications_none,
+                        color: Colors.white,
+                      ),
                       onPressed: () {
                         context.push('/notifications');
                       },
@@ -508,13 +521,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   ],
                 ),
                 loading: () => IconButton(
-                  icon: const Icon(Icons.notifications_none, color: Colors.white),
+                  icon: const Icon(
+                    Icons.notifications_none,
+                    color: Colors.white,
+                  ),
                   onPressed: () {
                     context.push('/notifications');
                   },
                 ),
-                error: (_, _) => IconButton(
-                  icon: const Icon(Icons.notifications_none, color: Colors.white),
+                error: (err, stack) => IconButton(
+                  icon: const Icon(
+                    Icons.notifications_none,
+                    color: Colors.white,
+                  ),
                   onPressed: () {
                     context.push('/notifications');
                   },
@@ -529,7 +548,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                 context: context,
                 builder: (context) => AlertDialog(
                   title: const Text('ログアウト'),
-               content: const Text('本当にログアウトしますか?'),
+                  content: const Text('本当にログアウトしますか?'),
                   actions: [
                     TextButton(
                       onPressed: () => context.pop(false),
@@ -571,67 +590,71 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   isRefresh: true,
                 );
               },
-              child: homeScreenState.isLoading && homeScreenState.products.isEmpty
+              child:
+                  homeScreenState.isLoading && homeScreenState.products.isEmpty
                   ? _buildLoadingShimmer()
                   : homeScreenState.products.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.inbox, size: 80, color: Colors.grey[400]),
-                              const SizedBox(height: 16),
-                              Text(
-                                'まだレビューが投稿されていません',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '右下の + ボタンから投稿してみましょう!',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: Colors.grey[500],
-                                ),
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.inbox, size: 80, color: Colors.grey[400]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'まだレビューが投稿されていません',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: Colors.grey[600],
+                            ),
                           ),
-                        )
-                      : LayoutBuilder(
-                          builder: (context, constraints) {
-                            if (constraints.maxWidth > 600) {
-                              return GridView.builder(
-                                key: const PageStorageKey('home_grid'),
-                                controller: _scrollController,
-                                padding: const EdgeInsets.all(8),
-                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: constraints.maxWidth > 900 ? 3 : 2,
+                          const SizedBox(height: 8),
+                          Text(
+                            '右下の + ボタンから投稿してみましょう!',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (constraints.maxWidth > 600) {
+                          return GridView.builder(
+                            key: const PageStorageKey('home_grid'),
+                            controller: _scrollController,
+                            padding: const EdgeInsets.all(8),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: constraints.maxWidth > 900
+                                      ? 3
+                                      : 2,
                                   childAspectRatio: 0.75,
                                   crossAxisSpacing: 8,
                                   mainAxisSpacing: 8,
                                 ),
-                                itemCount: homeScreenState.products.length,
-                                itemBuilder: (context, index) {
-                                  return _buildProductCard(
-                                    context,
-                                    homeScreenState.products[index],
-                                  );
-                                },
+                            itemCount: homeScreenState.products.length,
+                            itemBuilder: (context, index) {
+                              return _buildProductCard(
+                                context,
+                                homeScreenState.products[index],
                               );
-                            } else {
-                              return ListView.builder(
-                                key: const PageStorageKey('home_list'),
-                                controller: _scrollController,
-                                itemCount: homeScreenState.products.length,
-                                itemBuilder: (context, index) {
-                                  return _buildProductCard(
-                                    context,
-                                    homeScreenState.products[index],
-                                  );
-                                },
+                            },
+                          );
+                        } else {
+                          return ListView.builder(
+                            key: const PageStorageKey('home_list'),
+                            controller: _scrollController,
+                            itemCount: homeScreenState.products.length,
+                            itemBuilder: (context, index) {
+                              return _buildProductCard(
+                                context,
+                                homeScreenState.products[index],
                               );
-                            }
-                          },
-                        ),
+                            },
+                          );
+                        }
+                      },
+                    ),
             ),
           ),
         ],
@@ -707,13 +730,11 @@ class _ReviewItemWithStats extends ConsumerStatefulWidget {
   final Product product;
   final Review review;
 
-  const _ReviewItemWithStats({
-    required this.product,
-    required this.review,
-  });
+  const _ReviewItemWithStats({required this.product, required this.review});
 
   @override
-  ConsumerState<_ReviewItemWithStats> createState() => _ReviewItemWithStatsState();
+  ConsumerState<_ReviewItemWithStats> createState() =>
+      _ReviewItemWithStatsState();
 }
 
 class _ReviewItemWithStatsState extends ConsumerState<_ReviewItemWithStats> {
@@ -744,10 +765,7 @@ class _ReviewItemWithStatsState extends ConsumerState<_ReviewItemWithStats> {
     final currentUser = authRepository.getCurrentUser();
 
     if (currentUser == null) {
-      return ReviewItem(
-        product: widget.product,
-        review: widget.review,
-      );
+      return ReviewItem(product: widget.product, review: widget.review);
     }
 
     // 初回のみデータを取得
@@ -850,10 +868,10 @@ class _ReviewItemWithStatsState extends ConsumerState<_ReviewItemWithStats> {
             _likeCount = (_likeCount ?? 1) - 1;
           }
         });
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('いいねの操作に失敗しました: $e')),
-        );
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('いいねの操作に失敗しました: $e')));
       }
     }
   }

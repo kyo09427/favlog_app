@@ -1,0 +1,19 @@
+Analyzing favlog_app...                                         
+
+   info • Unnecessary use of multiple underscores • lib/presentation/screens/announcement_detail_screen.dart:259:18 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/presentation/screens/announcements_screen.dart:163:18 • unnecessary_underscores
+warning • Unused import: '../../domain/models/announcement.dart' • lib/presentation/screens/create_announcement_screen.dart:5:8 • unused_import
+   info • Unnecessary use of multiple underscores • lib/presentation/screens/home_screen.dart:436:26 • unnecessary_underscores
+warning • Unused import: '../../domain/models/product.dart' • lib/presentation/screens/profile_screen.dart:9:8 • unused_import
+warning • Unused import: '../../domain/models/review_stats.dart' • lib/presentation/screens/profile_screen.dart:10:8 • unused_import
+warning • Unused import: '../../domain/repositories/product_repository.dart' • lib/presentation/screens/profile_screen.dart:11:8 • unused_import
+warning • Unused import: '../../domain/repositories/comment_repository.dart' • lib/presentation/screens/profile_screen.dart:12:8 • unused_import
+warning • Unused import: '../../domain/repositories/like_repository.dart' • lib/presentation/screens/profile_screen.dart:13:8 • unused_import
+warning • Unused import: '../../data/repositories/supabase_product_repository.dart' • lib/presentation/screens/profile_screen.dart:19:8 • unused_import
+warning • Unused import: '../../data/repositories/supabase_comment_repository.dart' • lib/presentation/screens/profile_screen.dart:20:8 • unused_import
+warning • The value of the local variable 'reviewRepository' isn't used • lib/presentation/screens/profile_screen.dart:120:11 • unused_local_variable
+   info • Unnecessary use of multiple underscores • lib/presentation/screens/settings_screen.dart:84:34 • unnecessary_underscores
+   info • Don't use 'BuildContext's across async gaps • lib/presentation/screens/settings_screen.dart:479:32 • use_build_context_synchronously
+   info • Don't invoke 'print' in production code • lib/services/update_service.dart:57:7 • avoid_print
+
+15 issues found. (ran in 2.4s)

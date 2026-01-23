@@ -54,7 +54,7 @@ class UpdateService {
         throw Exception('バージョン情報の取得に失敗しました: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error fetching version info: $e');
+      // エラーログが必要な場合は別途ロギングを検討
       return null;
     }
   }

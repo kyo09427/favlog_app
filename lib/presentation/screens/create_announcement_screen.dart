@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import '../../domain/models/announcement.dart';
 import '../providers/announcement_providers.dart';
 
 /// お知らせ作成画面
@@ -86,18 +85,15 @@ class _CreateAnnouncementScreenState
       ref.invalidate(unreadAnnouncementCountProvider);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('お知らせを作成しました')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('お知らせを作成しました')));
         context.pop();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('エラー: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('エラー: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {

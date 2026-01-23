@@ -6,18 +6,11 @@ import 'package:badges/badges.dart' as badges;
 
 import '../../domain/models/profile.dart';
 import '../../domain/models/review.dart';
-import '../../domain/models/product.dart';
-import '../../domain/models/review_stats.dart';
-import '../../domain/repositories/product_repository.dart';
-import '../../domain/repositories/comment_repository.dart';
-import '../../domain/repositories/like_repository.dart';
 import '../providers/profile_screen_controller.dart';
 import '../providers/profile_data_providers.dart';
 import '../widgets/error_dialog.dart';
 import '../widgets/review_item.dart';
 import '../../data/repositories/supabase_review_repository.dart';
-import '../../data/repositories/supabase_product_repository.dart';
-import '../../data/repositories/supabase_comment_repository.dart';
 import '../../data/repositories/supabase_like_repository.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../core/providers/notification_providers.dart';
@@ -29,7 +22,8 @@ class ProfileScreen extends ConsumerStatefulWidget {
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTickerProviderStateMixin {
+class _ProfileScreenState extends ConsumerState<ProfileScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final Map<String, bool> _likedReviews = {};
 
@@ -58,9 +52,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('いいねの操作に失敗しました: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('いいねの操作に失敗しました: $e')));
       }
     }
   }
@@ -90,7 +84,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
     try {
       final reviewRepository = ref.read(reviewRepositoryProvider);
       await reviewRepository.deleteReview(reviewId);
-      
+
       if (mounted) {
         // プロバイダーを無効化してキャッシュを更新
         final authRepository = ref.read(authRepositoryProvider);
@@ -99,16 +93,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
           ref.invalidate(userReviewsProvider(currentUserId));
           ref.invalidate(userLikedReviewIdsProvider(currentUserId));
         }
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('レビューを削除しました')),
-        );
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('レビューを削除しました')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('削除に失敗しました: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('削除に失敗しました: $e')));
       }
     }
   }
@@ -116,19 +110,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
   @override
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileScreenControllerProvider);
-    final profileController = ref.read(profileScreenControllerProvider.notifier);
-    final reviewRepository = ref.watch(reviewRepositoryProvider);
+    final profileController = ref.read(
+      profileScreenControllerProvider.notifier,
+    );
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     const primaryColor = Color(0xFF13ec5b);
-    final backgroundColor = isDark ? const Color(0xFF102216) : const Color(0xFFF6F8F6);
+    final backgroundColor = isDark
+        ? const Color(0xFF102216)
+        : const Color(0xFFF6F8F6);
     final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-    final mutedTextColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-    final borderColor = isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
+    final mutedTextColor = isDark
+        ? const Color(0xFF9CA3AF)
+        : const Color(0xFF6B7280);
+    final borderColor = isDark
+        ? const Color(0xFF374151)
+        : const Color(0xFFE5E7EB);
 
-    ref.listen<AsyncValue<Profile?>>(profileScreenControllerProvider, (previous, next) {
+    ref.listen<AsyncValue<Profile?>>(profileScreenControllerProvider, (
+      previous,
+      next,
+    ) {
       if (!next.isLoading && next.hasError) {
         ErrorDialog.show(context, 'プロフィールの更新に失敗しました: ${next.error}');
       }
@@ -145,10 +149,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                 children: [
                   const CircularProgressIndicator(color: primaryColor),
                   const SizedBox(height: 16),
-                  Text(
-                    'プロフィールを準備中...',
-                    style: TextStyle(color: textColor),
-                  ),
+                  Text('プロフィールを準備中...', style: TextStyle(color: textColor)),
                 ],
               ),
             );
@@ -178,14 +179,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                   // 通知アイコン
                   Consumer(
                     builder: (context, ref, child) {
-                      final unreadCountAsync = ref.watch(unreadNotificationCountProvider);
-                      
+                      final unreadCountAsync = ref.watch(
+                        unreadNotificationCountProvider,
+                      );
+
                       return unreadCountAsync.when(
                         data: (unreadCount) {
                           if (unreadCount > 0) {
                             return badges.Badge(
                               badgeContent: Text(
-                                unreadCount > 99 ? '99+' : unreadCount.toString(),
+                                unreadCount > 99
+                                    ? '99+'
+                                    : unreadCount.toString(),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 10,
@@ -196,24 +201,39 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                                 badgeColor: Colors.red,
                                 padding: EdgeInsets.all(4),
                               ),
-                              position: badges.BadgePosition.topEnd(top: 0, end: 3),
+                              position: badges.BadgePosition.topEnd(
+                                top: 0,
+                                end: 3,
+                              ),
                               child: IconButton(
-                                icon: Icon(Icons.notifications, color: textColor),
+                                icon: Icon(
+                                  Icons.notifications,
+                                  color: textColor,
+                                ),
                                 onPressed: () => context.push('/notifications'),
                               ),
                             );
                           }
                           return IconButton(
-                            icon: Icon(Icons.notifications_none, color: textColor),
+                            icon: Icon(
+                              Icons.notifications_none,
+                              color: textColor,
+                            ),
                             onPressed: () => context.push('/notifications'),
                           );
                         },
                         loading: () => IconButton(
-                          icon: Icon(Icons.notifications_none, color: textColor),
+                          icon: Icon(
+                            Icons.notifications_none,
+                            color: textColor,
+                          ),
                           onPressed: () => context.push('/notifications'),
                         ),
                         error: (_, _) => IconButton(
-                          icon: Icon(Icons.notifications_none, color: textColor),
+                          icon: Icon(
+                            Icons.notifications_none,
+                            color: textColor,
+                          ),
                           onPressed: () => context.push('/notifications'),
                         ),
                       );
@@ -222,7 +242,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                   IconButton(
                     icon: Icon(Icons.edit, color: textColor),
                     onPressed: () {
-                      _showEditProfileDialog(context, profile, profileController);
+                      _showEditProfileDialog(
+                        context,
+                        profile,
+                        profileController,
+                      );
                     },
                   ),
                 ],
@@ -232,7 +256,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                 child: Column(
                   children: [
                     const SizedBox(height: 16),
-                    
+
                     // ユーザーアバター
                     Container(
                       width: 128,
@@ -242,14 +266,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                         border: Border.all(color: primaryColor, width: 2),
                         image: profile.avatarUrl != null
                             ? DecorationImage(
-                                image: CachedNetworkImageProvider(profile.avatarUrl!),
+                                image: CachedNetworkImageProvider(
+                                  profile.avatarUrl!,
+                                ),
                                 fit: BoxFit.cover,
                               )
                             : null,
                         color: Colors.grey[300],
                       ),
                       child: profile.avatarUrl == null
-                          ? Icon(Icons.person, size: 64, color: Colors.grey[600])
+                          ? Icon(
+                              Icons.person,
+                              size: 64,
+                              color: Colors.grey[600],
+                            )
                           : null,
                     ),
 
@@ -271,9 +301,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                     // レビュー数統計
                     Consumer(
                       builder: (context, ref, child) {
-                        final reviewsAsync = ref.watch(userReviewsProvider(currentUserId));
-                        final reviewCount = reviewsAsync.valueOrNull?.length ?? 0;
-                        
+                        final reviewsAsync = ref.watch(
+                          userReviewsProvider(currentUserId),
+                        );
+                        final reviewCount =
+                            reviewsAsync.valueOrNull?.length ?? 0;
+
                         return Container(
                           margin: const EdgeInsets.symmetric(horizontal: 16),
                           constraints: const BoxConstraints(maxWidth: 320),
@@ -314,7 +347,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                       margin: const EdgeInsets.symmetric(horizontal: 16),
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+                        color: isDark
+                            ? const Color(0xFF374151)
+                            : const Color(0xFFE5E7EB),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: TabBar(
@@ -374,9 +409,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
             ],
           );
         },
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: primaryColor),
-        ),
+        loading: () =>
+            const Center(child: CircularProgressIndicator(color: primaryColor)),
         error: (error, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -419,14 +453,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.rate_review_outlined, size: 64, color: mutedTextColor),
+                Icon(
+                  Icons.rate_review_outlined,
+                  size: 64,
+                  color: mutedTextColor,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'まだレビューがありません',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: mutedTextColor,
-                  ),
+                  style: TextStyle(fontSize: 16, color: mutedTextColor),
                 ),
               ],
             ),
@@ -450,10 +485,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
         child: CircularProgressIndicator(color: Color(0xFF13ec5b)),
       ),
       error: (error, stack) => Center(
-        child: Text(
-          'レビューの読み込みに失敗しました',
-          style: TextStyle(color: textColor),
-        ),
+        child: Text('レビューの読み込みに失敗しました', style: TextStyle(color: textColor)),
       ),
     );
   }
@@ -463,7 +495,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
     required Color textColor,
     required Color mutedTextColor,
   }) {
-    final likedReviewIdsAsync = ref.watch(userLikedReviewIdsProvider(currentUserId));
+    final likedReviewIdsAsync = ref.watch(
+      userLikedReviewIdsProvider(currentUserId),
+    );
     final reviewRepository = ref.watch(reviewRepositoryProvider);
 
     return likedReviewIdsAsync.when(
@@ -477,10 +511,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                 const SizedBox(height: 16),
                 Text(
                   'まだいいねしたレビューがありません',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: mutedTextColor,
-                  ),
+                  style: TextStyle(fontSize: 16, color: mutedTextColor),
                 ),
               ],
             ),
@@ -499,7 +530,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                 if (!reviewSnapshot.hasData) {
                   return const SizedBox.shrink();
                 }
-                
+
                 final review = reviewSnapshot.data!;
                 return _buildReviewItemOptimized(
                   review: review,
@@ -532,10 +563,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
     // レビュー統計を取得
     final statsAsync = ref.watch(reviewStatsProvider(review.id));
     // いいね状態を取得
-    final isLikedAsync = ref.watch(reviewLikeStatusProvider((reviewId: review.id, userId: currentUserId)));
+    final isLikedAsync = ref.watch(
+      reviewLikeStatusProvider((reviewId: review.id, userId: currentUserId)),
+    );
 
     // いずれかがローディング中の場合
-    if (productAsync.isLoading ||statsAsync.isLoading || isLikedAsync.isLoading) {
+    if (productAsync.isLoading ||
+        statsAsync.isLoading ||
+        isLikedAsync.isLoading) {
       return const SizedBox.shrink();
     }
 
@@ -561,10 +596,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
       onCommentTap: () {
         context.push(
           '/comment',
-          extra: {
-            'reviewId': review.id,
-            'productName': product.name,
-          },
+          extra: {'reviewId': review.id, 'productName': product.name},
         );
       },
       onDelete: () => _deleteReview(review.id),
@@ -579,11 +611,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
     final usernameController = TextEditingController(text: profile.username);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF102216) : const Color(0xFFF6F8F6);
+    final backgroundColor = isDark
+        ? const Color(0xFF102216)
+        : const Color(0xFFF6F8F6);
     final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-    final mutedTextColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-    final borderColor = isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
+    final mutedTextColor = isDark
+        ? const Color(0xFF9CA3AF)
+        : const Color(0xFF6B7280);
+    final borderColor = isDark
+        ? const Color(0xFF374151)
+        : const Color(0xFFE5E7EB);
     const primaryColor = Color(0xFF13ec5b);
 
     Navigator.of(context).push(
@@ -596,7 +634,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
             final isLoading = profileState.isLoading;
 
             // エラーハンドリング
-            ref.listen<AsyncValue<Profile?>>(profileScreenControllerProvider, (previous, next) {
+            ref.listen<AsyncValue<Profile?>>(profileScreenControllerProvider, (
+              previous,
+              next,
+            ) {
               if (!next.isLoading && next.hasError) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -613,12 +654,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                 children: [
                   // ヘッダー
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: backgroundColor,
-                      border: Border(
-                        bottom: BorderSide(color: borderColor),
-                      ),
+                      border: Border(bottom: BorderSide(color: borderColor)),
                     ),
                     child: SafeArea(
                       bottom: false,
@@ -671,17 +713,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                                   height: 128,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: primaryColor, width: 2),
+                                    border: Border.all(
+                                      color: primaryColor,
+                                      width: 2,
+                                    ),
                                     image: currentProfile.avatarUrl != null
                                         ? DecorationImage(
-                                            image: CachedNetworkImageProvider(currentProfile.avatarUrl!),
+                                            image: CachedNetworkImageProvider(
+                                              currentProfile.avatarUrl!,
+                                            ),
                                             fit: BoxFit.cover,
                                           )
                                         : null,
                                     color: Colors.grey[300],
                                   ),
                                   child: currentProfile.avatarUrl == null
-                                      ? Icon(Icons.person, size: 64, color: Colors.grey[600])
+                                      ? Icon(
+                                          Icons.person,
+                                          size: 64,
+                                          color: Colors.grey[600],
+                                        )
                                       : null,
                                 ),
                                 // ローディングインジケーター
@@ -691,7 +742,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                                     height: 128,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: Colors.black.withValues(alpha: 0.5),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.5,
+                                      ),
                                     ),
                                     child: const Center(
                                       child: CircularProgressIndicator(
@@ -718,9 +771,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                                       ],
                                     ),
                                     child: IconButton(
-                                      onPressed: isLoading ? null : () {
-                                        controller.pickAndUploadAvatar();
-                                      },
+                                      onPressed: isLoading
+                                          ? null
+                                          : () {
+                                              controller.pickAndUploadAvatar();
+                                            },
                                       icon: const Icon(
                                         Icons.edit,
                                         color: Colors.black,
@@ -734,13 +789,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                             ),
                             const SizedBox(height: 16),
                             TextButton(
-                              onPressed: isLoading ? null : () {
-                                controller.pickAndUploadAvatar();
-                              },
+                              onPressed: isLoading
+                                  ? null
+                                  : () {
+                                      controller.pickAndUploadAvatar();
+                                    },
                               child: Text(
                                 isLoading ? 'アップロード中...' : 'プロフィール画像を変更',
                                 style: TextStyle(
-                                  color: isLoading ? mutedTextColor : primaryColor,
+                                  color: isLoading
+                                      ? mutedTextColor
+                                      : primaryColor,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -782,7 +841,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: primaryColor, width: 2),
+                                  borderSide: const BorderSide(
+                                    color: primaryColor,
+                                    width: 2,
+                                  ),
                                 ),
                               ),
                             ),
@@ -790,7 +852,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                         ),
 
                         const SizedBox(height: 24),
-
                       ],
                     ),
                   ),
@@ -800,9 +861,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: backgroundColor,
-                      border: Border(
-                        top: BorderSide(color: borderColor),
-                      ),
+                      border: Border(top: BorderSide(color: borderColor)),
                     ),
                     child: SafeArea(
                       top: false,
@@ -810,14 +869,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                         width: double.infinity,
                         height: 48,
                         child: ElevatedButton(
-                          onPressed: isLoading ? null : () async {
-                            await controller.updateProfileDetails(
-                              username: usernameController.text,
-                            );
-                            if (context.mounted) {
-                              Navigator.pop(context);
-                            }
-                          },
+                          onPressed: isLoading
+                              ? null
+                              : () async {
+                                  await controller.updateProfileDetails(
+                                    username: usernameController.text,
+                                  );
+                                  if (context.mounted) {
+                                    Navigator.pop(context);
+                                  }
+                                },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,
                             foregroundColor: Colors.black,

@@ -30,7 +30,11 @@ class AnnouncementsScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.campaign_outlined, size: 80, color: Colors.grey[400]),
+                  Icon(
+                    Icons.campaign_outlined,
+                    size: 80,
+                    color: Colors.grey[400],
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'お知らせはありません',
@@ -62,8 +66,9 @@ class AnnouncementsScreen extends ConsumerWidget {
                     leading: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: _getCategoryColor(announcement.category)
-                            .withValues(alpha: 0.1),
+                        color: _getCategoryColor(
+                          announcement.category,
+                        ).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -160,7 +165,7 @@ class AnnouncementsScreen extends ConsumerWidget {
         );
       },
       loading: () => null,
-      error: (_, __) => null,
+      error: (err, stack) => null,
     );
   }
 

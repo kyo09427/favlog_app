@@ -10,10 +10,7 @@ import '../../data/repositories/supabase_auth_repository.dart';
 class AnnouncementDetailScreen extends ConsumerStatefulWidget {
   final String announcementId;
 
-  const AnnouncementDetailScreen({
-    super.key,
-    required this.announcementId,
-  });
+  const AnnouncementDetailScreen({super.key, required this.announcementId});
 
   @override
   ConsumerState<AnnouncementDetailScreen> createState() =>
@@ -91,7 +88,11 @@ class _AnnouncementDetailScreenState
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.campaign_outlined, size: 80, color: Colors.grey[400]),
+                  Icon(
+                    Icons.campaign_outlined,
+                    size: 80,
+                    color: Colors.grey[400],
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'お知らせが見つかりません',
@@ -116,8 +117,9 @@ class _AnnouncementDetailScreenState
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: _getCategoryColor(announcement.category)
-                        .withValues(alpha: 0.1),
+                    color: _getCategoryColor(
+                      announcement.category,
+                    ).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: _getCategoryColor(announcement.category),
@@ -155,8 +157,9 @@ class _AnnouncementDetailScreenState
                 const SizedBox(height: 8),
                 // 公開日時
                 Text(
-                  DateFormat('yyyy年MM月dd日 HH:mm')
-                      .format(announcement.publishedAt),
+                  DateFormat(
+                    'yyyy年MM月dd日 HH:mm',
+                  ).format(announcement.publishedAt),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: Colors.grey,
                   ),
@@ -165,9 +168,7 @@ class _AnnouncementDetailScreenState
                 // 本文
                 Text(
                   announcement.content,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    height: 1.6,
-                  ),
+                  style: theme.textTheme.bodyLarge?.copyWith(height: 1.6),
                 ),
               ],
             ),
@@ -235,7 +236,9 @@ class _AnnouncementDetailScreenState
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () async {
-              final announcement = await repository.getAnnouncementById(widget.announcementId);
+              final announcement = await repository.getAnnouncementById(
+                widget.announcementId,
+              );
               if (announcement != null && mounted) {
                 final result = await context.push<bool>(
                   '/announcements/${widget.announcementId}/edit',
@@ -256,7 +259,7 @@ class _AnnouncementDetailScreenState
         ];
       },
       loading: () => [],
-      error: (_, __) => [],
+      error: (err, stack) => [],
     );
   }
 
@@ -286,11 +289,11 @@ class _AnnouncementDetailScreenState
         await repository.deleteAnnouncement(widget.announcementId);
         ref.invalidate(announcementsProvider);
         ref.invalidate(unreadAnnouncementCountProvider);
-        
+
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('お知らせを削除しました')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('お知らせを削除しました')));
           context.pop();
         }
       } catch (e) {

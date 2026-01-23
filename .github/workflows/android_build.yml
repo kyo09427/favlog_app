@@ -1,10 +1,13 @@
-# Androidアプリのリリースビルド（単一APK／AAB出力 + optional: GitHub Releaseへ自動投稿）
+# Androidアプリのリリースビルド + セルフアップデート配信
 name: Android Build
 
-# ワークフローを手動実行するための設定
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: 'アプリのバージョン番号（例：1.7.5）'
+        required: true
+        default: '1.7.5'
       build_type:
         description: 'ビルドタイプ'
         required: true
@@ -14,23 +17,85 @@ on:
           - apk
           - aab
           - both
-      # リリース自動作成: no / draft / publish
       create_release:
         description: 'GitHub Releaseを作るか（no / draft / publish）'
         required: true
-        default: 'no'
+        default: 'publish'
         type: choice
         options:
           - no
           - draft
           - publish
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".github/workflows/ci.yml"
 
-# リリースを作成するためにworkflowに書き込み権限が必要
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
+  # ===========================================================
+  # 準備ジョブ：バージョンコード生成
+  # ===========================================================
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version_code: ${{ steps.version_gen.outputs.version_code }}
+      version_name: ${{ steps.version_gen.outputs.version_name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate version info
+        id: version_gen
+        run: |
+          # バージョン名の決定（手動実行時は入力値、Push時は現在の値かデフォルト）
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION_NAME="${{ github.event.inputs.version }}"
+          else
+            # README等から取得するか、デフォルト値
+            VERSION_NAME="1.7.5"
+          fi
+          
+          # バージョンコードの生成 (yyMMdd + counter)
+          DATE=$(date +'%y%m%d')
+          COUNTER_FILE=".version_counter"
+          if [ -f "$COUNTER_FILE" ]; then
+            COUNT=$(cat "$COUNTER_FILE")
+          else
+            COUNT=0
+          fi
+          COUNT=$((10#$COUNT+1))
+          printf "%02d" "$COUNT" > "$COUNTER_FILE"
+          VERSION_CODE="${DATE}$(cat "$COUNTER_FILE")"
+          
+          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "Generated: $VERSION_NAME ($VERSION_CODE)"
+
+      - name: Commit updated counter
+        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+        run: |
+          if git status --porcelain | grep -q ".version_counter"; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add .version_counter
+            git commit -m "Update version counter [skip ci]"
+            git push || true
+          fi
+
+  # ===========================================================
+  # ビルドジョブ
+  # ===========================================================
   build-android:
+    needs: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -52,12 +117,19 @@ jobs:
           cache: true
           cache-key: flutter-android-${{ hashFiles('**/pubspec.lock') }}
 
-      - name: Create Keystore
+      - name: Update versions in files
+        run: |
+          VERSION_NAME="${{ needs.prepare.outputs.version_name }}"
+          VERSION_CODE="${{ needs.prepare.outputs.version_code }}"
+          # android/app/build.gradle.kts の書き換え
+          sed -i "s/versionName = .*/versionName = \"$VERSION_NAME\"/" android/app/build.gradle.kts
+          sed -i "s/versionCode = .*/versionCode = $VERSION_CODE/" android/app/build.gradle.kts
+          # pubspec.yaml の書き換え
+          sed -i "s/^version: .*/version: $VERSION_NAME+$VERSION_CODE/" pubspec.yaml
+
+      - name: Create Keystore & Properties
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/release.keystore
-
-      - name: Create key.properties
-        run: |
           echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" > android/key.properties
           echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
           echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
@@ -71,76 +143,76 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      # ---- ビルド（"単一"のAPK と AABのみ）----
-      # NOTE: `flutter build apk --release` はデフォルトで universal(single) APK を出力します。
-      - name: Build APK (universal)
-        if: github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both'
-        run: flutter build apk --release
+      - name: Build APK
+        if: github.event_name == 'push' || github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both'
+        run: flutter build apk --release --no-tree-shake-icons
 
-      - name: Build App Bundle (AAB)
-        if: github.event.inputs.build_type == 'aab' || github.event.inputs.build_type == 'both'
+      - name: Build AAB
+        if: github.event_name == 'workflow_dispatch' && (github.event.inputs.build_type == 'aab' || github.event.inputs.build_type == 'both')
         run: flutter build appbundle --release
 
-      # ---- アーティファクト (ActionsのArtifacts) ----
-      # Actionsの"Artifacts"は複数ファイルや単一ファイルでもZIP形式で保存されることが多いです。
-      # "単一のapkをそのままダウンロード"にしたい場合は下のReleaseへのアップロードを有効にしてください。
-      - name: Upload APK artifact
-        if: github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both'
-        uses: actions/upload-artifact@v4
+      # Release作成
+      - name: Create Release and Upload Assets
+        if: github.event_name == 'push' || github.event.inputs.create_release != 'no'
+        uses: softprops/action-gh-release@v2
         with:
-          name: FavLog-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 30
-
-      - name: Upload AAB artifact
-        if: github.event.inputs.build_type == 'aab' || github.event.inputs.build_type == 'both'
-        uses: actions/upload-artifact@v4
-        with:
-          name: FavLog-aab
-          path: build/app/outputs/bundle/release/app-release.aab
-          retention-days: 90
-
-      # ---- (任意) GitHub Release を作成して "生の" APK/AAB をリリースアセットとしてアップロードする ----
-      # create_release input を "no" にするとリリース作成とアセットアップロードはスキップされます。
-      - name: Create GitHub Release
-        id: create_release
-        if: github.event.inputs.create_release != 'no'
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          # タグは自動生成（build-<run_id>）。必要ならここを inputs 等で置き換えてください。
-          tag_name: build-${{ github.run_id }}
-          release_name: Build ${{ github.run_number }} (run ${{ github.run_id }})
-          body: Automated build uploaded by workflow ${{ github.workflow }}
+          tag_name: v${{ needs.prepare.outputs.version_name }}-${{ needs.prepare.outputs.version_code }}
+          name: FavLog v${{ needs.prepare.outputs.version_name }} (Build ${{ needs.prepare.outputs.version_code }})
           draft: ${{ github.event.inputs.create_release == 'draft' }}
           prerelease: false
-
-      - name: Upload APK to Release (raw single-file download)
-        if: (github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both') && (github.event.inputs.create_release != 'no')
-        uses: actions/upload-release-asset@v1
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/app/outputs/flutter-apk/app-release.apk
-          asset_name: FavLog.apk
-          asset_content_type: application/vnd.android.package-archive
 
-      - name: Upload AAB to Release (raw single-file download)
-        if: (github.event.inputs.build_type == 'aab' || github.event.inputs.build_type == 'both') && (github.event.inputs.create_release != 'no')
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/app/outputs/bundle/release/app-release.aab
-          asset_name: FavLog.aab
-          asset_content_type: application/octet-stream
-
-      - name: Clean up secrets
-        if: always()
+      # セルフアップデート用ファイルの生成
+      - name: Generate version.json
         run: |
-          rm -f android/release.keystore
-          rm -f android/key.properties
-          rm -f .env
+          TAG="v${{ needs.prepare.outputs.version_name }}-${{ needs.prepare.outputs.version_code }}"
+          APK_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/app-release.apk"
+          RELEASE_NOTES=$(git log -10 --pretty=format:"- %s" || echo "New release build")
+          
+          jq -n \
+            --arg v "${{ needs.prepare.outputs.version_name }}" \
+            --arg vc "${{ needs.prepare.outputs.version_code }}" \
+            --arg dl "$APK_URL" \
+            --arg rn "$RELEASE_NOTES" \
+            '{
+              version: $v,
+              versionCode: ($vc|tonumber),
+              downloadUrl: $dl,
+              releaseNotes: $rn,
+              minSupportedVersion: "0.0.1",
+              forceUpdate: false
+            }' > version.json
+
+      - name: Upload version.json as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: update-assets
+          path: version.json
+
+  # ===========================================================
+  # デプロイジョブ (GitHub Pages)
+  # ===========================================================
+  deploy-updates:
+    needs: build-android
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download version.json
+        uses: actions/download-artifact@v4
+        with:
+          name: update-assets
+          path: .
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          publish_branch: gh-pages
+          keep_files: true # 既存のファイルを保持（もしWebデプロイ等がある場合）
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'

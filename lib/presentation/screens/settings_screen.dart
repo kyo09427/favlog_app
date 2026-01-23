@@ -81,7 +81,7 @@ class SettingsScreen extends ConsumerWidget {
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
-                      error: (_, __) => const SizedBox.shrink(),
+                      error: (err, stack) => const SizedBox.shrink(),
                     ),
               ),
             ],
@@ -476,12 +476,14 @@ class SettingsScreen extends ConsumerWidget {
         // 最新版の場合
         if (context.mounted) {
           final currentVersion = await updateService.getCurrentVersion();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('最新版です (v$currentVersion)'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('最新版です (v$currentVersion)'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
         }
         return;
       }
