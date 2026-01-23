@@ -14,12 +14,16 @@ class DownloadProgressDialog extends StatelessWidget {
   /// エラー時の閉じるボタンコールバック
   final VoidCallback? onClose;
 
+  /// 設定ガイドを開くボタンのコールバック
+  final VoidCallback? onOpenGuide;
+
   const DownloadProgressDialog({
     super.key,
     required this.progress,
     required this.status,
     this.error,
     this.onClose,
+    this.onOpenGuide,
   });
 
   @override
@@ -83,8 +87,16 @@ class DownloadProgressDialog extends StatelessWidget {
             ],
           ],
         ),
-        actions: hasError && onClose != null
-            ? [TextButton(onPressed: onClose, child: const Text('閉じる'))]
+        actions: hasError
+            ? [
+                if (onOpenGuide != null)
+                  TextButton(
+                    onPressed: onOpenGuide,
+                    child: const Text('設定ガイドを見る'),
+                  ),
+                if (onClose != null)
+                  TextButton(onPressed: onClose, child: const Text('閉じる')),
+              ]
             : null,
       ),
     );

@@ -4,6 +4,7 @@ import '../models/version_info.dart';
 import '../providers/update_provider.dart';
 import '../widgets/update_dialog.dart';
 import '../widgets/download_progress_dialog.dart';
+import 'package:go_router/go_router.dart';
 
 /// アップデートUIを表示するためのユーティリティ
 class UpdateUiHelper {
@@ -91,6 +92,19 @@ class UpdateUiHelper {
                     statusSub.cancel();
                     errorSub.cancel();
                     Navigator.of(dialogContext).pop();
+
+                    // 権限エラーの場合、ガイド画面への遷移を促す（オプション）
+                    // ここではダイアログ内のボタンで制御するため、ここでの遷移は行わない
+                  }
+                : null,
+            onOpenGuide:
+                currentError != null && currentError!.contains('インストール権限')
+                ? () {
+                    progressSub.cancel();
+                    statusSub.cancel();
+                    errorSub.cancel();
+                    Navigator.of(dialogContext).pop();
+                    context.push('/settings/version/permission-guide');
                   }
                 : null,
           );

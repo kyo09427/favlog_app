@@ -2,7 +2,7 @@ name: favlog_app
 description: "A review app to log your favorite things."
 publish_to: 'none'
 
-version: 0.0.1
+version: 1.7.5
 
 environment:
   sdk: ^3.10.1
@@ -32,6 +32,7 @@ dependencies:
   package_info_plus: ^8.0.0  # アプリバージョン情報取得用
   http: ^1.2.0  # version.json取得用
   ota_update: ^6.0.0  # APKダウンロード&インストール用
+  permission_handler: ^12.0.1
 
 dev_dependencies:
   flutter_test:

@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../providers/theme_provider.dart';
 import '../../core/providers/notification_providers.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../providers/update_provider.dart';
-import '../../utils/update_ui_helper.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -65,7 +65,7 @@ class SettingsScreen extends ConsumerWidget {
                 context,
                 title: 'アップデートを確認',
                 icon: Icons.system_update,
-                onTap: () => _checkForUpdatesManually(context, ref),
+                onTap: () => _navigateToVersionCheck(context),
                 primaryColor: primaryColor,
                 textColor: textColor,
                 mutedTextColor: mutedTextColor,
@@ -449,82 +449,17 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
-  /// 手動でアップデートをチェック
-  Future<void> _checkForUpdatesManually(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
-    // ローディングダイアログを表示
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
+  Future<void> _navigateToVersionCheck(BuildContext context) async {
+    // インストール権限をチェック
+    final status = await Permission.requestInstallPackages.status;
+    if (!context.mounted) return;
 
-    try {
-      final updateService = ref.read(updateServiceProvider);
-
-      // 更新が利用可能かチェック
-      final isAvailable = await updateService.isUpdateAvailable();
-
-      // ローディングダイアログを閉じる
-      if (context.mounted) {
-        Navigator.of(context).pop();
-      }
-
-      if (!isAvailable) {
-        // 最新版の場合
-        if (context.mounted) {
-          final currentVersion = await updateService.getCurrentVersion();
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('最新版です (v$currentVersion)'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-        }
-        return;
-      }
-
-      // 最新バージョン情報を取得
-      final latestVersion = await updateService.fetchLatestVersion();
-      if (latestVersion == null) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('バージョン情報の取得に失敗しました'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      // 強制更新が必要かチェック
-      final isForceUpdate = await updateService.isForceUpdateRequired();
-
-      // ダイアログを表示
-      if (context.mounted) {
-        UpdateUiHelper.showUpdateDialog(
-          context: context,
-          ref: ref,
-          versionInfo: latestVersion,
-          isForceUpdate: isForceUpdate,
-        );
-      }
-    } catch (e) {
-      // エラーが発生した場合
-      if (context.mounted) {
-        Navigator.of(context).pop(); // ローディングダイアログを閉じる
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('エラーが発生しました: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    if (status.isGranted) {
+      // 権限が付与されている場合はバージョン確認画面へ
+      context.push('/settings/version');
+    } else {
+      // 権限が未設定の場合は設定ガイド画面へ
+      context.push('/settings/version/permission-guide');
     }
   }
 }

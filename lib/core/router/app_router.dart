@@ -21,6 +21,8 @@ import '../../presentation/screens/comment_screen.dart';
 import '../../presentation/screens/add_review_to_product_screen.dart';
 import '../../presentation/screens/edit_product_screen.dart';
 import '../../presentation/screens/settings_screen.dart';
+import '../../presentation/screens/version_screen.dart';
+import '../../presentation/screens/install_permission_guide_screen.dart';
 import '../../presentation/screens/password_reset_request_screen.dart';
 import '../../presentation/screens/password_reset_email_sent_screen.dart';
 import '../../presentation/screens/update_password_screen.dart';
@@ -60,8 +62,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
     debugLogDiagnostics: true, // デバッグ用にログを有効化
-    refreshListenable:
-        GoRouterRefreshStream(ref.watch(authRepositoryProvider).authStateChanges),
+    refreshListenable: GoRouterRefreshStream(
+      ref.watch(authRepositoryProvider).authStateChanges,
+    ),
     redirect: (BuildContext context, GoRouterState state) async {
       final authState = await ref.watch(authStateChangesProvider.future);
       final loggedIn = authState.session != null;
@@ -73,7 +76,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         '/password-reset-email-sent',
         '/reset-password',
       ];
-      
+
       final currentLocation = state.matchedLocation;
       final isPublic = publicRoutes.contains(currentLocation);
 
@@ -146,12 +149,27 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/settings',
                 builder: (context, state) => const SettingsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'version',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) => const VersionScreen(),
+                    routes: [
+                      GoRoute(
+                        path: 'permission-guide',
+                        parentNavigatorKey: _rootNavigatorKey,
+                        builder: (context, state) =>
+                            const InstallPermissionGuideScreen(),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
         ],
       ),
-      
+
       // ボトムナビゲーションバ�Eの外に表示される画面
       GoRoute(
         path: '/auth',
