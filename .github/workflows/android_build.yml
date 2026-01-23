@@ -80,6 +80,12 @@ jobs:
           VERSION_NAME: ${{ steps.version.outputs.version_name }}
           VERSION_CODE: ${{ steps.version.outputs.version_code }}
         run: |
+          # Gradleの問題修正: afterEvaluateブロックを削除
+          if grep -q "afterEvaluate" android/build.gradle.kts; then
+            echo "Fixing android/build.gradle.kts..."
+            sed -i '/afterEvaluate/,/^}/d' android/build.gradle.kts
+          fi
+          
           # バージョン更新
           sed -i "s/versionName = .*/versionName = \"$VERSION_NAME\"/" android/app/build.gradle.kts
           sed -i "s/versionCode = .*/versionCode = $VERSION_CODE/" android/app/build.gradle.kts
@@ -105,6 +111,26 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      # Gradleのクリーンアップ
+      - name: Clean Gradle
+        run: |
+          cd android
+          ./gradlew clean --no-daemon
+          rm -rf .gradle
+          cd ..
+
+      # デバッグ情報
+      - name: Debug Gradle files
+        run: |
+          echo "=== build.gradle.kts ==="
+          cat android/build.gradle.kts
+          echo ""
+          echo "=== app/build.gradle.kts ==="
+          cat android/app/build.gradle.kts
+          echo ""
+          echo "=== settings.gradle.kts ==="
+          cat android/settings.gradle.kts
+
       # ビルド
       - name: Build APK
         if: inputs.build_type == 'apk' || inputs.build_type == 'both'
@@ -113,6 +139,23 @@ jobs:
       - name: Build AAB
         if: inputs.build_type == 'aab' || inputs.build_type == 'both'
         run: flutter build appbundle --release
+
+      # アーティファクトのアップロード（Releaseなしの場合でもダウンロード可能に）
+      - name: Upload APK artifact
+        if: inputs.build_type == 'apk' || inputs.build_type == 'both'
+        uses: actions/upload-artifact@v4
+        with:
+          name: FavLog-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
+      - name: Upload AAB artifact
+        if: inputs.build_type == 'aab' || inputs.build_type == 'both'
+        uses: actions/upload-artifact@v4
+        with:
+          name: FavLog-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 90
 
       # リリース作成
       - name: Generate release notes
