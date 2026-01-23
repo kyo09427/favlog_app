@@ -1,4 +1,4 @@
-name: Get Android App Link Fingerprint
+name: Get Android Fingerprint
 
 on:
   workflow_dispatch:
@@ -6,19 +6,24 @@ on:
 jobs:
   get-fingerprint:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create Keystore
-        run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/release.keystore
+      - name: Create keystore
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
 
-      - name: Get SHA256 Fingerprint
+      - name: Get SHA256 fingerprint
         run: |
-          keytool -list -v -keystore android/release.keystore -alias "${{ secrets.ANDROID_KEY_ALIAS }}" -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" -keypass "${{ secrets.ANDROID_KEY_PASSWORD }}" | grep "SHA256:"
+          keytool -list -v \
+            -keystore release.keystore \
+            -alias "${{ secrets.ANDROID_KEY_ALIAS }}" \
+            -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -keypass "${{ secrets.ANDROID_KEY_PASSWORD }}" \
+            | grep "SHA256:"
 
-      - name: Clean up Keystore
-        if: always() # Always run cleanup even if previous steps fail
-        run: rm android/release.keystore
+      - name: Cleanup
+        if: always()
+        run: rm -f release.keystore

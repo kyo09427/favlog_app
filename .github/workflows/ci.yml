@@ -2,39 +2,42 @@ name: CI - Test and Analyze
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
   push:
-    branches: [ main ]
+    branches: [main]
     paths-ignore:
       - '**.md'
+      - 'docs/**'
       - '.github/workflows/android_build.yml'
-      - '.github/workflows/get_fingerprint.yml'
+      - '.github/workflows/deploy.yml'
 
-# 同じブランチから複数のPRがプッシュされた場合、古いワークフローをキャンセル
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  analyze:
-    name: 静的解析
+  analyze-and-test:
+    name: 静的解析 & テスト
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
-          cache: true # Flutterのキャッシュを有効化
+          channel: stable
+          cache: true
+          cache-key: flutter-${{ hashFiles('**/pubspec.lock') }}
 
-      - name: Create .env file
+      - name: Create .env
         run: |
-          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
-          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+          cat > .env << EOF
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          EOF
 
       - name: Get dependencies
         run: flutter pub get
@@ -44,38 +47,14 @@ jobs:
         continue-on-error: true
 
       - name: Analyze code
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
-
-  test:
-    name: ユニット・ウィジェットテスト
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: analyze # analyzeが成功した後に実行
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Create .env file
-        run: |
-          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
-          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
-
-      - name: Get dependencies
-        run: flutter pub get
+        run: flutter analyze --no-fatal-infos
 
       - name: Run tests
         run: flutter test --coverage
 
-      - name: Upload coverage to Codecov
+      - name: Upload coverage
         uses: codecov/codecov-action@v4
-        if: success()
+        if: github.event_name == 'pull_request'
         with:
           files: ./coverage/lcov.info
           fail_ci_if_error: false
