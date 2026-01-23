@@ -183,12 +183,13 @@ jobs:
       # version.json 生成
       - name: Generate version.json
         run: |
+          mkdir -p public
           TAG="${{ steps.version.outputs.tag }}"
           VERSION_NAME="${{ steps.version.outputs.version_name }}"
           VERSION_CODE="${{ steps.version.outputs.version_code }}"
           APK_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/app-release.apk"
           RELEASE_NOTES=$(git log -10 --pretty=format:"- %s" || echo "New release")
-          FORCE_UPDATE="${{ github.event.inputs.force_update }}"
+          FORCE_UPDATE="${{ github.event.inputs.force_update || 'false' }}"
           
           jq -n \
             --arg v "$VERSION_NAME" \
@@ -203,9 +204,9 @@ jobs:
               releaseNotes: $notes,
               minSupportedVersion: "0.0.1",
               forceUpdate: $force
-            }' > version.json
+            }' > public/version.json
           
-          cat version.json
+          cat public/version.json
 
       # download.html 生成
       - name: Generate download.html
@@ -213,7 +214,7 @@ jobs:
           TAG="${{ steps.version.outputs.tag }}"
           APK_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/app-release.apk"
           
-          cat > download.html << EOF
+          cat > public/download.html << EOF
           <!DOCTYPE html>
           <html>
           <head>
@@ -232,14 +233,11 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: .
+          publish_dir: ./public
           publish_branch: gh-pages
           keep_files: true
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
-          include_files: |
-            version.json
-            download.html
 
       - name: Clean up secrets
         if: always()
