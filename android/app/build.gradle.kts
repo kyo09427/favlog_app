@@ -20,11 +20,8 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // ota_update パッケージのために必要
         isCoreLibraryDesugaringEnabled = true
-    }
-
-    dependencies {
-        coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     }
 
     kotlinOptions {
@@ -63,4 +60,10 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Core library desugaring (ota_updateのために必要)
+    // ota_updateは2.1.4以上を要求
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
