@@ -189,7 +189,13 @@ jobs:
           VERSION_CODE="${{ steps.version.outputs.version_code }}"
           APK_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/app-release.apk"
           RELEASE_NOTES=$(git log -10 --pretty=format:"- %s" || echo "New release")
-          FORCE_UPDATE="${{ github.event.inputs.force_update || 'false' }}"
+          
+          # boolean を正しく処理
+          if [ "${{ github.event.inputs.force_update }}" = "true" ]; then
+            FORCE_UPDATE="true"
+          else
+            FORCE_UPDATE="false"
+          fi
           
           jq -n \
             --arg v "$VERSION_NAME" \
@@ -214,7 +220,7 @@ jobs:
           TAG="${{ steps.version.outputs.tag }}"
           APK_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/app-release.apk"
           
-          cat > public/download.html << EOF
+          cat > download.html << EOF
           <!DOCTYPE html>
           <html>
           <head>
