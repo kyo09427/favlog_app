@@ -31,7 +31,7 @@ dependencies:
   badges: ^3.1.2  # 通知バッジ用に追加
   package_info_plus: ^8.0.0  # アプリバージョン情報取得用
   http: ^1.2.0  # version.json取得用
-  ota_update: ^6.0.0  # APKダウンロード&インストール用
+  ota_update: ^7.1.0  # APKダウンロード&インストール用
   permission_handler: ^12.0.1
 
 dev_dependencies:

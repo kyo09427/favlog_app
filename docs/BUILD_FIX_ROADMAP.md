@@ -1,34 +1,50 @@
-# ビルドエラー解消および機能復元ロードマップ
+# Android Build Error Fix Roadmap - 2026-01-23
 
-## 現状の課題
-1.  **Android SDK不整合**: 一部の依存プラグインが Android API 36 を要求しており、現在の設定（API 34）ではビルドが失敗する。
-2.  **ワークフローの機能不足**: 新しく導入された `android_build.yml` に、過去の `web_apk_build.yml` で実装されていた「自動バージョン管理」と「セルフアップデート用ファイルの自動配信」が含まれていない。
+## 1. 現状の分析
+### エラー内容
+`AAPT: error: resource android:attr/lStar not found.`
+このエラーは、`androidx.core:core:1.7.0` 以降のライブラリが内部的に `lStar` 属性（Android SDK 31で導入）を使用しているにもかかわらず、ビルドに使用している SDK バージョン（`compileSdkVersion`）がそれ未満（30以下）である場合に発生します。
 
-## フェーズ1：Androidビルドの正常化（即時対応）
-このフェーズでは、まずGitHub Actions上でビルドが正常に完了する状態を作ります。
+### 直接の原因
+GitHub Actions のログを見ると `Installing Android SDK Platform 28` とあり、一部のプラグイン（特にエラーが出ている `ota_update`）が古い SDK バージョンを要求してビルドされていることが推測されます。
 
-*   [x] **compileSdk/targetSdkの更新**: `android/app/build.gradle.kts` を API 36/35 に更新（実施済み）。
-*   [ ] **Kotlin Gradle Pluginの確認**: 必要に応じて Kotlin バージョンを更新する（ビルドログで警告が出る場合）。
-*   [ ] **CI環境の検証**: GitHub Actionsのランナー環境（SDKの自動インストール）でAPI 36が正しく動作するか確認する。
+---
 
-## フェーズ2：過去の「自動化ロジック」の復元
-失われたセルフアップデート機能を、新しいビルド環境に合わせて統合します。
+## 2. 解決策
+プロジェクト全体のビルド設定および、各プラグイン（サブプロジェクト）のビルド設定を強制的に最新の SDK に合わせることで解決します。
 
-*   [ ] **自動バージョン管理の統合**: 
-    *   `web_apk_build.yml` にあった `.version_counter` を用いた `versionCode` の自動生成ロジックを `android_build.yml` に移植。
-*   [ ] **アップデート情報の自動作成（version.json）**:
-    *   ビルド完了後、最新のタグ名、ダウンロードURL、リリースノートを含む `version.json` を生成するステップを `android_build.yml` に追加。
-*   [ ] **デプロイ機能の集約**:
-    *   生成された `version.json` を GitHub Pages に自動デプロイするステップを追加。これによりアプリ側からのアップデート検知を正常化させる。
+### 方針
+1.  **`android/build.gradle.kts` の修正**:
+    全サブプロジェクト（Flutterプラグイン）に対して、`compileSdk` を明示的に引き上げる設定を追加します。
+2.  **`android/gradle.properties` の修正**:
+    古いライブラリを AndroidX に対応させるための Jetifier を有効化します（念のため）。
 
-## フェーズ3：アプリ側との整合性確認
-ビルドされたバイナリが正しく動作し、アップデートが機能するかを検証します。
+---
 
-*   [ ] **リリースノートの動的取得**: `git log` からのリリースノート自動生成の復元。
-*   [ ] **環境変数の再確認**: `.env` （Supabaseキー等）がGitHub Secretsから正しく注入されているか、リリースビルドで動作確認。
-*   [ ] **テスト実行**: CIワークフロー (`ci.yml`) との同期。
+## 3. 実行ロードマップ
 
-## 完了定義
-*   GitHub Actionsで `apk` がエラーなく生成される。
-*   生成と同時にGitHub Releaseが作成され、成果物がアップロードされる。
-*   GitHub Pages上の `version.json` が最新の状態に更新され、アプリから新しいバージョンとして認識される。
+- [x] **Step 1: 全サブプロジェクトの SDK バージョン強制統一**
+    `android/build.gradle.kts` に、全プラグインの `compileSdk` を 36 に固定する処理を追加しました。これにより `lStar` 属性の欠落エラーを解消します。
+- [x] **Step 2: Jetifier の有効化**
+    `android/gradle.properties` に `android.enableJetifier=true` を追記し、古いライブラリの互換性を確保しました。
+- [x] **Step 3: パッケージのアップグレード**
+    `ota_update` ライブラリを `^6.0.0` から `^7.1.0` にアップグレードし、最新のビルド環境への対応を強化しました。
+- [ ] **Step 4: 変更内容のプッシュと CI の確認**
+    GitHub に変更をプッシュし、GitHub Actions のビルドが成功することを確認してください。
+
+---
+
+## 4. 修正内容の詳細
+
+### `android/build.gradle.kts`
+```kotlin
+subprojects {
+    afterEvaluate {
+        if (project.extensions.findByName("android") != null) {
+            val android = project.extensions.getByName("android") as com.android.build.gradle.BaseExtension
+            android.compileSdkVersion(36)
+        }
+    }
+}
+```
+※ `ota_update` 等の古いプラグインが独自の低い設定を持っていても、これで上書きされます。
