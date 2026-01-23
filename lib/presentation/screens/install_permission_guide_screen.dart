@@ -1,6 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class InstallPermissionGuideScreen extends StatefulWidget {
   const InstallPermissionGuideScreen({super.key});
@@ -13,10 +17,25 @@ class InstallPermissionGuideScreen extends StatefulWidget {
 class _InstallPermissionGuideScreenState
     extends State<InstallPermissionGuideScreen>
     with WidgetsBindingObserver {
+  int? _sdkVersion;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _getSdkVersion();
+  }
+
+  Future<void> _getSdkVersion() async {
+    if (Platform.isAndroid) {
+      final deviceInfo = DeviceInfoPlugin();
+      final androidInfo = await deviceInfo.androidInfo;
+      if (mounted) {
+        setState(() {
+          _sdkVersion = androidInfo.version.sdkInt;
+        });
+      }
+    }
   }
 
   @override
@@ -42,8 +61,30 @@ class _InstallPermissionGuideScreenState
   }
 
   Future<void> _openSettings() async {
-    // Androidの「不明なアプリのインストール」設定画面を開く
-    await openAppSettings();
+    if (!Platform.isAndroid) {
+      await openAppSettings();
+      return;
+    }
+
+    final sdkInt = _sdkVersion ?? 0;
+
+    if (sdkInt >= 26) {
+      // Android 8.0 (Oreo) 以上:
+      // アプリ固有の「不明なアプリのインストール」設定画面へ直接遷移
+      final packageInfo = await PackageInfo.fromPlatform();
+      final intent = AndroidIntent(
+        action: 'android.settings.MANAGE_UNKNOWN_APP_SOURCES',
+        data: 'package:${packageInfo.packageName}',
+      );
+      await intent.launch();
+    } else {
+      // Android 7.1 以下:
+      // セキュリティ設定画面へ遷移（ユーザーに「提供元不明のアプリ」を探してもらう）
+      final intent = AndroidIntent(
+        action: 'android.settings.SECURITY_SETTINGS',
+      );
+      await intent.launch();
+    }
   }
 
   @override
@@ -163,8 +204,12 @@ class _InstallPermissionGuideScreenState
                             ),
                             _buildStepRow(
                               '2',
-                              '「Favlog」をONにする',
-                              'リストからFavlogを探し許可を有効化します',
+                              (_sdkVersion ?? 26) >= 26
+                                  ? '「Favlog」をONにする'
+                                  : '「提供元不明のアプリ」をONにする',
+                              (_sdkVersion ?? 26) >= 26
+                                  ? 'リストからFavlogを探し許可を有効化します'
+                                  : 'セキュリティ設定内の「提供元不明のアプリ」を許可します',
                               true,
                               primaryColor,
                               textColor,
