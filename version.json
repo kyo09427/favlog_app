@@ -1,0 +1,8 @@
+{
+  "version": "1.7.8",
+  "versionCode": 26012328,
+  "downloadUrl": "https://github.com/kyo09427/favlog_app/releases/download/v1.7.8-26012328/app-release.apk",
+  "releaseNotes": "- chore: bump version counter [skip ci]\n- 提供元不明アプリからのインストールを設定する画面に正しく遷移するように修正\n- chore: bump version counter [skip ci]\n- chore: bump version counter [skip ci]\n- re fix github actions\n- fix: github actions invalid input 'include_files'\n- fix2\n- chore: bump version counter [skip ci]\n- β v1.7.6リリース\n- chore: bump version counter [skip ci]",
+  "minSupportedVersion": "0.0.1",
+  "forceUpdate": false
+}
