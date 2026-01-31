@@ -5,7 +5,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../domain/models/product.dart';
 import '../../data/repositories/supabase_product_repository.dart';
 import '../../data/repositories/supabase_review_repository.dart';
-import '../../data/repositories/supabase_auth_repository.dart';
 
 class ProductSelectionScreen extends ConsumerStatefulWidget {
   const ProductSelectionScreen({super.key});
@@ -37,35 +36,43 @@ class _ProductSelectionScreenState extends ConsumerState<ProductSelectionScreen>
     setState(() => _isLoading = true);
     
     try {
-      final authRepository = ref.read(authRepositoryProvider);
       final reviewRepository = ref.read(reviewRepositoryProvider);
       final productRepository = ref.read(productRepositoryProvider);
-      final currentUser = authRepository.getCurrentUser();
       
-      if (currentUser != null) {
-        // ユーザーの最近のレビューを取得
-        final reviews = await reviewRepository.getReviewsByUserId(currentUser.id);
-        
-        // レビューから商品IDを抽出し、重複を排除
-        final productIds = reviews.map((r) => r.productId).toSet().toList();
-        
-        // 商品情報を取得（最大5件）
-        final products = <Product>[];
-        for (var i = 0; i < productIds.length && i < 5; i++) {
-          try {
-            final product = await productRepository.getProductById(productIds[i]);
-            products.add(product);
-          } catch (e) {
-            // 商品が見つからない場合はスキップ
-            continue;
-          }
+      // 全ユーザーの最近のレビューを取得（カテゴリやフィルタなし）
+      final reviews = await reviewRepository.getReviews();
+      
+      // レビューを作成日時の降順でソート
+      reviews.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      
+      // レビューから商品IDを抽出し、重複を排除（最大5件）
+      final seenProductIds = <String>{};
+      final productIds = <String>[];
+      
+      for (var review in reviews) {
+        if (!seenProductIds.contains(review.productId)) {
+          seenProductIds.add(review.productId);
+          productIds.add(review.productId);
+          if (productIds.length >= 5) break;
         }
-        
-        setState(() {
-          _recentProducts = products;
-          _isLoading = false;
-        });
       }
+      
+      // 商品情報を取得
+      final products = <Product>[];
+      for (var productId in productIds) {
+        try {
+          final product = await productRepository.getProductById(productId);
+          products.add(product);
+        } catch (e) {
+          // 商品が見つからない場合はスキップ
+          continue;
+        }
+      }
+      
+      setState(() {
+        _recentProducts = products;
+        _isLoading = false;
+      });
     } catch (e) {
       setState(() => _isLoading = false);
     }
@@ -216,7 +223,7 @@ class _ProductSelectionScreenState extends ConsumerState<ProductSelectionScreen>
                           children: [
                             if (_searchController.text.isEmpty) ...[
                               Text(
-                                '最近レビューしたもの',
+                                '最近レビューされた商品',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
