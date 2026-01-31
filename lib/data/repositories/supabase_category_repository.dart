@@ -24,7 +24,10 @@ class SupabaseCategoryRepository implements CategoryRepository {
         return [];
       }
 
-      final keywords = result.map((e) => '#\${e["keyword"]}').toList();
+      final keywords = result.map((e) {
+        final keyword = e['keyword'] as String;
+        return '#$keyword';
+      }).toList();
       return keywords;
 
     } catch (e) {
