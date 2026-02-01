@@ -5,6 +5,7 @@ plugins {
     id("com.android.application")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services")
 }
 
 val keystoreProperties = Properties()
@@ -30,7 +31,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.favlog_app"
-        minSdk = 21
+        minSdk = flutter.minSdkVersion
         targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
@@ -63,6 +64,10 @@ flutter {
 }
 
 dependencies {
+    // Firebaseの機能を一括管理する「BoM」
+    implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
+    // プッシュ通知（Messaging）用のライブラリ
+    implementation("com.google.firebase:firebase-messaging")
     // Core library desugaring (ota_updateのために必要)
     // ota_updateは2.1.4以上を要求
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")

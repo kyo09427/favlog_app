@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/review.dart';
 import '../../domain/repositories/review_repository.dart';
 import '../../main.dart';
+import '../repositories/supabase_fcm_token_repository.dart';
+import '../../utils/push_notification_helper.dart';
 
 final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
   return SupabaseReviewRepository(ref.watch(supabaseProvider));
@@ -11,8 +13,13 @@ final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
 
 class SupabaseReviewRepository implements ReviewRepository {
   final SupabaseClient _supabaseClient;
+  final PushNotificationHelper _pushNotificationHelper;
 
-  SupabaseReviewRepository(this._supabaseClient);
+  SupabaseReviewRepository(this._supabaseClient)
+      : _pushNotificationHelper = PushNotificationHelper(
+          _supabaseClient,
+          SupabaseFCMTokenRepository(_supabaseClient),
+        );
 
   @override
   Future<List<Review>> getReviews({String? category, String? visibility, String? currentUserId}) async {
@@ -164,7 +171,9 @@ class SupabaseReviewRepository implements ReviewRepository {
         return;
       }
 
-      // 各ユーザーの通知設定を確認
+      // 各ユーザーの通知設定を確認してDB通知を作成し、プッシュ通知も送信
+      final notificationEnabledUserIds = <String>[];
+      
       for (final userId in allUserIds) {
         try {
           final settingsResponse = await _supabaseClient
@@ -179,7 +188,7 @@ class SupabaseReviewRepository implements ReviewRepository {
               : (settingsResponse['enable_new_review_notifications'] as bool? ?? true);
           
           if (enableNotifications) {
-            // 通知を作成
+            // アプリ内通知を作成
             await _supabaseClient.from('notifications').insert({
               'user_id': userId,
               'type': 'new_review',
@@ -188,9 +197,22 @@ class SupabaseReviewRepository implements ReviewRepository {
               'related_review_id': review.id,
               'related_user_id': review.userId,
             });
+            
+            // プッシュ通知送信対象に追加
+            notificationEnabledUserIds.add(userId);
           }
         } catch (_) {
         }
+      }
+
+      // プッシュ通知を送信
+      if (notificationEnabledUserIds.isNotEmpty) {
+        await _pushNotificationHelper.sendPushNotifications(
+          userIds: notificationEnabledUserIds,
+          title: '新しいレビューが投稿されました',
+          body: '$productNameのレビューが投稿されました',
+          data: {'review_id': review.id},
+        );
       }
 
     } catch (_) {

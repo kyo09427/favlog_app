@@ -11,6 +11,8 @@ import '../providers/review_detail_controller.dart';
 
 import '../../data/repositories/supabase_product_repository.dart';
 import '../../data/repositories/supabase_review_repository.dart';
+import '../../data/repositories/supabase_auth_repository.dart';
+import '../../core/providers/profile_providers.dart';
 
 class ReviewDetailScreen extends ConsumerStatefulWidget {
   final String productId;
@@ -372,16 +374,43 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                                   ],
                                 ),
                               ),
-                              SizedBox(
-                                width: 40,
-                                child: IconButton(
-                                  alignment: Alignment.topRight,
-                                  padding: const EdgeInsets.all(0),
-                                  icon: const Icon(Icons.more_vert),
-                                  onPressed: () {
-                                    _showProductMenu(context, ref, displayedProduct);
-                                  },
-                                ),
+                              // 現在のユーザーIDとプロフィール情報を取得
+                              Builder(
+                                builder: (context) {
+                                  final currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id;
+                                  if (currentUserId == null) {
+                                    return const SizedBox(width: 40);
+                                  }
+
+                                  // ユーザーのプロフィール情報を取得
+                                  final profileAsync = ref.watch(userProfileProvider(currentUserId));
+
+                                  return profileAsync.when(
+                                    data: (profile) {
+                                      // 作成者または管理者の場合のみメニューボタンを表示
+                                      final canEdit = currentUserId == displayedProduct.userId || 
+                                                      (profile?.isAdmin ?? false);
+                                      
+                                      if (!canEdit) {
+                                        return const SizedBox(width: 40);
+                                      }
+
+                                      return SizedBox(
+                                        width: 40,
+                                        child: IconButton(
+                                          alignment: Alignment.topRight,
+                                          padding: const EdgeInsets.all(0),
+                                          icon: const Icon(Icons.more_vert),
+                                          onPressed: () {
+                                            _showProductMenu(context, ref, displayedProduct);
+                                          },
+                                        ),
+                                      );
+                                    },
+                                    loading: () => const SizedBox(width: 40),
+                                    error: (_, __) => const SizedBox(width: 40),
+                                  );
+                                },
                               ),
                             ],
                           ),

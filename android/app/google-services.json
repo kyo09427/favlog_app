@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "380658961308",
+    "project_id": "favlog",
+    "storage_bucket": "favlog.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:380658961308:android:76ab6e27e98a2b03a99659",
+        "android_client_info": {
+          "package_name": "com.example.favlog_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRoEDG7xyjJSQnEkCEcLz_6ZuXLu-ruNs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

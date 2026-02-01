@@ -1,16 +1,19 @@
 ﻿import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 // ignore: depend_on_referenced_packages
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:favlog_app/core/router/app_router.dart';
 import 'package:favlog_app/presentation/providers/theme_provider.dart';
 import 'package:favlog_app/providers/update_provider.dart';
 import 'package:favlog_app/models/version_info.dart';
 import 'package:favlog_app/utils/update_ui_helper.dart';
+import 'package:favlog_app/services/fcm_service.dart';
 
 // Define a Riverpod provider for SupabaseClient
 final supabaseProvider = Provider<SupabaseClient>((ref) {
@@ -53,6 +56,15 @@ Future<void> main() async {
 
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
 
+  // Firebaseの初期化（Android/iOSのみ、Webでは実行しない）
+  if (!kIsWeb) {
+    try {
+      await Firebase.initializeApp();
+    } catch (e) {
+      debugPrint('Firebase initialization error: $e');
+    }
+  }
+
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -73,6 +85,7 @@ class _MyAppState extends ConsumerState<MyApp> {
     super.initState();
     _initDeepLinks();
     _initAuthListener();
+    _initFCM();
     // アプリ起動後にバージョンチェックを実行
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkForUpdates();
@@ -136,6 +149,12 @@ class _MyAppState extends ConsumerState<MyApp> {
       final AuthChangeEvent event = data.event;
       if (event == AuthChangeEvent.passwordRecovery) {
         ref.read(goRouterProvider).go('/reset-password');
+      } else if (event == AuthChangeEvent.signedIn) {
+        // ログイン時にFCMトークンを取得・保存
+        if (!kIsWeb) {
+          final fcmService = ref.read(fcmServiceProvider);
+          fcmService.refreshToken();
+        }
       } else if (event == AuthChangeEvent.userUpdated) {
         // メールアドレス変更完了時など
         // SnackBarを表示してユーザーに通知する
@@ -154,6 +173,18 @@ class _MyAppState extends ConsumerState<MyApp> {
         }
       }
     });
+  }
+
+  /// FCMサービスの初期化
+  void _initFCM() async {
+    if (!kIsWeb) {
+      try {
+        final fcmService = ref.read(fcmServiceProvider);
+        await fcmService.initialize();
+      } catch (e) {
+        debugPrint('FCM initialization error: $e');
+      }
+    }
   }
 
   /// アプリ起動時のバージョンチェック
