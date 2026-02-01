@@ -4,9 +4,8 @@ import '../data/repositories/supabase_fcm_token_repository.dart';
 /// プッシュ通知を送信するヘルパークラス
 class PushNotificationHelper {
   final SupabaseClient _supabaseClient;
-  final SupabaseFCMTokenRepository _fcmTokenRepository;
 
-  PushNotificationHelper(this._supabaseClient, this._fcmTokenRepository);
+  PushNotificationHelper(this._supabaseClient);
 
   /// 指定したユーザーIDsにプッシュ通知を送信
   Future<void> sendPushNotifications({

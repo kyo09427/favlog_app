@@ -16,10 +16,7 @@ class SupabaseReviewRepository implements ReviewRepository {
   final PushNotificationHelper _pushNotificationHelper;
 
   SupabaseReviewRepository(this._supabaseClient)
-      : _pushNotificationHelper = PushNotificationHelper(
-          _supabaseClient,
-          SupabaseFCMTokenRepository(_supabaseClient),
-        );
+      : _pushNotificationHelper = PushNotificationHelper(_supabaseClient);
 
   @override
   Future<List<Review>> getReviews({String? category, String? visibility, String? currentUserId}) async {

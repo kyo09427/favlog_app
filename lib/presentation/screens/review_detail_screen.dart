@@ -408,7 +408,7 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                                       );
                                     },
                                     loading: () => const SizedBox(width: 40),
-                                    error: (_, __) => const SizedBox(width: 40),
+                                    error: (_, _unused) => const SizedBox(width: 40),
                                   );
                                 },
                               ),
