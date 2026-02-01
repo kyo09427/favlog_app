@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/repositories/like_repository.dart';
 import '../../main.dart';
+import '../../utils/push_notification_helper.dart';
 
 final likeRepositoryProvider = Provider<LikeRepository>((ref) {
   return SupabaseLikeRepository(ref.watch(supabaseProvider));
@@ -9,8 +10,10 @@ final likeRepositoryProvider = Provider<LikeRepository>((ref) {
 
 class SupabaseLikeRepository implements LikeRepository {
   final SupabaseClient _supabaseClient;
+  final PushNotificationHelper _pushNotificationHelper;
 
-  SupabaseLikeRepository(this._supabaseClient);
+  SupabaseLikeRepository(this._supabaseClient)
+      : _pushNotificationHelper = PushNotificationHelper(_supabaseClient);
 
   @override
   Future<void> addLike(String reviewId) async {
@@ -78,6 +81,7 @@ class SupabaseLikeRepository implements LikeRepository {
           : (settingsResponse['enable_like_notifications'] as bool? ?? true);
       
       if (enableNotifications) {
+        // アプリ内通知を作成
         await _supabaseClient.from('notifications').insert({
           'user_id': reviewOwnerId,
           'type': 'like',
@@ -86,7 +90,14 @@ class SupabaseLikeRepository implements LikeRepository {
           'related_review_id': reviewId,
           'related_user_id': likerId,
         });
-
+        
+        // プッシュ通知を送信
+        await _pushNotificationHelper.sendPushNotifications(
+          userIds: [reviewOwnerId],
+          title: 'いいねされました',
+          body: '$productNameのレビューにいいねされました',
+          data: {'review_id': reviewId},
+        );
       } else {
 
       }

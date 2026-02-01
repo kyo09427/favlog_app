@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/comment.dart';
 import '../../domain/repositories/comment_repository.dart';
 import '../../main.dart';
+import '../../utils/push_notification_helper.dart';
 
 final commentRepositoryProvider = Provider<CommentRepository>((ref) {
   return SupabaseCommentRepository(ref.watch(supabaseProvider));
@@ -10,8 +11,10 @@ final commentRepositoryProvider = Provider<CommentRepository>((ref) {
 
 class SupabaseCommentRepository implements CommentRepository {
   final SupabaseClient _supabaseClient;
+  final PushNotificationHelper _pushNotificationHelper;
 
-  SupabaseCommentRepository(this._supabaseClient);
+  SupabaseCommentRepository(this._supabaseClient)
+      : _pushNotificationHelper = PushNotificationHelper(_supabaseClient);
 
   @override
   Future<List<Comment>> getCommentsByReviewId(String reviewId) async {
@@ -105,6 +108,7 @@ class SupabaseCommentRepository implements CommentRepository {
           : (settingsResponse['enable_comment_notifications'] as bool? ?? true);
       
       if (enableNotifications) {
+        // アプリ内通知を作成
         await _supabaseClient.from('notifications').insert({
           'user_id': reviewOwnerId,
           'type': 'comment',
@@ -113,7 +117,14 @@ class SupabaseCommentRepository implements CommentRepository {
           'related_review_id': comment.reviewId,
           'related_user_id': comment.userId,
         });
-
+        
+        // プッシュ通知を送信
+        await _pushNotificationHelper.sendPushNotifications(
+          userIds: [reviewOwnerId],
+          title: 'コメントが追加されました',
+          body: '$productNameのレビューにコメントが追加されました',
+          data: {'review_id': comment.reviewId},
+        );
       } else {
       }
     } catch (_) {
