@@ -12,7 +12,7 @@ class UpdateService {
   ///
   /// GitHub Pagesにデプロイされたversion.jsonを参照します。
   static const String versionJsonUrl =
-      'https://kyo09427.github.io/favlog_app/version.json';
+      'https://favlog.okasis.win/version.json';
 
   /// 最終チェック日時を保存するキー
   static const String _lastCheckKey = 'last_update_check';

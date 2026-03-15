@@ -47,7 +47,7 @@ jobs:
       - name: Build Web
         run: |
           flutter config --enable-web
-          flutter build web --release --base-href /favlog_app/ --no-tree-shake-icons
+          flutter build web --release --base-href / --no-tree-shake-icons
 
       - name: Create 404 redirect
         run: |
@@ -58,14 +58,17 @@ jobs:
             <meta charset="utf-8">
             <title>Redirecting...</title>
             <script>
-              const path = window.location.pathname.replace('/favlog_app', '');
-              const target = path === '/404.html' ? '/favlog_app/' : '/favlog_app/' + path.slice(1);
+              const path = window.location.pathname;
+              const target = path === '/404.html' ? '/' : path;
               window.location.replace(target + window.location.search + window.location.hash);
             </script>
           </head>
           <body><p>リダイレクト中...</p></body>
           </html>
           EOF
+
+      - name: Create CNAME
+        run: echo "favlog.okasis.win" > build/web/CNAME
 
       # 最新のリリース情報を取得してversion.jsonを生成
       - name: Generate version.json from latest release
