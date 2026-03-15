@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/review.dart';
 import '../../domain/repositories/review_repository.dart';
 import '../../main.dart';
-import '../repositories/supabase_fcm_token_repository.dart';
 import '../../utils/push_notification_helper.dart';
 
 final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {

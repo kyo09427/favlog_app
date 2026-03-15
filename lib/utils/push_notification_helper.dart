@@ -1,5 +1,4 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../data/repositories/supabase_fcm_token_repository.dart';
 
 /// プッシュ通知を送信するヘルパークラス
 class PushNotificationHelper {
