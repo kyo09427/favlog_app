@@ -14,17 +14,12 @@ class SingleReviewScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('レビュー詳細'),
-      ),
+      appBar: AppBar(title: const Text('レビュー詳細')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              '個別レビュー表示画面',
-              style: TextStyle(fontSize: 24),
-            ),
+            const Text('個別レビュー表示画面', style: TextStyle(fontSize: 24)),
             const SizedBox(height: 16),
             Text('Review ID: $reviewId'),
             const SizedBox(height: 32),

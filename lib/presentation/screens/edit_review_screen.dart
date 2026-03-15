@@ -20,8 +20,7 @@ class EditReviewScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<EditReviewScreen> createState() =>
-      _EditReviewScreenState();
+  ConsumerState<EditReviewScreen> createState() => _EditReviewScreenState();
 }
 
 class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
@@ -42,14 +41,16 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
   }
 
   Future<void> _handleSubmit() async {
-    final controller = ref.read(editReviewControllerProvider(widget.review).notifier);
+    final controller = ref.read(
+      editReviewControllerProvider(widget.review).notifier,
+    );
     await controller.updateReview();
-    
+
     final latestState = ref.read(editReviewControllerProvider(widget.review));
     if (mounted && latestState.error == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('レビューを更新しました！')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('レビューを更新しました！')));
       context.pop(true); // 成功したら前の画面に戻る
     }
   }
@@ -65,7 +66,9 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
               title: const Text('ギャラリーから選択'),
               onTap: () {
                 context.pop();
-                ref.read(editReviewControllerProvider(widget.review).notifier).addImage(ImageSource.gallery);
+                ref
+                    .read(editReviewControllerProvider(widget.review).notifier)
+                    .addImage(ImageSource.gallery);
               },
             ),
             ListTile(
@@ -73,7 +76,9 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
               title: const Text('カメラで撮影'),
               onTap: () {
                 context.pop();
-                ref.read(editReviewControllerProvider(widget.review).notifier).addImage(ImageSource.camera);
+                ref
+                    .read(editReviewControllerProvider(widget.review).notifier)
+                    .addImage(ImageSource.camera);
               },
             ),
           ],
@@ -83,8 +88,10 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
   }
 
   Future<void> _showVisibilityDialog() async {
-    final currentVisibility = ref.read(editReviewControllerProvider(widget.review)).visibility;
-    
+    final currentVisibility = ref
+        .read(editReviewControllerProvider(widget.review))
+        .visibility;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -92,32 +99,53 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildVisibilityOption('public', '全体に公開', Icons.public, currentVisibility),
-            _buildVisibilityOption('friends', '親しい友達', Icons.group, currentVisibility),
-            _buildVisibilityOption('private', '非公開', Icons.lock, currentVisibility),
+            _buildVisibilityOption(
+              'public',
+              '全体に公開',
+              Icons.public,
+              currentVisibility,
+            ),
+            _buildVisibilityOption(
+              'friends',
+              '親しい友達',
+              Icons.group,
+              currentVisibility,
+            ),
+            _buildVisibilityOption(
+              'private',
+              '非公開',
+              Icons.lock,
+              currentVisibility,
+            ),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => context.pop(),
-            child: const Text('閉じる'),
-          ),
+          TextButton(onPressed: () => context.pop(), child: const Text('閉じる')),
         ],
       ),
     );
   }
 
-  Widget _buildVisibilityOption(String value, String label, IconData icon, String currentValue) {
+  Widget _buildVisibilityOption(
+    String value,
+    String label,
+    IconData icon,
+    String currentValue,
+  ) {
     final isSelected = value == currentValue;
     const primaryColor = Color(0xFF13ec5b);
-    
+
     return ListTile(
       leading: Icon(icon, color: isSelected ? primaryColor : null),
       title: Text(label),
-      trailing: isSelected ? const Icon(Icons.check, color: primaryColor) : null,
+      trailing: isSelected
+          ? const Icon(Icons.check, color: primaryColor)
+          : null,
       selected: isSelected,
       onTap: () {
-        ref.read(editReviewControllerProvider(widget.review).notifier).updateVisibility(value);
+        ref
+            .read(editReviewControllerProvider(widget.review).notifier)
+            .updateVisibility(value);
         context.pop();
       },
     );
@@ -126,16 +154,24 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(editReviewControllerProvider(widget.review));
-    final controller = ref.read(editReviewControllerProvider(widget.review).notifier);
+    final controller = ref.read(
+      editReviewControllerProvider(widget.review).notifier,
+    );
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     const primaryColor = Color(0xFF13ec5b);
-    final backgroundColor = isDark ? const Color(0xFF102216) : const Color(0xFFF6F8F6);
+    final backgroundColor = isDark
+        ? const Color(0xFF102216)
+        : const Color(0xFFF6F8F6);
     final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-    final mutedTextColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-    final borderColor = isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
+    final mutedTextColor = isDark
+        ? const Color(0xFF9CA3AF)
+        : const Color(0xFF6B7280);
+    final borderColor = isDark
+        ? const Color(0xFF374151)
+        : const Color(0xFFE5E7EB);
 
     // エラー表示
     if (state.error != null) {
@@ -252,7 +288,14 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildImageGrid(state, controller, cardColor, borderColor, textColor, mutedTextColor),
+                    _buildImageGrid(
+                      state,
+                      controller,
+                      cardColor,
+                      borderColor,
+                      textColor,
+                      mutedTextColor,
+                    ),
                     const SizedBox(height: 32),
 
                     // レビュー本文
@@ -274,7 +317,9 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                         hintText: '良かった点、気になった点など、自由にレビューを書きましょう。',
                         hintStyle: TextStyle(color: mutedTextColor),
                         filled: true,
-                        fillColor: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
+                        fillColor: isDark
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : const Color(0xFFF3F4F6),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(color: borderColor),
@@ -309,7 +354,9 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                         hintText: '例：ミステリー小説、ワイヤレスイヤホン',
                         hintStyle: TextStyle(color: mutedTextColor),
                         filled: true,
-                        fillColor: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
+                        fillColor: isDark
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : const Color(0xFFF3F4F6),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(color: borderColor),
@@ -326,12 +373,17 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                           icon: const Icon(Icons.add),
                           onPressed: () {
                             if (_tagInputController.text.trim().isNotEmpty) {
-                              controller.addSubcategoryTag(_tagInputController.text.trim());
+                              controller.addSubcategoryTag(
+                                _tagInputController.text.trim(),
+                              );
                               _tagInputController.clear();
                             }
                           },
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 15,
+                          vertical: 14,
+                        ),
                       ),
                       onSubmitted: (value) {
                         if (value.trim().isNotEmpty) {
@@ -349,8 +401,11 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                           return Chip(
                             label: Text('#$tag'),
                             deleteIcon: const Icon(Icons.close, size: 16),
-                            onDeleted: () => controller.removeSubcategoryTag(tag),
-                            backgroundColor: primaryColor.withValues(alpha: 0.2),
+                            onDeleted: () =>
+                                controller.removeSubcategoryTag(tag),
+                            backgroundColor: primaryColor.withValues(
+                              alpha: 0.2,
+                            ),
                             labelStyle: const TextStyle(
                               color: primaryColor,
                               fontWeight: FontWeight.w500,
@@ -378,7 +433,9 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.1)
+                              : const Color(0xFFF3F4F6),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -406,7 +463,11 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                                 ),
                               ),
                             ),
-                            Icon(Icons.arrow_forward_ios, size: 16, color: mutedTextColor),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                              color: mutedTextColor,
+                            ),
                           ],
                         ),
                       ),
@@ -427,10 +488,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              backgroundColor.withValues(alpha: 0),
-              backgroundColor,
-            ],
+            colors: [backgroundColor.withValues(alpha: 0), backgroundColor],
           ),
           border: Border(top: BorderSide(color: borderColor)),
         ),
@@ -490,10 +548,12 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
             isFilled
                 ? Icons.star
                 : isHalf
-                    ? Icons.star_half
-                    : Icons.star_border,
+                ? Icons.star_half
+                : Icons.star_border,
             size: 36,
-            color: isFilled || isHalf ? const Color(0xFF13ec5b) : Colors.grey[400],
+            color: isFilled || isHalf
+                ? const Color(0xFF13ec5b)
+                : Colors.grey[400],
           ),
         );
       }),
@@ -523,10 +583,11 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                   borderRadius: BorderRadius.circular(8),
                   image: DecorationImage(
                     image: imageData.url != null
-                        ? CachedNetworkImageProvider(imageData.url!) as ImageProvider
+                        ? CachedNetworkImageProvider(imageData.url!)
+                              as ImageProvider
                         : (kIsWeb
-                            ? MemoryImage(imageData.bytes!)
-                            : FileImage(imageData.file!) as ImageProvider),
+                              ? MemoryImage(imageData.bytes!)
+                              : FileImage(imageData.file!) as ImageProvider),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -562,12 +623,20 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
               decoration: BoxDecoration(
                 color: cardColor,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: borderColor, width: 2, style: BorderStyle.solid),
+                border: Border.all(
+                  color: borderColor,
+                  width: 2,
+                  style: BorderStyle.solid,
+                ),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add_photo_alternate, color: mutedTextColor, size: 32),
+                  Icon(
+                    Icons.add_photo_alternate,
+                    color: mutedTextColor,
+                    size: 32,
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     '追加',

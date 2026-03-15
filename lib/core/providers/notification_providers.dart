@@ -6,10 +6,12 @@ import '../../data/repositories/supabase_settings_repository.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 
 // 通知リストのプロバイダー
-final notificationsProvider = FutureProvider<List<AppNotification>>((ref) async {
+final notificationsProvider = FutureProvider<List<AppNotification>>((
+  ref,
+) async {
   final authRepository = ref.watch(authRepositoryProvider);
   final currentUser = authRepository.getCurrentUser();
-  
+
   if (currentUser == null) {
     return [];
   }
@@ -22,7 +24,7 @@ final notificationsProvider = FutureProvider<List<AppNotification>>((ref) async 
 final unreadNotificationCountProvider = FutureProvider<int>((ref) async {
   final authRepository = ref.watch(authRepositoryProvider);
   final currentUser = authRepository.getCurrentUser();
-  
+
   if (currentUser == null) {
     return 0;
   }
@@ -35,7 +37,7 @@ final unreadNotificationCountProvider = FutureProvider<int>((ref) async {
 final userSettingsProvider = FutureProvider<UserSettings>((ref) async {
   final authRepository = ref.watch(authRepositoryProvider);
   final currentUser = authRepository.getCurrentUser();
-  
+
   if (currentUser == null) {
     throw Exception('User not logged in');
   }
@@ -60,7 +62,7 @@ final markAllNotificationsAsReadProvider = Provider((ref) {
   return () async {
     final authRepository = ref.read(authRepositoryProvider);
     final currentUser = authRepository.getCurrentUser();
-    
+
     if (currentUser == null) return;
 
     final notificationRepository = ref.read(notificationRepositoryProvider);

@@ -9,7 +9,8 @@ class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  ConsumerState<NotificationsScreen> createState() => _NotificationsScreenState();
+  ConsumerState<NotificationsScreen> createState() =>
+      _NotificationsScreenState();
 }
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
@@ -25,9 +26,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final notificationsAsync = ref.watch(notificationsProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF102216) : const Color(0xFFF6F8F6);
+    final backgroundColor = isDark
+        ? const Color(0xFF102216)
+        : const Color(0xFFF6F8F6);
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-    final mutedTextColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+    final mutedTextColor = isDark
+        ? const Color(0xFF9CA3AF)
+        : const Color(0xFF6B7280);
     const primaryColor = Color(0xFF13ec5b);
 
     return Scaffold(
@@ -51,15 +56,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         actions: [
           TextButton(
             onPressed: () async {
-              final markAllAsRead = ref.read(markAllNotificationsAsReadProvider);
+              final markAllAsRead = ref.read(
+                markAllNotificationsAsReadProvider,
+              );
               await markAllAsRead();
             },
             child: const Text(
               'すべて既読',
-              style: TextStyle(
-                color: primaryColor,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: primaryColor, fontSize: 14),
             ),
           ),
         ],
@@ -79,10 +83,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   const SizedBox(height: 16),
                   Text(
                     '通知はありません',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: mutedTextColor,
-                    ),
+                    style: TextStyle(fontSize: 16, color: mutedTextColor),
                   ),
                 ],
               ),
@@ -104,23 +105,22 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             },
           );
         },
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: primaryColor),
-        ),
+        loading: () =>
+            const Center(child: CircularProgressIndicator(color: primaryColor)),
         error: (error, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.error_outline, color: Colors.red, size: 60),
               const SizedBox(height: 16),
-              Text(
-                '通知の読み込みに失敗しました',
-                style: TextStyle(color: textColor),
-              ),
+              Text('通知の読み込みに失敗しました', style: TextStyle(color: textColor)),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => ref.invalidate(notificationsProvider),
-                child: const Text('再読み込み', style: TextStyle(color: primaryColor)),
+                child: const Text(
+                  '再読み込み',
+                  style: TextStyle(color: primaryColor),
+                ),
               ),
             ],
           ),
@@ -137,7 +137,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   ) {
     final markAsRead = ref.read(markNotificationAsReadProvider);
     final deleteNotification = ref.read(deleteNotificationProvider);
-    
+
     IconData icon;
     Color iconColor;
 
@@ -185,8 +185,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           color: notification.isRead
               ? Colors.transparent
               : (isDark
-                  ? const Color(0xFF1C1C1E).withValues(alpha: 0.5)
-                  : const Color(0xFF13ec5b).withValues(alpha: 0.05)),
+                    ? const Color(0xFF1C1C1E).withValues(alpha: 0.5)
+                    : const Color(0xFF13ec5b).withValues(alpha: 0.05)),
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,20 +220,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     const SizedBox(height: 4),
                     Text(
                       notification.body,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: mutedTextColor,
-                      ),
+                      style: TextStyle(fontSize: 13, color: mutedTextColor),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
                       timeago.format(notification.createdAt, locale: 'ja'),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: mutedTextColor,
-                      ),
+                      style: TextStyle(fontSize: 12, color: mutedTextColor),
                     ),
                   ],
                 ),

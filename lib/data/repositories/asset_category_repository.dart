@@ -10,7 +10,9 @@ final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
 class AssetCategoryRepository implements CategoryRepository {
   @override
   Future<List<String>> getCategories() async {
-    final String response = await rootBundle.loadString('assets/categories.json');
+    final String response = await rootBundle.loadString(
+      'assets/categories.json',
+    );
     final data = await json.decode(response);
     return List<String>.from(data['categories']);
   }

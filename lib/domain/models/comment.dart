@@ -13,9 +13,9 @@ class Comment {
     required this.userId,
     required this.reviewId,
     required this.commentText,
-  })  : id = id ?? const Uuid().v4(),
-        // 修正: 明示的にUTCとして保存
-        createdAt = createdAt ?? DateTime.now().toUtc();
+  }) : id = id ?? const Uuid().v4(),
+       // 修正: 明示的にUTCとして保存
+       createdAt = createdAt ?? DateTime.now().toUtc();
 
   factory Comment.fromJson(Map<String, dynamic> json) {
     return Comment(

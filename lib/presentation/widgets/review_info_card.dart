@@ -45,20 +45,24 @@ class ReviewInfoCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final reviewAuthorProfileAsync = ref.watch(userProfileProvider(review.userId));
+    final reviewAuthorProfileAsync = ref.watch(
+      userProfileProvider(review.userId),
+    );
     const primaryColor = Color(0xFF13ec5b);
     final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-    final mutedTextColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-    final borderColor = isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
+    final mutedTextColor = isDark
+        ? const Color(0xFF9CA3AF)
+        : const Color(0xFF6B7280);
+    final borderColor = isDark
+        ? const Color(0xFF374151)
+        : const Color(0xFFE5E7EB);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cardColor,
-        border: Border(
-          bottom: BorderSide(color: borderColor),
-        ),
+        border: Border(bottom: BorderSide(color: borderColor)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,15 +128,8 @@ class ReviewInfoCard extends ConsumerWidget {
                       ),
                     ),
                     Text(
-                      '@${reviewAuthorProfileAsync.when(
-                        data: (p) => p?.username.toLowerCase().replaceAll(' ', '_') ?? 'user',
-                        loading: () => 'loading',
-                        error: (error, stack) => 'user',
-                      )}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: mutedTextColor,
-                      ),
+                      '@${reviewAuthorProfileAsync.when(data: (p) => p?.username.toLowerCase().replaceAll(' ', '_') ?? 'user', loading: () => 'loading', error: (error, stack) => 'user')}',
+                      style: TextStyle(fontSize: 14, color: mutedTextColor),
                     ),
                   ],
                 ),
@@ -174,7 +171,9 @@ class ReviewInfoCard extends ConsumerWidget {
                   return Icon(
                     Icons.star,
                     size: 18,
-                    color: isDark ? const Color(0xFF4B5563) : const Color(0xFFD1D5DB),
+                    color: isDark
+                        ? const Color(0xFF4B5563)
+                        : const Color(0xFFD1D5DB),
                   );
                 }
               }),
@@ -196,10 +195,7 @@ class ReviewInfoCard extends ConsumerWidget {
           if (product.subcategoryTags.isNotEmpty)
             Text(
               '#${product.subcategoryTags.first}',
-              style: const TextStyle(
-                fontSize: 14,
-                color: primaryColor,
-              ),
+              style: const TextStyle(fontSize: 14, color: primaryColor),
             ),
 
           const SizedBox(height: 12),
@@ -207,11 +203,7 @@ class ReviewInfoCard extends ConsumerWidget {
           // レビューテキスト
           Text(
             review.reviewText,
-            style: TextStyle(
-              fontSize: 16,
-              color: textColor,
-              height: 1.5,
-            ),
+            style: TextStyle(fontSize: 16, color: textColor, height: 1.5),
           ),
 
           const SizedBox(height: 12),
@@ -227,7 +219,10 @@ class ReviewInfoCard extends ConsumerWidget {
                     onTap: onToggleLike,
                     borderRadius: BorderRadius.circular(20),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       child: Row(
                         children: [
                           Icon(
@@ -259,10 +254,7 @@ class ReviewInfoCard extends ConsumerWidget {
                       const SizedBox(width: 4),
                       Text(
                         commentCount.toString(),
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: mutedTextColor,
-                        ),
+                        style: TextStyle(fontSize: 14, color: mutedTextColor),
                       ),
                     ],
                   ),
@@ -270,10 +262,7 @@ class ReviewInfoCard extends ConsumerWidget {
               ),
               Text(
                 _formatDate(review.createdAt),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: mutedTextColor,
-                ),
+                style: TextStyle(fontSize: 14, color: mutedTextColor),
               ),
             ],
           ),

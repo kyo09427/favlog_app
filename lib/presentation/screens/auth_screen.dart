@@ -82,10 +82,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       }
     } catch (error) {
       if (mounted) {
-        await ErrorDialog.show(
-          context,
-          '予期せぬエラーが発生しました: $error',
-        );
+        await ErrorDialog.show(context, '予期せぬエラーが発生しました: $error');
       }
     } finally {
       if (mounted) {
@@ -133,10 +130,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       }
     } catch (error) {
       if (mounted) {
-        await ErrorDialog.show(
-          context,
-          '予期せぬエラーが発生しました: $error',
-        );
+        await ErrorDialog.show(context, '予期せぬエラーが発生しました: $error');
       }
     } finally {
       if (mounted) {
@@ -227,7 +221,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           enabled: !_isLoading,
                           decoration: InputDecoration(
                             hintText: 'ユーザー名を入力',
-                            hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                            hintStyle: const TextStyle(
+                              color: Color(0xFF9CA3AF),
+                            ),
                             filled: true,
                             fillColor: Colors.white,
                             contentPadding: const EdgeInsets.all(15),
@@ -241,13 +237,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: primaryColor, width: 2),
+                              borderSide: const BorderSide(
+                                color: primaryColor,
+                                width: 2,
+                              ),
                             ),
                           ),
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: textColor,
-                          ),
+                          style: TextStyle(fontSize: 16, color: textColor),
                         ),
                       ],
                     ),
@@ -289,13 +285,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: primaryColor, width: 2),
+                            borderSide: const BorderSide(
+                              color: primaryColor,
+                              width: 2,
+                            ),
                           ),
                         ),
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: textColor,
-                        ),
+                        style: TextStyle(fontSize: 16, color: textColor),
                       ),
                     ],
                   ),
@@ -337,11 +333,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: primaryColor, width: 2),
+                            borderSide: const BorderSide(
+                              color: primaryColor,
+                              width: 2,
+                            ),
                           ),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                              _obscurePassword
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
                               color: const Color(0xFF9CA3AF),
                             ),
                             onPressed: () {
@@ -351,10 +352,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             },
                           ),
                         ),
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: textColor,
-                        ),
+                        style: TextStyle(fontSize: 16, color: textColor),
                       ),
                     ],
                   ),
@@ -382,7 +380,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           enabled: !_isLoading,
                           decoration: InputDecoration(
                             hintText: 'パスワードを再入力',
-                            hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                            hintStyle: const TextStyle(
+                              color: Color(0xFF9CA3AF),
+                            ),
                             filled: true,
                             fillColor: Colors.white,
                             contentPadding: const EdgeInsets.all(15),
@@ -396,13 +396,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: primaryColor, width: 2),
+                              borderSide: const BorderSide(
+                                color: primaryColor,
+                                width: 2,
+                              ),
                             ),
                           ),
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: textColor,
-                          ),
+                          style: TextStyle(fontSize: 16, color: textColor),
                         ),
                       ],
                     ),
@@ -427,7 +427,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
                         foregroundColor: textColor,
-                        disabledBackgroundColor: primaryColor.withValues(alpha: 0.5),
+                        disabledBackgroundColor: primaryColor.withValues(
+                          alpha: 0.5,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -439,7 +441,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1F2937)),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Color(0xFF1F2937),
+                                ),
                               ),
                             )
                           : Text(
@@ -499,10 +503,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     },
                     child: const Text(
                       'パスワードをお忘れですか？',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF6B7280),
-                      ),
+                      style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
                     ),
                   ),
 

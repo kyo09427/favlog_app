@@ -57,8 +57,8 @@ class SearchScreenState {
 // 検索コントローラーのプロバイダー
 final searchControllerProvider =
     StateNotifierProvider<SearchController, SearchScreenState>((ref) {
-  return SearchController(ref);
-});
+      return SearchController(ref);
+    });
 
 class SearchController extends StateNotifier<SearchScreenState> {
   final Ref _ref;
@@ -67,15 +67,12 @@ class SearchController extends StateNotifier<SearchScreenState> {
     _loadSearchHistory();
   }
 
-
   // 検索履歴の読み込み（簡易実装：メモリ内のみ）
   void _loadSearchHistory() {
     // TODO: SharedPreferencesなどで永続化する場合はここで読み込み
-    state = state.copyWith(searchHistory: [
-      'オーガニックコーヒー',
-      'ワイヤレスイヤホン',
-      '新宿 カフェ',
-    ]);
+    state = state.copyWith(
+      searchHistory: ['オーガニックコーヒー', 'ワイヤレスイヤホン', '新宿 カフェ'],
+    );
   }
 
   // 検索クエリをStateにセットするだけ
@@ -97,10 +94,11 @@ class SearchController extends StateNotifier<SearchScreenState> {
 
     // 検索実行時にクエリをstateにセットし、ローディング開始
     state = state.copyWith(
-        searchQuery: query,
-        isLoading: true,
-        error: null,
-        hasSearched: true);
+      searchQuery: query,
+      isLoading: true,
+      error: null,
+      hasSearched: true,
+    );
 
     try {
       final productRepository = _ref.read(productRepositoryProvider);
@@ -148,7 +146,8 @@ class SearchController extends StateNotifier<SearchScreenState> {
       List<SearchResult> results = [];
       if (products.isNotEmpty) {
         final productIds = products.map((p) => p.id).toList();
-        final latestReviews = await reviewRepository.getLatestReviewsByProductIds(productIds);
+        final latestReviews = await reviewRepository
+            .getLatestReviewsByProductIds(productIds);
 
         results = products.map((product) {
           return SearchResult(
@@ -158,10 +157,7 @@ class SearchController extends StateNotifier<SearchScreenState> {
         }).toList();
       }
 
-      state = state.copyWith(
-        searchResults: results,
-        isLoading: false,
-      );
+      state = state.copyWith(searchResults: results, isLoading: false);
 
       // 検索履歴に追加
       _addToSearchHistory(query);
@@ -176,20 +172,20 @@ class SearchController extends StateNotifier<SearchScreenState> {
   // 検索履歴に追加
   void _addToSearchHistory(String query) {
     final history = List<String>.from(state.searchHistory);
-    
+
     // 既存の同じクエリを削除
     history.remove(query);
-    
+
     // 先頭に追加
     history.insert(0, query);
-    
+
     // 最大10件まで保持
     if (history.length > 10) {
       history.removeLast();
     }
 
     state = state.copyWith(searchHistory: history);
-    
+
     // TODO: SharedPreferencesなどで永続化
   }
 

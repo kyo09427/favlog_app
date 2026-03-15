@@ -75,8 +75,8 @@ class HomeScreenState {
 
 final homeScreenControllerProvider =
     StateNotifierProvider<HomeScreenController, HomeScreenState>((ref) {
-  return HomeScreenController(ref);
-});
+      return HomeScreenController(ref);
+    });
 
 class HomeScreenController extends StateNotifier<HomeScreenState> {
   final Ref _ref;
@@ -125,12 +125,14 @@ class HomeScreenController extends StateNotifier<HomeScreenState> {
     bool isRefresh = false,
     bool forceUpdate = false, // 追加
   }) async {
-    return _executeFetch(() => _fetchProductsImpl(
-          category: category,
-          searchQuery: searchQuery,
-          isRefresh: isRefresh,
-          forceUpdate: forceUpdate, // 追加
-        ));
+    return _executeFetch(
+      () => _fetchProductsImpl(
+        category: category,
+        searchQuery: searchQuery,
+        isRefresh: isRefresh,
+        forceUpdate: forceUpdate, // 追加
+      ),
+    );
   }
 
   Future<void> _fetchProductsImpl({
@@ -146,7 +148,7 @@ class HomeScreenController extends StateNotifier<HomeScreenState> {
     final targetSearchQuery = searchQuery ?? '';
     final categoryChanged = targetCategory != state.selectedCategory;
     final searchQueryChanged = targetSearchQuery != state.searchQuery;
-    
+
     if (!isRefresh &&
         !forceUpdate &&
         !categoryChanged &&
@@ -167,8 +169,9 @@ class HomeScreenController extends StateNotifier<HomeScreenState> {
       final productRepository = _ref.read(productRepositoryProvider);
       final reviewRepository = _ref.read(reviewRepositoryProvider);
 
-      final categoryFilter =
-          (category == null || category == 'すべて') ? null : category;
+      final categoryFilter = (category == null || category == 'すべて')
+          ? null
+          : category;
 
       final products = await productRepository.getProducts(
         category: categoryFilter,
@@ -190,26 +193,31 @@ class HomeScreenController extends StateNotifier<HomeScreenState> {
       }
 
       final productIds = products.map((p) => p.id).toList();
-      final currentUserId = _ref.read(authRepositoryProvider).getCurrentUser()?.id; // Add this line
+      final currentUserId = _ref
+          .read(authRepositoryProvider)
+          .getCurrentUser()
+          ?.id; // Add this line
 
       // Get latest reviews and stats in parallel
       final results = await Future.wait([
-        reviewRepository.getLatestReviewsByProductIds(productIds, currentUserId: currentUserId), // Modify this line
+        reviewRepository.getLatestReviewsByProductIds(
+          productIds,
+          currentUserId: currentUserId,
+        ), // Modify this line
         reviewRepository.getProductStats(productIds),
       ]);
 
       final latestReviewsMap = results[0] as Map<String, Review>;
       final productStatsList = results[1] as List<ProductStats>;
       final productStatsMap = {
-        for (var stat in productStatsList) stat.productId: stat
+        for (var stat in productStatsList) stat.productId: stat,
       };
 
       final productsWithData = products.map((product) {
         return ProductWithReviewAndStats(
           product: product,
           latestReview: latestReviewsMap[product.id],
-          stats:
-              productStatsMap[product.id] ?? ProductStats.empty(),
+          stats: productStatsMap[product.id] ?? ProductStats.empty(),
         );
       }).toList();
 
@@ -269,11 +277,7 @@ class HomeScreenController extends StateNotifier<HomeScreenState> {
 
   void _setError(String error) {
     if (_isDisposed) return;
-    state = state.copyWith(
-      isLoading: false,
-      isRefreshing: false,
-      error: error,
-    );
+    state = state.copyWith(isLoading: false, isRefreshing: false, error: error);
   }
 
   void updateSearchQuery(String query) {

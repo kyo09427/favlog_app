@@ -14,16 +14,22 @@ class SupabaseFCMTokenRepository implements FCMTokenRepository {
   SupabaseFCMTokenRepository(this._supabaseClient);
 
   @override
-  Future<void> saveToken(String userId, String token, String? deviceType) async {
+  Future<void> saveToken(
+    String userId,
+    String token,
+    String? deviceType,
+  ) async {
     try {
       print('saveToken: Attempting to save token for user $userId');
-      print('saveToken: Token: ${token.substring(0, 20)}..., Device: $deviceType');
-      
+      print(
+        'saveToken: Token: ${token.substring(0, 20)}..., Device: $deviceType',
+      );
+
       // device_typeは必須
       if (deviceType == null || deviceType.isEmpty) {
         throw Exception('Device type is required');
       }
-      
+
       // upsert: 同じuser_id + device_typeの組み合わせがあれば更新、なければ挿入
       // これにより、1ユーザー・1デバイスタイプにつき1トークンのみ保持される
       await _supabaseClient.from('fcm_tokens').upsert({
@@ -32,7 +38,7 @@ class SupabaseFCMTokenRepository implements FCMTokenRepository {
         'device_type': deviceType,
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       }, onConflict: 'user_id,device_type');
-      
+
       print('saveToken: Successfully saved token to database');
     } catch (e) {
       print('saveToken: Error - $e');
@@ -48,7 +54,9 @@ class SupabaseFCMTokenRepository implements FCMTokenRepository {
     }
 
     try {
-      print('getTokensByUserIds: Fetching tokens for ${userIds.length} users: $userIds');
+      print(
+        'getTokensByUserIds: Fetching tokens for ${userIds.length} users: $userIds',
+      );
       final response = await _supabaseClient
           .from('fcm_tokens')
           .select('token')
@@ -69,10 +77,7 @@ class SupabaseFCMTokenRepository implements FCMTokenRepository {
   @override
   Future<void> deleteToken(String token) async {
     try {
-      await _supabaseClient
-          .from('fcm_tokens')
-          .delete()
-          .eq('token', token);
+      await _supabaseClient.from('fcm_tokens').delete().eq('token', token);
     } catch (e) {
       throw Exception('Failed to delete FCM token: $e');
     }
@@ -86,9 +91,7 @@ class SupabaseFCMTokenRepository implements FCMTokenRepository {
           .select()
           .eq('user_id', userId);
 
-      return (response as List)
-          .map((json) => FCMToken.fromJson(json))
-          .toList();
+      return (response as List).map((json) => FCMToken.fromJson(json)).toList();
     } catch (e) {
       throw Exception('Failed to get FCM tokens by user ID: $e');
     }

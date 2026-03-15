@@ -19,8 +19,8 @@ class FCMService {
   final Ref _ref;
 
   FCMService(this._ref)
-      : _messaging = FirebaseMessaging.instance,
-        _localNotifications = FlutterLocalNotificationsPlugin();
+    : _messaging = FirebaseMessaging.instance,
+      _localNotifications = FlutterLocalNotificationsPlugin();
 
   /// FCMサービスの初期化
   Future<void> initialize() async {
@@ -90,10 +90,10 @@ class FCMService {
   Future<void> _saveToken(String token) async {
     try {
       print('_saveToken: Starting to save token: ${token.substring(0, 20)}...');
-      
+
       final authRepository = _ref.read(authRepositoryProvider);
       final currentUser = authRepository.getCurrentUser();
-      
+
       if (currentUser == null) {
         print('_saveToken: No current user, skipping token save');
         return;
@@ -101,7 +101,7 @@ class FCMService {
 
       print('_saveToken: Current user ID: ${currentUser.id}');
       final fcmTokenRepository = _ref.read(fcmTokenRepositoryProvider);
-      
+
       // デバイスタイプの取得
       String? deviceType;
       if (kIsWeb) {
@@ -113,7 +113,9 @@ class FCMService {
       }
 
       if (deviceType == null) {
-        print('_saveToken: Unable to determine device type, skipping token save');
+        print(
+          '_saveToken: Unable to determine device type, skipping token save',
+        );
         return;
       }
 
@@ -134,7 +136,9 @@ class FCMService {
     }
 
     try {
-      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const androidSettings = AndroidInitializationSettings(
+        '@mipmap/ic_launcher',
+      );
       const iosSettings = DarwinInitializationSettings(
         requestAlertPermission: false,
         requestBadgePermission: false,

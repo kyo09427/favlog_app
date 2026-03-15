@@ -49,7 +49,9 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               title: const Text('ギャラリーから選択'),
               onTap: () {
                 context.pop();
-                ref.read(addProductControllerProvider.notifier).pickImage(ImageSource.gallery);
+                ref
+                    .read(addProductControllerProvider.notifier)
+                    .pickImage(ImageSource.gallery);
               },
             ),
             ListTile(
@@ -57,7 +59,9 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               title: const Text('カメラで撮影'),
               onTap: () {
                 context.pop();
-                ref.read(addProductControllerProvider.notifier).pickImage(ImageSource.camera);
+                ref
+                    .read(addProductControllerProvider.notifier)
+                    .pickImage(ImageSource.camera);
               },
             ),
           ],
@@ -74,11 +78,17 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     const primaryColor = Color(0xFF13ec5b);
-    final backgroundColor = isDark ? const Color(0xFF102216) : const Color(0xFFF6F8F6);
+    final backgroundColor = isDark
+        ? const Color(0xFF102216)
+        : const Color(0xFFF6F8F6);
     final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-    final mutedTextColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-    final borderColor = isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
+    final mutedTextColor = isDark
+        ? const Color(0xFF9CA3AF)
+        : const Color(0xFF6B7280);
+    final borderColor = isDark
+        ? const Color(0xFF374151)
+        : const Color(0xFFE5E7EB);
 
     // エラー表示
     if (state.error != null) {
@@ -108,7 +118,11 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                     height: 48,
                     child: IconButton(
                       onPressed: () => context.pop(),
-                      icon: Icon(Icons.arrow_back_ios_new, color: textColor, size: 20),
+                      icon: Icon(
+                        Icons.arrow_back_ios_new,
+                        color: textColor,
+                        size: 20,
+                      ),
                     ),
                   ),
                   Expanded(
@@ -163,7 +177,9 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                             hintText: '例：最高のワイヤレスイヤホン',
                             hintStyle: TextStyle(color: mutedTextColor),
                             filled: true,
-                            fillColor: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
+                            fillColor: isDark
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : const Color(0xFFF3F4F6),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(color: borderColor),
@@ -173,10 +189,18 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                               borderSide: BorderSide(color: borderColor),
                             ),
                             focusedBorder: const OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(12)),
-                              borderSide: BorderSide(color: primaryColor, width: 2),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                              borderSide: BorderSide(
+                                color: primaryColor,
+                                width: 2,
+                              ),
                             ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
                           ),
                         ),
                       ],
@@ -217,7 +241,9 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                             hintText: 'https://example.com',
                             hintStyle: TextStyle(color: mutedTextColor),
                             filled: true,
-                            fillColor: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
+                            fillColor: isDark
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : const Color(0xFFF3F4F6),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(color: borderColor),
@@ -227,10 +253,18 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                               borderSide: BorderSide(color: borderColor),
                             ),
                             focusedBorder: const OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(12)),
-                              borderSide: BorderSide(color: primaryColor, width: 2),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                              borderSide: BorderSide(
+                                color: primaryColor,
+                                width: 2,
+                              ),
                             ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
                           ),
                         ),
                       ],
@@ -258,7 +292,13 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        _buildImagePicker(state, controller, cardColor, borderColor, mutedTextColor),
+                        _buildImagePicker(
+                          state,
+                          controller,
+                          cardColor,
+                          borderColor,
+                          mutedTextColor,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 32),
@@ -280,15 +320,23 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                           spacing: 8,
                           runSpacing: 8,
                           children: state.categories.map((category) {
-                            final isSelected = state.selectedCategory == category;
+                            final isSelected =
+                                state.selectedCategory == category;
                             return GestureDetector(
                               onTap: () => controller.selectCategory(category),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
                                 decoration: BoxDecoration(
                                   color: isSelected
                                       ? primaryColor
-                                      : (isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE5E7EB)),
+                                      : (isDark
+                                            ? Colors.white.withValues(
+                                                alpha: 0.1,
+                                              )
+                                            : const Color(0xFFE5E7EB)),
                                   borderRadius: BorderRadius.circular(24),
                                 ),
                                 child: Text(
@@ -296,7 +344,9 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    color: isSelected ? Colors.black : textColor,
+                                    color: isSelected
+                                        ? Colors.black
+                                        : textColor,
                                   ),
                                 ),
                               ),
@@ -339,7 +389,9 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                             hintText: '例：ミステリー',
                             hintStyle: TextStyle(color: mutedTextColor),
                             filled: true,
-                            fillColor: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
+                            fillColor: isDark
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : const Color(0xFFF3F4F6),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(color: borderColor),
@@ -349,19 +401,31 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                               borderSide: BorderSide(color: borderColor),
                             ),
                             focusedBorder: const OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(12)),
-                              borderSide: BorderSide(color: primaryColor, width: 2),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                              borderSide: BorderSide(
+                                color: primaryColor,
+                                width: 2,
+                              ),
                             ),
                             suffixIcon: IconButton(
                               icon: const Icon(Icons.add),
                               onPressed: () {
-                                if (_tagInputController.text.trim().isNotEmpty) {
-                                  controller.addSubcategoryTag(_tagInputController.text.trim());
+                                if (_tagInputController.text
+                                    .trim()
+                                    .isNotEmpty) {
+                                  controller.addSubcategoryTag(
+                                    _tagInputController.text.trim(),
+                                  );
                                   _tagInputController.clear();
                                 }
                               },
                             ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
                           ),
                           onSubmitted: (value) {
                             if (value.trim().isNotEmpty) {
@@ -379,8 +443,11 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                               return Chip(
                                 label: Text('#$tag'),
                                 deleteIcon: const Icon(Icons.close, size: 16),
-                                onDeleted: () => controller.removeSubcategoryTag(tag),
-                                backgroundColor: primaryColor.withValues(alpha: 0.2),
+                                onDeleted: () =>
+                                    controller.removeSubcategoryTag(tag),
+                                backgroundColor: primaryColor.withValues(
+                                  alpha: 0.2,
+                                ),
                                 labelStyle: const TextStyle(
                                   color: primaryColor,
                                   fontWeight: FontWeight.w500,
@@ -503,12 +570,20 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                 decoration: BoxDecoration(
                   color: cardColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: borderColor, width: 2, style: BorderStyle.solid),
+                  border: Border.all(
+                    color: borderColor,
+                    width: 2,
+                    style: BorderStyle.solid,
+                  ),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.add_photo_alternate, color: const Color(0xFF13ec5b), size: 40),
+                    Icon(
+                      Icons.add_photo_alternate,
+                      color: const Color(0xFF13ec5b),
+                      size: 40,
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       '追加',

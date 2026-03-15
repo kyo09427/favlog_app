@@ -55,8 +55,8 @@ class EditProductCategorySelector extends StatelessWidget {
                           color: selected
                               ? const Color(0xFF102216)
                               : (theme.brightness == Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black87),
+                                    ? Colors.white
+                                    : Colors.black87),
                         ),
                       ),
                       selected: selected,
@@ -70,8 +70,8 @@ class EditProductCategorySelector extends StatelessWidget {
                           color: selected
                               ? const Color(0xFF22A06B)
                               : (theme.brightness == Brightness.dark
-                                  ? Colors.white24
-                                  : Colors.grey.shade300),
+                                    ? Colors.white24
+                                    : Colors.grey.shade300),
                         ),
                       ),
                       onSelected: state.isLoading

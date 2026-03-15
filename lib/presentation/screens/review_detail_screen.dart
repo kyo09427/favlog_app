@@ -34,13 +34,18 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
     // 画面に戻ってきたときにデータをリフレッシュ
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        ref.read(reviewDetailControllerProvider(widget.productId).notifier).refreshAll();
+        ref
+            .read(reviewDetailControllerProvider(widget.productId).notifier)
+            .refreshAll();
       }
     });
   }
 
   Future<void> _showProductMenu(
-      BuildContext context, WidgetRef ref, Product product) async {
+    BuildContext context,
+    WidgetRef ref,
+    Product product,
+  ) async {
     final theme = Theme.of(context);
     await showModalBottomSheet(
       context: context,
@@ -61,11 +66,15 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                 title: const Text('編集する'),
                 onTap: () async {
                   context.pop(); // Close the bottom sheet
-                  final result = await context.push('/edit-product', extra: product);
+                  final result = await context.push(
+                    '/edit-product',
+                    extra: product,
+                  );
                   if (result == true && mounted) {
                     ref
-                        .read(reviewDetailControllerProvider(product.id)
-                            .notifier)
+                        .read(
+                          reviewDetailControllerProvider(product.id).notifier,
+                        )
                         .refreshAll();
                   }
                 },
@@ -108,18 +117,21 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
       await reviewRepository.deleteReview(reviewId);
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('レビューを削除しました')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('レビューを削除しました')));
 
         // 最後のレビューが削除されたかチェック
-        final reviews = ref.read(reviewDetailControllerProvider(widget.productId))
+        final reviews = ref
+            .read(reviewDetailControllerProvider(widget.productId))
             .reviewsWithStats;
 
         // deleteReviewが成功した時点では、Stateのリストの長さはまだ1残っている
         if (reviews.length == 1) {
           final productRepository = ref.read(productRepositoryProvider);
-          final product = ref.read(reviewDetailControllerProvider(widget.productId)).currentProduct;
+          final product = ref
+              .read(reviewDetailControllerProvider(widget.productId))
+              .currentProduct;
 
           // 関連画像をStorageから削除
           if (product.imageUrl != null) {
@@ -135,7 +147,9 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
             context.pop(); // 前の画面に戻る
           }
         } else {
-          final controller = ref.read(reviewDetailControllerProvider(widget.productId).notifier);
+          final controller = ref.read(
+            reviewDetailControllerProvider(widget.productId).notifier,
+          );
           await controller.refreshAll();
         }
       }
@@ -153,16 +167,17 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final reviewDetailState = ref.watch(reviewDetailControllerProvider(widget.productId));
-    final reviewDetailController = ref.read(reviewDetailControllerProvider(widget.productId).notifier);
-
+    final reviewDetailState = ref.watch(
+      reviewDetailControllerProvider(widget.productId),
+    );
+    final reviewDetailController = ref.read(
+      reviewDetailControllerProvider(widget.productId).notifier,
+    );
 
     final displayedProduct = reviewDetailState.currentProduct;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final backgroundColor = isDark ? _backgroundDark : _backgroundLight;
-
-
 
     if (displayedProduct.id == Product.empty().id) {
       return Scaffold(
@@ -180,9 +195,9 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
     final averageRating = reviewCount == 0
         ? 0.0
         : reviewsWithStats
-                .map((rws) => rws.review.rating)
-                .fold<double>(0, (sum, r) => sum + r) /
-            reviewCount;
+                  .map((rws) => rws.review.rating)
+                  .fold<double>(0, (sum, r) => sum + r) /
+              reviewCount;
 
     return PopScope(
       canPop: false,
@@ -201,11 +216,16 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
               children: [
                 // ヘッダー
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: backgroundColor,
                     border: Border(
-                      bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                      bottom: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
                     ),
                   ),
                   child: Row(
@@ -262,27 +282,46 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                                 child: SizedBox(
                                   width: 64,
                                   height: 64,
-                                  child: displayedProduct.imageUrl != null &&
+                                  child:
+                                      displayedProduct.imageUrl != null &&
                                           displayedProduct.imageUrl!.isNotEmpty
                                       ? CachedNetworkImage(
                                           imageUrl: displayedProduct.imageUrl!,
                                           fit: BoxFit.cover,
-                                          placeholder: (context, url) => Shimmer.fromColors(
-                                            baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                                            highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
-                                            child: Container(color: Colors.white),
-                                          ),
-                                          errorWidget: (context, url, error) => Container(
-                                            color: isDark ? Colors.grey[900] : Colors.grey[200],
-                                            child: Icon(
-                                              Icons.image_not_supported_outlined,
-                                              color: isDark ? Colors.grey[700] : Colors.grey[500],
-                                            ),
-                                          ),
+                                          placeholder: (context, url) =>
+                                              Shimmer.fromColors(
+                                                baseColor: isDark
+                                                    ? Colors.grey[800]!
+                                                    : Colors.grey[300]!,
+                                                highlightColor: isDark
+                                                    ? Colors.grey[700]!
+                                                    : Colors.grey[100]!,
+                                                child: Container(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                          errorWidget: (context, url, error) =>
+                                              Container(
+                                                color: isDark
+                                                    ? Colors.grey[900]
+                                                    : Colors.grey[200],
+                                                child: Icon(
+                                                  Icons
+                                                      .image_not_supported_outlined,
+                                                  color: isDark
+                                                      ? Colors.grey[700]
+                                                      : Colors.grey[500],
+                                                ),
+                                              ),
                                         )
                                       : Container(
-                                          color: isDark ? Colors.grey[900] : Colors.grey[200],
-                                          child: const Icon(Icons.image, size: 24),
+                                          color: isDark
+                                              ? Colors.grey[900]
+                                              : Colors.grey[200],
+                                          child: const Icon(
+                                            Icons.image,
+                                            size: 24,
+                                          ),
                                         ),
                                 ),
                               ),
@@ -295,44 +334,69 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                                       displayedProduct.name,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
-                                      style: theme.textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: isDark ? Colors.white : Colors.black,
-                                      ),
+                                      style: theme.textTheme.titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: isDark
+                                                ? Colors.white
+                                                : Colors.black,
+                                          ),
                                     ),
                                     const SizedBox(height: 4),
                                     _UrlLink(url: displayedProduct.url),
                                     const SizedBox(height: 6),
                                     Row(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
                                       children: [
-                                        const Icon(Icons.star, size: 16, color: _primary),
+                                        const Icon(
+                                          Icons.star,
+                                          size: 16,
+                                          color: _primary,
+                                        ),
                                         const SizedBox(width: 4),
                                         Text(
-                                          reviewCount == 0 ? '-' : averageRating.toStringAsFixed(1),
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: isDark ? Colors.white : Colors.black,
-                                          ),
+                                          reviewCount == 0
+                                              ? '-'
+                                              : averageRating.toStringAsFixed(
+                                                  1,
+                                                ),
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                                color: isDark
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                              ),
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
                                           '($reviewCount)',
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                          ),
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                                color: isDark
+                                                    ? Colors.grey[400]
+                                                    : Colors.grey[600],
+                                              ),
                                         ),
                                         Container(
                                           width: 1,
                                           height: 12,
-                                          margin: const EdgeInsets.symmetric(horizontal: 8),
-                                          color: isDark ? Colors.grey[600] : Colors.grey[300],
+                                          margin: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                          ),
+                                          color: isDark
+                                              ? Colors.grey[600]
+                                              : Colors.grey[300],
                                         ),
                                         Text(
                                           displayedProduct.category ?? '',
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                          ),
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                                color: isDark
+                                                    ? Colors.grey[400]
+                                                    : Colors.grey[600],
+                                              ),
                                         ),
                                       ],
                                     ),
@@ -342,27 +406,40 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                                         Expanded(
                                           child: Row(
                                             children: [
-                                              if (displayedProduct.category != null)
+                                              if (displayedProduct.category !=
+                                                  null)
                                                 Flexible(
                                                   child: Text(
                                                     '#${displayedProduct.category}',
-                                                    style: theme.textTheme.bodySmall?.copyWith(
-                                                      color: _primary,
-                                                      fontWeight: FontWeight.w500,
-                                                    ),
-                                                    overflow: TextOverflow.ellipsis,
+                                                    style: theme
+                                                        .textTheme
+                                                        .bodySmall
+                                                        ?.copyWith(
+                                                          color: _primary,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                   ),
                                                 ),
-                                              if (displayedProduct.subcategoryTags.isNotEmpty) ...[
+                                              if (displayedProduct
+                                                  .subcategoryTags
+                                                  .isNotEmpty) ...[
                                                 const SizedBox(width: 6),
                                                 Flexible(
                                                   child: Text(
                                                     '#${displayedProduct.subcategoryTags.first}',
-                                                    style: theme.textTheme.bodySmall?.copyWith(
-                                                      color: _primary,
-                                                      fontWeight: FontWeight.w500,
-                                                    ),
-                                                    overflow: TextOverflow.ellipsis,
+                                                    style: theme
+                                                        .textTheme
+                                                        .bodySmall
+                                                        ?.copyWith(
+                                                          color: _primary,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                   ),
                                                 ),
                                               ],
@@ -377,20 +454,27 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                               // 現在のユーザーIDとプロフィール情報を取得
                               Builder(
                                 builder: (context) {
-                                  final currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id;
+                                  final currentUserId = ref
+                                      .read(authRepositoryProvider)
+                                      .getCurrentUser()
+                                      ?.id;
                                   if (currentUserId == null) {
                                     return const SizedBox(width: 40);
                                   }
 
                                   // ユーザーのプロフィール情報を取得
-                                  final profileAsync = ref.watch(userProfileProvider(currentUserId));
+                                  final profileAsync = ref.watch(
+                                    userProfileProvider(currentUserId),
+                                  );
 
                                   return profileAsync.when(
                                     data: (profile) {
                                       // 作成者または管理者の場合のみメニューボタンを表示
-                                      final canEdit = currentUserId == displayedProduct.userId || 
-                                                      (profile?.isAdmin ?? false);
-                                      
+                                      final canEdit =
+                                          currentUserId ==
+                                              displayedProduct.userId ||
+                                          (profile?.isAdmin ?? false);
+
                                       if (!canEdit) {
                                         return const SizedBox(width: 40);
                                       }
@@ -402,13 +486,18 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                                           padding: const EdgeInsets.all(0),
                                           icon: const Icon(Icons.more_vert),
                                           onPressed: () {
-                                            _showProductMenu(context, ref, displayedProduct);
+                                            _showProductMenu(
+                                              context,
+                                              ref,
+                                              displayedProduct,
+                                            );
                                           },
                                         ),
                                       );
                                     },
                                     loading: () => const SizedBox(width: 40),
-                                    error: (_, _unused) => const SizedBox(width: 40),
+                                    error: (_, _unused) =>
+                                        const SizedBox(width: 40),
                                   );
                                 },
                               ),
@@ -420,7 +509,9 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                         Container(
                           decoration: BoxDecoration(
                             border: Border(
-                              bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                              bottom: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.1),
+                              ),
                             ),
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -428,21 +519,30 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                             children: [
                               _SortTab(
                                 label: 'すべて',
-                                isActive: reviewDetailState.sortType == ReviewSortType.all,
+                                isActive:
+                                    reviewDetailState.sortType ==
+                                    ReviewSortType.all,
                                 isDark: isDark,
-                                onTap: () => reviewDetailController.changeSortType(ReviewSortType.all),
+                                onTap: () => reviewDetailController
+                                    .changeSortType(ReviewSortType.all),
                               ),
                               _SortTab(
                                 label: '新しい順',
-                                isActive: reviewDetailState.sortType == ReviewSortType.newest,
+                                isActive:
+                                    reviewDetailState.sortType ==
+                                    ReviewSortType.newest,
                                 isDark: isDark,
-                                onTap: () => reviewDetailController.changeSortType(ReviewSortType.newest),
+                                onTap: () => reviewDetailController
+                                    .changeSortType(ReviewSortType.newest),
                               ),
                               _SortTab(
                                 label: '高評価順',
-                                isActive: reviewDetailState.sortType == ReviewSortType.highRated,
+                                isActive:
+                                    reviewDetailState.sortType ==
+                                    ReviewSortType.highRated,
                                 isDark: isDark,
-                                onTap: () => reviewDetailController.changeSortType(ReviewSortType.highRated),
+                                onTap: () => reviewDetailController
+                                    .changeSortType(ReviewSortType.highRated),
                               ),
                             ],
                           ),
@@ -474,16 +574,23 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                             children: reviewsWithStats.map((reviewWithStats) {
                               final review = reviewWithStats.review;
                               final stats = reviewWithStats.stats;
-                              final isLiked = reviewWithStats.isLikedByCurrentUser;
-
+                              final isLiked =
+                                  reviewWithStats.isLikedByCurrentUser;
 
                               return Container(
                                 decoration: BoxDecoration(
                                   border: Border(
-                                    bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                                    bottom: BorderSide(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
                                 child: Column(
                                   children: [
                                     ReviewItem(
@@ -491,13 +598,19 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
                                       review: review,
                                       stats: stats,
                                       isLiked: isLiked,
-                                      onLikeToggle: () => reviewDetailController.toggleLike(review.id),
+                                      onLikeToggle: () => reviewDetailController
+                                          .toggleLike(review.id),
                                       onCommentTap: () {
                                         // コメント画面に遷移
                                         context.push('/review/${review.id}');
                                       },
-                                      onReviewUpdated: () => reviewDetailController.refreshAll(),
-                                      onDelete: () => _deleteReview(context, ref, review.id),
+                                      onReviewUpdated: () =>
+                                          reviewDetailController.refreshAll(),
+                                      onDelete: () => _deleteReview(
+                                        context,
+                                        ref,
+                                        review.id,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -517,7 +630,9 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
           onPressed: () async {
             final result = await context.push(
               '/add-review', // 遷移先を/add-reviewに変更
-              extra: {'product': displayedProduct}, // extraの形式をMap<String, dynamic>に変更
+              extra: {
+                'product': displayedProduct,
+              }, // extraの形式をMap<String, dynamic>に変更
             );
             if (result == true && mounted) {
               reviewDetailController.refreshAll();
@@ -538,9 +653,9 @@ class _UrlLink extends StatelessWidget {
   Future<void> _launchUrl(BuildContext context, String urlString) async {
     final uri = Uri.tryParse(urlString);
     if (uri == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('無効なURLです: $urlString')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('無効なURLです: $urlString')));
       return;
     }
 
@@ -548,9 +663,9 @@ class _UrlLink extends StatelessWidget {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('このURLを開けませんでした')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('このURLを開けませんでした')));
       }
     }
   }

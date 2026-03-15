@@ -32,8 +32,8 @@ class UpdateEmailState {
 
 final updateEmailControllerProvider =
     StateNotifierProvider<UpdateEmailController, UpdateEmailState>((ref) {
-  return UpdateEmailController(ref);
-});
+      return UpdateEmailController(ref);
+    });
 
 class UpdateEmailController extends StateNotifier<UpdateEmailState> {
   final Ref _ref;
@@ -63,20 +63,11 @@ class UpdateEmailController extends StateNotifier<UpdateEmailState> {
       // 確認メールのリンクをクリックすると、メールアドレスの変更が確定します。
       await authRepository.updateEmail(state.newEmail.trim());
 
-      state = state.copyWith(
-        isLoading: false,
-        isEmailSent: true,
-      );
+      state = state.copyWith(isLoading: false, isEmailSent: true);
     } on AuthException catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'エラー: ${e.message}',
-      );
+      state = state.copyWith(isLoading: false, error: 'エラー: ${e.message}');
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: '予期しないエラーが発生しました',
-      );
+      state = state.copyWith(isLoading: false, error: '予期しないエラーが発生しました');
     }
   }
 }

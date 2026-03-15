@@ -6,4 +6,3 @@ final authStateChangesProvider = StreamProvider<AuthState>((ref) {
   final supabase = ref.watch(supabaseProvider);
   return supabase.auth.onAuthStateChange;
 });
-

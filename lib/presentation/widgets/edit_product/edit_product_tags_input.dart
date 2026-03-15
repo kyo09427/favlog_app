@@ -57,13 +57,8 @@ class EditProductTagsInput extends StatelessWidget {
               ),
             ),
             focusedBorder: const OutlineInputBorder(
-              borderRadius: BorderRadius.all(
-                Radius.circular(12),
-              ),
-              borderSide: BorderSide(
-                color: Color(0xFF22A06B),
-                width: 1.5,
-              ),
+              borderRadius: BorderRadius.all(Radius.circular(12)),
+              borderSide: BorderSide(color: Color(0xFF22A06B), width: 1.5),
             ),
             suffixIcon: IconButton(
               icon: const Icon(Icons.add),

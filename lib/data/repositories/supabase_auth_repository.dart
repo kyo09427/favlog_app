@@ -13,13 +13,24 @@ class SupabaseAuthRepository implements AuthRepository {
   SupabaseAuthRepository(this._supabaseClient);
 
   @override
-  Future<AuthResponse> signUp(String email, String password, {Map<String, dynamic>? data}) async {
-    return _supabaseClient.auth.signUp(email: email, password: password, data: data);
+  Future<AuthResponse> signUp(
+    String email,
+    String password, {
+    Map<String, dynamic>? data,
+  }) async {
+    return _supabaseClient.auth.signUp(
+      email: email,
+      password: password,
+      data: data,
+    );
   }
 
   @override
   Future<AuthResponse> signIn(String email, String password) async {
-    return _supabaseClient.auth.signInWithPassword(email: email, password: password);
+    return _supabaseClient.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
   }
 
   @override
@@ -33,7 +44,8 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Stream<AuthState> get authStateChanges => _supabaseClient.auth.onAuthStateChange;
+  Stream<AuthState> get authStateChanges =>
+      _supabaseClient.auth.onAuthStateChange;
 
   @override
   User? getCurrentUser() {
@@ -57,8 +69,6 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> updateEmail(String newEmail) async {
-    await _supabaseClient.auth.updateUser(
-      UserAttributes(email: newEmail),
-    );
+    await _supabaseClient.auth.updateUser(UserAttributes(email: newEmail));
   }
 }

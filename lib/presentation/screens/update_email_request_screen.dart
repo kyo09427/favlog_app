@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/update_email_controller.dart';
@@ -25,18 +25,19 @@ class _UpdateEmailRequestScreenState
   @override
   Widget build(BuildContext context) {
     final updateEmailState = ref.watch(updateEmailControllerProvider);
-    final updateEmailController =
-        ref.read(updateEmailControllerProvider.notifier);
+    final updateEmailController = ref.read(
+      updateEmailControllerProvider.notifier,
+    );
 
     // メール送信完了時の画面遷移
-    ref.listen<UpdateEmailState>(
-      updateEmailControllerProvider,
-      (previous, next) {
-        if (next.isEmailSent && !previous!.isEmailSent) {
-          context.push('/update-email-sent');
-        }
-      },
-    );
+    ref.listen<UpdateEmailState>(updateEmailControllerProvider, (
+      previous,
+      next,
+    ) {
+      if (next.isEmailSent && !previous!.isEmailSent) {
+        context.push('/update-email-sent');
+      }
+    });
 
     const backgroundDark = Color(0xFF102216);
     const inputBackground = Color(0xFF1C271F);
@@ -47,10 +48,7 @@ class _UpdateEmailRequestScreenState
     return Scaffold(
       backgroundColor: backgroundDark,
       appBar: AppBar(
-        title: const Text(
-          'メールアドレス変更',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text('メールアドレス変更', style: TextStyle(color: Colors.white)),
         backgroundColor: backgroundDark,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -88,10 +86,7 @@ class _UpdateEmailRequestScreenState
                     const Text(
                       '新しいメールアドレスを入力してください.\n確認用のメールをお送りします。',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: mutedTextColor,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: mutedTextColor, fontSize: 14),
                     ),
                     const SizedBox(height: 32),
 
@@ -168,10 +163,7 @@ class _UpdateEmailRequestScreenState
                       const SizedBox(height: 12),
                       Text(
                         updateEmailState.error!,
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontSize: 14,
-                        ),
+                        style: const TextStyle(color: Colors.red, fontSize: 14),
                         textAlign: TextAlign.center,
                       ),
                     ],

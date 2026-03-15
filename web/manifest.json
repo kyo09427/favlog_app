@@ -2,7 +2,7 @@
   "name": "FavLog",
   "short_name": "FavLog",
   "description": "Trust Pick - クローズドなコミュニティ向けレビュー共有アプリケーション",
-  "start_url": "/favlog_app/",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2196F3",

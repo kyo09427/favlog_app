@@ -65,10 +65,12 @@ class AddProductState {
 
 /// 商品追加コントローラーのプロバイダー
 final addProductControllerProvider =
-    StateNotifierProvider.autoDispose<AddProductController, AddProductState>((ref) {
-  final imageCompressor = ref.watch(imageCompressorProvider);
-  return AddProductController(ref, imageCompressor);
-});
+    StateNotifierProvider.autoDispose<AddProductController, AddProductState>((
+      ref,
+    ) {
+      final imageCompressor = ref.watch(imageCompressorProvider);
+      return AddProductController(ref, imageCompressor);
+    });
 
 /// 商品追加コントローラー
 class AddProductController extends StateNotifier<AddProductState> {
@@ -77,7 +79,8 @@ class AddProductController extends StateNotifier<AddProductState> {
   final ImagePicker _picker = ImagePicker();
   bool _isDisposed = false;
 
-  AddProductController(this._ref, this._imageCompressor) : super(AddProductState()) {
+  AddProductController(this._ref, this._imageCompressor)
+    : super(AddProductState()) {
     _loadCategories();
   }
 
@@ -132,7 +135,8 @@ class AddProductController extends StateNotifier<AddProductState> {
     // 重複チェック
     if (state.subcategoryTags.contains(trimmedTag)) return;
 
-    final updatedTags = List<String>.from(state.subcategoryTags)..add(trimmedTag);
+    final updatedTags = List<String>.from(state.subcategoryTags)
+      ..add(trimmedTag);
     state = state.copyWith(subcategoryTags: updatedTags);
   }
 
@@ -160,7 +164,10 @@ class AddProductController extends StateNotifier<AddProductState> {
           final imageBytes = await pickedFile.readAsBytes();
           state = state.copyWith(imageBytes: imageBytes, imageFile: null);
         } else {
-          state = state.copyWith(imageFile: File(pickedFile.path), imageBytes: null);
+          state = state.copyWith(
+            imageFile: File(pickedFile.path),
+            imageBytes: null,
+          );
         }
       }
     } catch (e) {
@@ -268,19 +275,13 @@ class AddProductController extends StateNotifier<AddProductState> {
     } on AuthException catch (e) {
       // 認証エラー
       if (!_isDisposed) {
-        state = state.copyWith(
-          isLoading: false,
-          error: '認証エラー: ${e.message}',
-        );
+        state = state.copyWith(isLoading: false, error: '認証エラー: ${e.message}');
       }
       return null;
     } catch (e) {
       // その他のエラー
       if (!_isDisposed) {
-        state = state.copyWith(
-          isLoading: false,
-          error: e.toString(),
-        );
+        state = state.copyWith(isLoading: false, error: e.toString());
       }
       return null;
     }

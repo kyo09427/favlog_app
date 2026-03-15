@@ -8,11 +8,12 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return SupabaseProfileRepository(ref.watch(supabaseProvider));
 });
 
-final userProfileProvider =
-    FutureProvider.family.autoDispose<Profile?, String>((ref, userId) {
-  // ref.keepAlive() を呼び出して、プロバイダの状態をキャッシュする
-  ref.keepAlive();
+final userProfileProvider = FutureProvider.family.autoDispose<Profile?, String>(
+  (ref, userId) {
+    // ref.keepAlive() を呼び出して、プロバイダの状態をキャッシュする
+    ref.keepAlive();
 
-  final profileRepository = ref.watch(profileRepositoryProvider);
-  return profileRepository.fetchProfile(userId);
-});
+    final profileRepository = ref.watch(profileRepositoryProvider);
+    return profileRepository.fetchProfile(userId);
+  },
+);

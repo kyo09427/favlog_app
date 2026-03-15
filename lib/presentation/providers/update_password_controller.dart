@@ -36,8 +36,8 @@ class UpdatePasswordState {
 
 final updatePasswordControllerProvider =
     StateNotifierProvider<UpdatePasswordController, UpdatePasswordState>((ref) {
-  return UpdatePasswordController(ref);
-});
+      return UpdatePasswordController(ref);
+    });
 
 class UpdatePasswordController extends StateNotifier<UpdatePasswordState> {
   final Ref _ref;
@@ -90,21 +90,12 @@ class UpdatePasswordController extends StateNotifier<UpdatePasswordState> {
     try {
       final authRepository = _ref.read(authRepositoryProvider);
       await authRepository.updatePassword(state.newPassword);
-      
-      state = state.copyWith(
-        isLoading: false,
-        isPasswordUpdated: true,
-      );
+
+      state = state.copyWith(isLoading: false, isPasswordUpdated: true);
     } on AuthException catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'エラー: ${e.message}',
-      );
+      state = state.copyWith(isLoading: false, error: 'エラー: ${e.message}');
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: '予期しないエラーが発生しました',
-      );
+      state = state.copyWith(isLoading: false, error: '予期しないエラーが発生しました');
     }
   }
 }

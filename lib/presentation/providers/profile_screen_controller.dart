@@ -1,11 +1,9 @@
-﻿
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:io';
-
 
 import '../../domain/models/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
@@ -45,7 +43,7 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
 
   Future<void> _loadProfile() async {
     if (_isDisposed) return;
-    
+
     state = const AsyncValue.loading();
     try {
       final currentUser = _authRepository.getCurrentUser();
@@ -55,11 +53,11 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
         }
         return;
       }
-      
+
       final profile = await _profileRepository.fetchProfile(currentUser.id);
-      
+
       if (_isDisposed) return;
-      
+
       // プロフィールが存在しない場合は自動作成
       if (profile == null && !_isInitializing) {
         _isInitializing = true;
@@ -77,16 +75,19 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
 
   Future<void> _createInitialProfile(User user) async {
     if (_isDisposed) return;
-    
+
     try {
       final newProfile = Profile(
         id: user.id,
-        username: user.userMetadata?['username'] ?? user.email?.split('@').first ?? 'User',
+        username:
+            user.userMetadata?['username'] ??
+            user.email?.split('@').first ??
+            'User',
         avatarUrl: null,
       );
-      
+
       await _profileRepository.updateProfile(newProfile);
-      
+
       if (!_isDisposed) {
         state = AsyncValue.data(newProfile);
       }
@@ -97,11 +98,9 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
     }
   }
 
-  Future<void> updateProfileDetails({
-    required String username,
-  }) async {
+  Future<void> updateProfileDetails({required String username}) async {
     if (_isDisposed) return;
-    
+
     final currentProfile = state.valueOrNull;
     if (currentProfile == null) {
       if (!_isDisposed) {
@@ -109,41 +108,45 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
       }
       return;
     }
-    
+
     final newUsername = username.trim();
-    
+
     if (newUsername.isEmpty) {
       if (!_isDisposed) {
-        state = AsyncValue<Profile?>.error('ユーザー名を入力してください', StackTrace.current).copyWithPrevious(state);
+        state = AsyncValue<Profile?>.error(
+          'ユーザー名を入力してください',
+          StackTrace.current,
+        ).copyWithPrevious(state);
       }
       return;
     }
-    
+
     // 変更がない場合はリターン
     if (newUsername == currentProfile.username) {
       return;
     }
-    
+
     state = const AsyncValue.loading();
     try {
-      final updatedProfile = currentProfile.copyWith(
-        username: newUsername,
-      );
+      final updatedProfile = currentProfile.copyWith(username: newUsername);
       await _profileRepository.updateProfile(updatedProfile);
-      
+
       if (!_isDisposed) {
         state = AsyncValue.data(updatedProfile);
       }
     } catch (e, st) {
       if (!_isDisposed) {
-        state = AsyncValue<Profile?>.error('プロフィールの更新に失敗しました: $e', st).copyWithPrevious(state);
+        state = AsyncValue<Profile?>.error(
+          'プロフィールの更新に失敗しました: $e',
+          st,
+        ).copyWithPrevious(state);
       }
     }
   }
 
   Future<void> pickAndUploadAvatar() async {
     if (_isDisposed) return;
-    
+
     final currentUser = _authRepository.getCurrentUser();
     if (currentUser == null) {
       state = AsyncValue.error('ユーザーがログインしていません', StackTrace.current);
@@ -175,7 +178,9 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
 
       // プラットフォームに応じて拡張子とContent-Typeを設定
       // Windows/LinuxはJPEG、それ以外（Web/Mobile）はWebP
-      final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isFuchsia);
+      final isDesktop =
+          !kIsWeb &&
+          (Platform.isWindows || Platform.isLinux || Platform.isFuchsia);
       final fileExtension = isDesktop ? 'jpg' : 'webp';
       final contentType = isDesktop ? 'image/jpeg' : 'image/webp';
       final fileName = '${const Uuid().v4()}.$fileExtension';
@@ -193,14 +198,21 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
       }
 
       // 新しい画像をアップロード (uploadBinaryを使用)
-      await _supabaseClient.storage.from('avatars').uploadBinary(
+      await _supabaseClient.storage
+          .from('avatars')
+          .uploadBinary(
             path,
             compressedBytes,
             fileOptions: FileOptions(
-                cacheControl: '3600', upsert: true, contentType: contentType),
+              cacheControl: '3600',
+              upsert: true,
+              contentType: contentType,
+            ),
           );
 
-      final publicUrl = _supabaseClient.storage.from('avatars').getPublicUrl(path);
+      final publicUrl = _supabaseClient.storage
+          .from('avatars')
+          .getPublicUrl(path);
 
       Profile updatedProfile;
       if (currentProfile != null) {
@@ -232,17 +244,17 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
 
 final profileScreenControllerProvider =
     StateNotifierProvider<ProfileScreenController, AsyncValue<Profile?>>((ref) {
-  final profileRepository = ref.watch(profileRepositoryProvider);
-  final supabaseClient = ref.watch(supabaseProvider);
-  final authRepository = ref.watch(authRepositoryProvider);
-  final imagePicker = ref.watch(imagePickerProvider);
-  final imageCompressor = ref.watch(imageCompressorProvider);
-  return ProfileScreenController(
-    profileRepository,
-    supabaseClient,
-    authRepository,
+      final profileRepository = ref.watch(profileRepositoryProvider);
+      final supabaseClient = ref.watch(supabaseProvider);
+      final authRepository = ref.watch(authRepositoryProvider);
+      final imagePicker = ref.watch(imagePickerProvider);
+      final imageCompressor = ref.watch(imageCompressorProvider);
+      return ProfileScreenController(
+        profileRepository,
+        supabaseClient,
+        authRepository,
 
-    imagePicker,
-    imageCompressor,
-  );
-});
+        imagePicker,
+        imageCompressor,
+      );
+    });

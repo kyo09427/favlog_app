@@ -41,7 +41,10 @@ class EditProductImagePicker extends StatelessWidget {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library, color: Color(0xFF22A06B)),
+                leading: const Icon(
+                  Icons.photo_library,
+                  color: Color(0xFF22A06B),
+                ),
                 title: const Text('ギャラリーから選択'),
                 onTap: () {
                   context.pop();
@@ -74,9 +77,7 @@ class EditProductImagePicker extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         GestureDetector(
-          onTap: state.isLoading
-              ? null
-              : () => _showImageSourceDialog(context),
+          onTap: state.isLoading ? null : () => _showImageSourceDialog(context),
           child: Container(
             width: double.infinity,
             height: 200,
@@ -133,103 +134,99 @@ class EditProductImagePicker extends StatelessWidget {
                     ],
                   )
                 : state.existingImageUrl != null
-                    ? Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: CachedNetworkImage(
-                              imageUrl: state.existingImageUrl!,
-                              width: double.infinity,
-                              height: double.infinity,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => Shimmer.fromColors(
-                                baseColor: theme.brightness == Brightness.dark
-                                    ? Colors.grey[800]!
-                                    : Colors.grey[300]!,
-                                highlightColor: theme.brightness == Brightness.dark
-                                    ? Colors.grey[700]!
-                                    : Colors.grey[100]!,
-                                child: Container(color: Colors.white),
-                              ),
-                              errorWidget: (context, url, error) => Container(
-                                color: theme.brightness == Brightness.dark
-                                    ? Colors.grey[900]
-                                    : Colors.grey[200],
-                                child: Icon(
-                                  Icons.image_not_supported_outlined,
-                                  color: theme.brightness == Brightness.dark
-                                      ? Colors.grey[700]
-                                      : Colors.grey[500],
+                ? Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: CachedNetworkImage(
+                          imageUrl: state.existingImageUrl!,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Shimmer.fromColors(
+                            baseColor: theme.brightness == Brightness.dark
+                                ? Colors.grey[800]!
+                                : Colors.grey[300]!,
+                            highlightColor: theme.brightness == Brightness.dark
+                                ? Colors.grey[700]!
+                                : Colors.grey[100]!,
+                            child: Container(color: Colors.white),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: theme.brightness == Brightness.dark
+                                ? Colors.grey[900]
+                                : Colors.grey[200],
+                            child: Icon(
+                              Icons.image_not_supported_outlined,
+                              color: theme.brightness == Brightness.dark
+                                  ? Colors.grey[700]
+                                  : Colors.grey[500],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 8,
+                        right: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.edit, color: Colors.white, size: 16),
+                              SizedBox(width: 4),
+                              Text(
+                                '画像を変更',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                          Positioned(
-                            bottom: 8,
-                            right: 8,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.black54,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.edit,
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    '画像を変更',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.add_photo_alternate_outlined,
-                            size: 48,
-                            color: theme.brightness == Brightness.dark
-                                ? Colors.grey[600]
-                                : Colors.grey[400],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '画像を追加',
-                            style: TextStyle(
-                              color: theme.brightness == Brightness.dark
-                                  ? Colors.grey[400]
-                                  : Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'タップして選択',
-                            style: TextStyle(
-                              color: theme.brightness == Brightness.dark
-                                  ? Colors.grey[600]
-                                  : Colors.grey[400],
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
+                    ],
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.add_photo_alternate_outlined,
+                        size: 48,
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.grey[600]
+                            : Colors.grey[400],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '画像を追加',
+                        style: TextStyle(
+                          color: theme.brightness == Brightness.dark
+                              ? Colors.grey[400]
+                              : Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'タップして選択',
+                        style: TextStyle(
+                          color: theme.brightness == Brightness.dark
+                              ? Colors.grey[600]
+                              : Colors.grey[400],
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
           ),
         ),
       ],

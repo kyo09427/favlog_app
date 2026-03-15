@@ -324,7 +324,7 @@ jobs:
   "name": "FavLog",
   "short_name": "FavLog",
   "description": "Trust Pick - クローズドなコミュニティ向けレビュー共有アプリケーション",
-  "start_url": "/favlog_app/",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2196F3",
@@ -376,22 +376,36 @@ GitHub Actions が自動実行され、デプロイが完了します。
 
 GitHub Pages のデプロイ完了後、リポジトリの Settings > Pages で確認したURLが公開アドレスになります。
 
-典型的なURL: `https://kyo09427.github.io/favlog_app/`
+典型的なURL: `https://favlog.okasis.win/`
 
 ---
 
 ## フェーズ6: 本番運用とメンテナンス
 
-### 6.1 CORS設定の確認
+### 6.1 カスタムドメインの設定
 
-Supabase APIへのアクセス時にCORSエラーが発生する場合、Supabase ダッシュボードで以下を設定：
+カスタムドメイン（例: `favlog.okasis.win`）を使用する場合、以下の設定が必要です：
 
-Settings > API > CORS Configuration:
+1. **CNAMEファイルの作成**: ビルド成果物のルートに `CNAME` ファイル（内容はドメイン名のみ）を配置します。
+2. **GitHubリポジトリの設定**: Settings > Pages > Custom domain にドメインを入力します。
+
+### 6.2 Supabaseの設定更新
+
+カスタムドメインへ移行した際、以下のSupabase設定を必ず更新してください：
+
+#### 6.2.1 CORS設定
+Supabase ダッシュボードの `Settings > API > CORS Configuration` に新しいドメインを追加します。
 ```
-https://kyo09427.github.io
+https://favlog.okasis.win
 ```
 
-### 6.2 環境変数の安全な管理
+#### 6.2.2 認証リダイレクトURL
+`Settings > Auth > Redirect URLs` に新しいドメインのリダイレクト先を追加します。
+```
+https://favlog.okasis.win/**
+```
+
+### 6.3 環境変数の安全な管理
 
 Web公開時には、機密情報（Anonキー）が見えてしまう可能性があります。対策：
 
@@ -445,7 +459,7 @@ web:
 必要に応じて、以下を明示的に設定：
 ```yaml
 web:
-  homePage: "https://kyo09427.github.io/favlog_app/"
+  homePage: "https://favlog.okasis.win/"
 ```
 
 ---

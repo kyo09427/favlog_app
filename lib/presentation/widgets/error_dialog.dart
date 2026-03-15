@@ -5,11 +5,7 @@ class ErrorDialog extends StatelessWidget {
   final String title;
   final String message;
 
-  const ErrorDialog({
-    super.key,
-    this.title = 'エラー',
-    required this.message,
-  });
+  const ErrorDialog({super.key, this.title = 'エラー', required this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -28,13 +24,14 @@ class ErrorDialog extends StatelessWidget {
   }
 
   // Helper method to show the dialog
-  static Future<void> show(BuildContext context, String message, {String title = 'エラー'}) async {
+  static Future<void> show(
+    BuildContext context,
+    String message, {
+    String title = 'エラー',
+  }) async {
     await showDialog(
       context: context,
-      builder: (context) => ErrorDialog(
-        title: title,
-        message: message,
-      ),
+      builder: (context) => ErrorDialog(title: title, message: message),
     );
   }
 }

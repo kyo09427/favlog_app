@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/update_password_controller.dart';
@@ -28,24 +28,25 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final updatePasswordState = ref.watch(updatePasswordControllerProvider);
-    final updatePasswordController =
-        ref.read(updatePasswordControllerProvider.notifier);
+    final updatePasswordController = ref.read(
+      updatePasswordControllerProvider.notifier,
+    );
 
     // パスワード更新完了時の画面遷移
-    ref.listen<UpdatePasswordState>(
-      updatePasswordControllerProvider,
-      (previous, next) {
-        if (next.isPasswordUpdated && !previous!.isPasswordUpdated) {
-          context.go('/auth');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('パスワードを更新しました。新しいパスワードでログインしてください。'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      },
-    );
+    ref.listen<UpdatePasswordState>(updatePasswordControllerProvider, (
+      previous,
+      next,
+    ) {
+      if (next.isPasswordUpdated && !previous!.isPasswordUpdated) {
+        context.go('/auth');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('パスワードを更新しました。新しいパスワードでログインしてください。'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    });
 
     const backgroundDark = Color(0xFF102216);
     const inputBackground = Color(0xFF1C271F);
@@ -86,10 +87,7 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                     const Text(
                       '新しいパスワードを入力してください',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: mutedTextColor,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: mutedTextColor, fontSize: 14),
                     ),
                     const SizedBox(height: 32),
 
@@ -165,8 +163,8 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                         ),
                       ),
                       onChanged: updatePasswordController.updateNewPassword,
-                      validator: (value) =>
-                          updatePasswordController.validatePassword(value ?? ''),
+                      validator: (value) => updatePasswordController
+                          .validatePassword(value ?? ''),
                     ),
                     const SizedBox(height: 16),
 
@@ -208,7 +206,8 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                           ),
                           onPressed: () {
                             setState(() {
-                              _obscureConfirmPassword = !_obscureConfirmPassword;
+                              _obscureConfirmPassword =
+                                  !_obscureConfirmPassword;
                             });
                           },
                         ),
@@ -256,10 +255,7 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                       const SizedBox(height: 12),
                       Text(
                         updatePasswordState.error!,
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontSize: 14,
-                        ),
+                        style: const TextStyle(color: Colors.red, fontSize: 14),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -307,10 +303,7 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                       onPressed: () => context.pop(),
                       child: const Text(
                         '戻る',
-                        style: TextStyle(
-                          color: mutedTextColor,
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: mutedTextColor, fontSize: 14),
                       ),
                     ),
                   ],

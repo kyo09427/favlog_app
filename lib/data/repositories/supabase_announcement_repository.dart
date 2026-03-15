@@ -23,11 +23,8 @@ class SupabaseAnnouncementRepository implements AnnouncementRepository {
       return (response as List).map((json) {
         final reads = json['announcement_reads'] as List?;
         final isRead = reads?.any((read) => read['user_id'] == userId) ?? false;
-        
-        return Announcement.fromJson({
-          ...json,
-          'is_read': isRead,
-        });
+
+        return Announcement.fromJson({...json, 'is_read': isRead});
       }).toList();
     } catch (e) {
       throw Exception('お知らせの取得に失敗しました: $e');
@@ -49,10 +46,7 @@ class SupabaseAnnouncementRepository implements AnnouncementRepository {
       final reads = response['announcement_reads'] as List?;
       final isRead = reads?.any((read) => read['user_id'] == userId) ?? false;
 
-      return Announcement.fromJson({
-        ...response,
-        'is_read': isRead,
-      });
+      return Announcement.fromJson({...response, 'is_read': isRead});
     } catch (e) {
       throw Exception('お知らせの取得に失敗しました: $e');
     }
@@ -68,7 +62,7 @@ class SupabaseAnnouncementRepository implements AnnouncementRepository {
       final allAnnouncementsResponse = await _client
           .from('announcements')
           .select('id');
-      
+
       final allCount = (allAnnouncementsResponse as List).length;
 
       // 既読お知らせ数を取得
@@ -76,7 +70,7 @@ class SupabaseAnnouncementRepository implements AnnouncementRepository {
           .from('announcement_reads')
           .select('announcement_id')
           .eq('user_id', userId);
-      
+
       final readCount = (readAnnouncementsResponse as List).length;
 
       return allCount - readCount;
@@ -114,18 +108,19 @@ class SupabaseAnnouncementRepository implements AnnouncementRepository {
     DateTime? publishedAt,
   }) async {
     try {
-      final response = await _client.from('announcements').insert({
-        'title': title,
-        'content': content,
-        'category': category,
-        'priority': priority,
-        'published_at': (publishedAt ?? DateTime.now()).toIso8601String(),
-      }).select().single();
+      final response = await _client
+          .from('announcements')
+          .insert({
+            'title': title,
+            'content': content,
+            'category': category,
+            'priority': priority,
+            'published_at': (publishedAt ?? DateTime.now()).toIso8601String(),
+          })
+          .select()
+          .single();
 
-      return Announcement.fromJson({
-        ...response,
-        'is_read': false,
-      });
+      return Announcement.fromJson({...response, 'is_read': false});
     } catch (e) {
       throw Exception('お知らせの作成に失敗しました: $e');
     }
@@ -147,13 +142,14 @@ class SupabaseAnnouncementRepository implements AnnouncementRepository {
         'category': category,
         'priority': priority,
       };
-      
+
       // publishedAtが指定されている場合のみ更新
       if (publishedAt != null) {
         updateData['published_at'] = publishedAt.toIso8601String();
       }
-      
-      final response = await _client.from('announcements')
+
+      final response = await _client
+          .from('announcements')
           .update(updateData)
           .eq('id', id)
           .select()
@@ -163,10 +159,7 @@ class SupabaseAnnouncementRepository implements AnnouncementRepository {
       final reads = response['announcement_reads'] as List?;
       final isRead = reads?.any((read) => read['user_id'] == userId) ?? false;
 
-      return Announcement.fromJson({
-        ...response,
-        'is_read': isRead,
-      });
+      return Announcement.fromJson({...response, 'is_read': isRead});
     } catch (e) {
       throw Exception('お知らせの更新に失敗しました: $e');
     }

@@ -8,10 +8,12 @@ class EmailVerificationScreen extends ConsumerStatefulWidget {
   const EmailVerificationScreen({super.key});
 
   @override
-  ConsumerState<EmailVerificationScreen> createState() => _EmailVerificationScreenState();
+  ConsumerState<EmailVerificationScreen> createState() =>
+      _EmailVerificationScreenState();
 }
 
-class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScreen> {
+class _EmailVerificationScreenState
+    extends ConsumerState<EmailVerificationScreen> {
   bool _isLoading = false;
   // String? _message; // Remove _message
 
@@ -31,7 +33,11 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
 
       await authRepository.resendEmail(user.email!);
       if (mounted) {
-        await ErrorDialog.show(context, '認証メールを再送しました。メールボックスをご確認ください。', title: '成功');
+        await ErrorDialog.show(
+          context,
+          '認証メールを再送しました。メールボックスをご確認ください。',
+          title: '成功',
+        );
       }
     } on AuthException catch (e) {
       if (mounted) {
@@ -53,9 +59,7 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('メールアドレスの確認'),
-      ),
+      appBar: AppBar(title: const Text('メールアドレスの確認')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),

@@ -13,8 +13,8 @@ class UserSettings {
     this.enableNewReviewNotifications = true,
     this.enableLikeNotifications = true,
     this.enableCommentNotifications = true,
-  })  : createdAt = createdAt ?? DateTime.now().toUtc(),
-        updatedAt = updatedAt ?? DateTime.now().toUtc();
+  }) : createdAt = createdAt ?? DateTime.now().toUtc(),
+       updatedAt = updatedAt ?? DateTime.now().toUtc();
 
   factory UserSettings.fromJson(Map<String, dynamic> json) {
     return UserSettings(

@@ -1,4 +1,4 @@
-﻿import 'package:go_router/go_router.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -31,21 +31,12 @@ class ReviewItem extends ConsumerStatefulWidget {
     this.onDelete,
   });
 
-
-
   @override
-
   ConsumerState<ReviewItem> createState() => _ReviewItemState();
-
 }
 
-
-
 class _ReviewItemState extends ConsumerState<ReviewItem> {
-
   bool _isExpanded = false;
-
-
 
   Widget _buildRatingStars(BuildContext context) {
     final theme = Theme.of(context);
@@ -110,10 +101,7 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
   Future<void> _handleEdit(BuildContext context) async {
     final result = await context.push<bool>(
       '/edit-review',
-      extra: {
-        'review': widget.review,
-        'product': widget.product,
-      },
+      extra: {'review': widget.review, 'product': widget.product},
     );
 
     if (result == true && widget.onReviewUpdated != null) {
@@ -123,7 +111,7 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
 
   void _showMenu(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
@@ -137,7 +125,10 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.edit_outlined, color: Color(0xFF22A06B)),
+                leading: const Icon(
+                  Icons.edit_outlined,
+                  color: Color(0xFF22A06B),
+                ),
                 title: const Text('編集する'),
                 onTap: () {
                   Navigator.pop(context);
@@ -161,14 +152,16 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
     );
   }
 
-  void _showImageViewer(BuildContext context, List<String> imageUrls, int initialIndex) {
+  void _showImageViewer(
+    BuildContext context,
+    List<String> imageUrls,
+    int initialIndex,
+  ) {
     showDialog(
       context: context,
       barrierColor: Colors.black87,
-      builder: (context) => ImageViewerDialog(
-        imageUrls: imageUrls,
-        initialIndex: initialIndex,
-      ),
+      builder: (context) =>
+          ImageViewerDialog(imageUrls: imageUrls, initialIndex: initialIndex),
     );
   }
 
@@ -178,9 +171,12 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
     final isDark = theme.brightness == Brightness.dark;
     final reviewText = widget.review.reviewText.trim();
     final currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id;
-    final isOwner = currentUserId != null && currentUserId == widget.review.userId;
+    final isOwner =
+        currentUserId != null && currentUserId == widget.review.userId;
 
-    final userProfileAsync = ref.watch(userProfileProvider(widget.review.userId));
+    final userProfileAsync = ref.watch(
+      userProfileProvider(widget.review.userId),
+    );
 
     final likeCount = widget.stats?.likeCount ?? 0;
     final commentCount = widget.stats?.commentCount ?? 0;
@@ -198,7 +194,9 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
                 if (avatarUrl != null && avatarUrl.isNotEmpty) {
                   return CircleAvatar(
                     radius: 20,
-                    backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
+                    backgroundColor: isDark
+                        ? Colors.grey[700]
+                        : Colors.grey[300],
                     backgroundImage: CachedNetworkImageProvider(avatarUrl),
                   );
                 }
@@ -283,7 +281,7 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
           ],
         ),
         const SizedBox(height: 8),
-        
+
         // レビュー画像（ある場合）
         if (widget.review.imageUrls.isNotEmpty) ...[
           SizedBox(
@@ -294,9 +292,15 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
               itemBuilder: (context, index) {
                 final imageUrl = widget.review.imageUrls[index];
                 return Padding(
-                  padding: EdgeInsets.only(right: index < widget.review.imageUrls.length - 1 ? 8 : 0),
+                  padding: EdgeInsets.only(
+                    right: index < widget.review.imageUrls.length - 1 ? 8 : 0,
+                  ),
                   child: GestureDetector(
-                    onTap: () => _showImageViewer(context, widget.review.imageUrls, index),
+                    onTap: () => _showImageViewer(
+                      context,
+                      widget.review.imageUrls,
+                      index,
+                    ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: CachedNetworkImage(
@@ -330,7 +334,7 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
           ),
           const SizedBox(height: 12),
         ],
-        
+
         // 本文
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -488,9 +492,7 @@ class _ImageViewerDialogState extends State<ImageViewerDialog> {
                         imageUrl: widget.imageUrls[index],
                         fit: BoxFit.contain,
                         placeholder: (context, url) => const Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                          ),
+                          child: CircularProgressIndicator(color: Colors.white),
                         ),
                         errorWidget: (context, url, error) => const Center(
                           child: Icon(
@@ -506,18 +508,14 @@ class _ImageViewerDialogState extends State<ImageViewerDialog> {
               ),
             ),
           ),
-          
+
           // 閉じるボタン
           Positioned(
             top: 40,
             right: 16,
             child: SafeArea(
               child: IconButton(
-                icon: const Icon(
-                  Icons.close,
-                  color: Colors.white,
-                  size: 32,
-                ),
+                icon: const Icon(Icons.close, color: Colors.white, size: 32),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
@@ -532,7 +530,10 @@ class _ImageViewerDialogState extends State<ImageViewerDialog> {
               child: SafeArea(
                 child: Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black54,
                       borderRadius: BorderRadius.circular(16),

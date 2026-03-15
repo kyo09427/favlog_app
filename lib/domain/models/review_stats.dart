@@ -18,10 +18,6 @@ class ReviewStats {
   }
 
   static ReviewStats empty(String reviewId) {
-    return ReviewStats(
-      reviewId: reviewId,
-      likeCount: 0,
-      commentCount: 0,
-    );
+    return ReviewStats(reviewId: reviewId, likeCount: 0, commentCount: 0);
   }
 }

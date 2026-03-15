@@ -18,10 +18,6 @@ class ProductStats {
   }
 
   static ProductStats empty() {
-    return ProductStats(
-      productId: '',
-      averageRating: 0.0,
-      reviewCount: 0,
-    );
+    return ProductStats(productId: '', averageRating: 0.0, reviewCount: 0);
   }
 }

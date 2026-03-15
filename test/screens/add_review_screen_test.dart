@@ -17,9 +17,13 @@ import 'package:mocktail/mocktail.dart';
 
 // Mock classes
 class MockCategoryRepository extends Mock implements CategoryRepository {}
+
 class MockProductRepository extends Mock implements ProductRepository {}
+
 class MockReviewRepository extends Mock implements ReviewRepository {}
+
 class MockAuthRepository extends Mock implements AuthRepository {}
+
 class MockImageCompressor extends Mock implements ImageCompressor {}
 
 void main() {
@@ -46,11 +50,15 @@ void main() {
         authRepositoryProvider.overrideWithValue(mockAuthRepository),
         imageCompressorProvider.overrideWithValue(mockImageCompressor),
       ],
-      child: MaterialApp(home: AddReviewScreen(selectedProduct: selectedProduct)),
+      child: MaterialApp(
+        home: AddReviewScreen(selectedProduct: selectedProduct),
+      ),
     );
   }
 
-  testWidgets('AddReviewScreen renders correctly with selected product', (WidgetTester tester) async {
+  testWidgets('AddReviewScreen renders correctly with selected product', (
+    WidgetTester tester,
+  ) async {
     // Create a test product
     final testProduct = Product(
       userId: 'test-user-id',
@@ -60,7 +68,9 @@ void main() {
       imageUrl: 'https://example.com/image.jpg',
     );
 
-    await tester.pumpWidget(createAddReviewScreen(selectedProduct: testProduct));
+    await tester.pumpWidget(
+      createAddReviewScreen(selectedProduct: testProduct),
+    );
     await tester.pumpAndSettle();
 
     // Check if header title is displayed
@@ -71,7 +81,7 @@ void main() {
 
     // Check if rating section is present
     expect(find.text('総合評価'), findsOneWidget);
-    
+
     // Check if rating stars are present
     // デフォルトの評価が3.5なので、3つのfilled星、1つのhalf星、1つのborder星
     expect(find.byIcon(Icons.star), findsNWidgets(3));
@@ -95,13 +105,15 @@ void main() {
     expect(find.text('投稿'), findsOneWidget);
   });
 
-  testWidgets('AddReviewScreen renders when no product is selected', (WidgetTester tester) async {
+  testWidgets('AddReviewScreen renders when no product is selected', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(createAddReviewScreen(selectedProduct: null));
     await tester.pumpAndSettle();
 
     // レビュー投稿画面はレンダリングされるべき
     expect(find.text('レビューを書く'), findsOneWidget);
-    
+
     // 商品情報が表示されないことを確認（selectedProductがnullの場合）
     // UIは表示されるが、商品名は表示されない
     expect(find.text('総合評価'), findsOneWidget);

@@ -9,10 +9,7 @@ import '../providers/announcement_providers.dart';
 class EditAnnouncementScreen extends ConsumerStatefulWidget {
   final Announcement announcement;
 
-  const EditAnnouncementScreen({
-    super.key,
-    required this.announcement,
-  });
+  const EditAnnouncementScreen({super.key, required this.announcement});
 
   @override
   ConsumerState<EditAnnouncementScreen> createState() =>
@@ -33,7 +30,9 @@ class _EditAnnouncementScreenState
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.announcement.title);
-    _contentController = TextEditingController(text: widget.announcement.content);
+    _contentController = TextEditingController(
+      text: widget.announcement.content,
+    );
     _selectedCategory = widget.announcement.category;
     _selectedPriority = widget.announcement.priority;
     _publishedAt = widget.announcement.publishedAt;
@@ -94,18 +93,15 @@ class _EditAnnouncementScreenState
       ref.invalidate(announcementsProvider);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('お知らせを更新しました')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('お知らせを更新しました')));
         context.pop();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('エラー: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('エラー: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class UpdateEmailSentScreen extends StatelessWidget {
@@ -69,8 +69,8 @@ class UpdateEmailSentScreen extends StatelessWidget {
                         ),
                         SizedBox(height: 12),
                         Text(
-                          '• 迷惑メールフォルダをご確認ください\n' 
-                          '• メールアドレスに誤りがないかご確認ください\n' 
+                          '• 迷惑メールフォルダをご確認ください\n'
+                          '• メールアドレスに誤りがないかご確認ください\n'
                           '• 数分お待ちいただいてから再度お試しください',
                           style: TextStyle(
                             color: mutedTextColor,
@@ -86,7 +86,8 @@ class UpdateEmailSentScreen extends StatelessWidget {
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton(
-                      onPressed: () => context.go('/auth'), // ログイン後の画面に戻る、またはログイン画面へ
+                      onPressed: () =>
+                          context.go('/auth'), // ログイン後の画面に戻る、またはログイン画面へ
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
                         foregroundColor: backgroundDark,

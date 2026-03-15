@@ -14,7 +14,7 @@ class SupabaseCommentRepository implements CommentRepository {
   final PushNotificationHelper _pushNotificationHelper;
 
   SupabaseCommentRepository(this._supabaseClient)
-      : _pushNotificationHelper = PushNotificationHelper(_supabaseClient);
+    : _pushNotificationHelper = PushNotificationHelper(_supabaseClient);
 
   @override
   Future<List<Comment>> getCommentsByReviewId(String reviewId) async {
@@ -25,9 +25,7 @@ class SupabaseCommentRepository implements CommentRepository {
           .eq('review_id', reviewId)
           .order('created_at', ascending: true);
 
-      return (response as List)
-          .map((json) => Comment.fromJson(json))
-          .toList();
+      return (response as List).map((json) => Comment.fromJson(json)).toList();
     } catch (e) {
       throw Exception('コメントの取得に失敗しました: $e');
     }
@@ -42,9 +40,7 @@ class SupabaseCommentRepository implements CommentRepository {
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
-      return (response as List)
-          .map((json) => Comment.fromJson(json))
-          .toList();
+      return (response as List).map((json) => Comment.fromJson(json)).toList();
     } catch (e) {
       throw Exception('ユーザーのコメント取得に失敗しました: $e');
     }
@@ -54,7 +50,7 @@ class SupabaseCommentRepository implements CommentRepository {
   Future<void> addComment(Comment comment) async {
     try {
       await _supabaseClient.from('comments').insert(comment.toJson());
-      
+
       // 通知の生成（コメント追加時）
       await _createCommentNotification(comment);
     } catch (e) {
@@ -65,24 +61,21 @@ class SupabaseCommentRepository implements CommentRepository {
   /// コメント追加時に通知を作成
   Future<void> _createCommentNotification(Comment comment) async {
     try {
-
-      
       // レビュー情報を取得してレビュー投稿者を特定
       final reviewResponse = await _supabaseClient
           .from('reviews')
           .select('user_id, product_id')
           .eq('id', comment.reviewId)
           .single();
-      
+
       final reviewOwnerId = reviewResponse['user_id'] as String;
       final productId = reviewResponse['product_id'] as String;
-      
+
       // 自分のレビューに自分でコメントした場合は通知しない
       if (reviewOwnerId == comment.userId) {
-
         return;
       }
-      
+
       // 商品名を取得
       String productName = '商品';
       try {
@@ -92,21 +85,20 @@ class SupabaseCommentRepository implements CommentRepository {
             .eq('id', productId)
             .single();
         productName = productResponse['name'] as String? ?? '商品';
-      } catch (_) {
-      }
-      
+      } catch (_) {}
+
       // レビュー投稿者の通知設定を確認
       final settingsResponse = await _supabaseClient
           .from('user_settings')
           .select('enable_comment_notifications')
           .eq('id', reviewOwnerId)
           .maybeSingle();
-      
+
       // 設定が存在しない場合はデフォルトでtrue
-      final enableNotifications = settingsResponse == null 
-          ? true 
+      final enableNotifications = settingsResponse == null
+          ? true
           : (settingsResponse['enable_comment_notifications'] as bool? ?? true);
-      
+
       if (enableNotifications) {
         // アプリ内通知を作成
         await _supabaseClient.from('notifications').insert({
@@ -117,7 +109,7 @@ class SupabaseCommentRepository implements CommentRepository {
           'related_review_id': comment.reviewId,
           'related_user_id': comment.userId,
         });
-        
+
         // プッシュ通知を送信
         await _pushNotificationHelper.sendPushNotifications(
           userIds: [reviewOwnerId],
@@ -125,10 +117,8 @@ class SupabaseCommentRepository implements CommentRepository {
           body: '$productNameのレビューにコメントが追加されました',
           data: {'review_id': comment.reviewId},
         );
-      } else {
-      }
-    } catch (_) {
-    }
+      } else {}
+    } catch (_) {}
   }
 
   @override
