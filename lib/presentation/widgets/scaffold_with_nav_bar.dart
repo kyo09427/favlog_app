@@ -3,10 +3,7 @@ import 'package:go_router/go_router.dart';
 
 // StatefulShellRouteと共に使用するナビゲーションバーを持つScaffold
 class ScaffoldWithNavBar extends StatefulWidget {
-  const ScaffoldWithNavBar({
-    required this.navigationShell,
-    super.key,
-  });
+  const ScaffoldWithNavBar({required this.navigationShell, super.key});
 
   // ナビゲーションシェル。UIの構築とブランチ間の移動に使用
   final StatefulNavigationShell navigationShell;
@@ -63,21 +60,27 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar>
 
   @override
   Widget build(BuildContext context) {
-    final animation = TweenSequence([
-      TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 1.3), weight: 50),
-      TweenSequenceItem(tween: Tween<double>(begin: 1.3, end: 1.0), weight: 50),
-    ]).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    final animation =
+        TweenSequence([
+          TweenSequenceItem(
+            tween: Tween<double>(begin: 1.0, end: 1.3),
+            weight: 50,
+          ),
+          TweenSequenceItem(
+            tween: Tween<double>(begin: 1.3, end: 1.0),
+            weight: 50,
+          ),
+        ]).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeInOut,
+          ),
+        );
     return Scaffold(
       body: widget.navigationShell,
       bottomNavigationBar: BottomNavigationBar(
         items: <BottomNavigationBarItem>[
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'ホーム',
-          ),
+          const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'ホーム'),
           BottomNavigationBarItem(
             icon: ScaleTransition(
               scale: animation,

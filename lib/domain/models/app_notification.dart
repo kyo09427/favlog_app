@@ -23,8 +23,8 @@ class AppNotification {
     this.relatedUserId,
     this.isRead = false,
     this.readAt,
-  })  : id = id ?? const Uuid().v4(),
-        createdAt = createdAt ?? DateTime.now().toUtc();
+  }) : id = id ?? const Uuid().v4(),
+       createdAt = createdAt ?? DateTime.now().toUtc();
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {
     return AppNotification(

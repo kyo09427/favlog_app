@@ -10,10 +10,12 @@ class ProductSelectionScreen extends ConsumerStatefulWidget {
   const ProductSelectionScreen({super.key});
 
   @override
-  ConsumerState<ProductSelectionScreen> createState() => _ProductSelectionScreenState();
+  ConsumerState<ProductSelectionScreen> createState() =>
+      _ProductSelectionScreenState();
 }
 
-class _ProductSelectionScreenState extends ConsumerState<ProductSelectionScreen> {
+class _ProductSelectionScreenState
+    extends ConsumerState<ProductSelectionScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<Product> _recentProducts = [];
   List<Product> _searchResults = [];
@@ -34,21 +36,21 @@ class _ProductSelectionScreenState extends ConsumerState<ProductSelectionScreen>
 
   Future<void> _loadRecentProducts() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final reviewRepository = ref.read(reviewRepositoryProvider);
       final productRepository = ref.read(productRepositoryProvider);
-      
+
       // 全ユーザーの最近のレビューを取得（カテゴリやフィルタなし）
       final reviews = await reviewRepository.getReviews();
-      
+
       // レビューを作成日時の降順でソート
       reviews.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      
+
       // レビューから商品IDを抽出し、重複を排除（最大5件）
       final seenProductIds = <String>{};
       final productIds = <String>[];
-      
+
       for (var review in reviews) {
         if (!seenProductIds.contains(review.productId)) {
           seenProductIds.add(review.productId);
@@ -56,7 +58,7 @@ class _ProductSelectionScreenState extends ConsumerState<ProductSelectionScreen>
           if (productIds.length >= 5) break;
         }
       }
-      
+
       // 商品情報を取得
       final products = <Product>[];
       for (var productId in productIds) {
@@ -68,7 +70,7 @@ class _ProductSelectionScreenState extends ConsumerState<ProductSelectionScreen>
           continue;
         }
       }
-      
+
       setState(() {
         _recentProducts = products;
         _isLoading = false;
@@ -86,16 +88,17 @@ class _ProductSelectionScreenState extends ConsumerState<ProductSelectionScreen>
       return;
     }
 
-
-
     try {
       final productRepository = ref.read(productRepositoryProvider);
       // すべての商品を取得してクライアント側でフィルタリング
       final allProducts = await productRepository.getProducts();
       final filteredProducts = allProducts
-          .where((product) => product.name.toLowerCase().contains(query.toLowerCase()))
+          .where(
+            (product) =>
+                product.name.toLowerCase().contains(query.toLowerCase()),
+          )
           .toList();
-      
+
       setState(() {
         _searchResults = filteredProducts;
       });
@@ -114,12 +117,20 @@ class _ProductSelectionScreenState extends ConsumerState<ProductSelectionScreen>
     final isDark = theme.brightness == Brightness.dark;
     const primaryColor = Color(0xFF13ec5b);
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-    final mutedTextColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-    final backgroundColor = isDark ? const Color(0xFF102216) : const Color(0xFFF6F8F6);
+    final mutedTextColor = isDark
+        ? const Color(0xFF9CA3AF)
+        : const Color(0xFF6B7280);
+    final backgroundColor = isDark
+        ? const Color(0xFF102216)
+        : const Color(0xFFF6F8F6);
     final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
-    final borderColor = isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
+    final borderColor = isDark
+        ? const Color(0xFF374151)
+        : const Color(0xFFE5E7EB);
 
-    final displayProducts = _searchController.text.isNotEmpty ? _searchResults : _recentProducts;
+    final displayProducts = _searchController.text.isNotEmpty
+        ? _searchResults
+        : _recentProducts;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -171,7 +182,9 @@ class _ProductSelectionScreenState extends ConsumerState<ProductSelectionScreen>
                   hintStyle: TextStyle(color: mutedTextColor),
                   prefixIcon: Icon(Icons.search, color: mutedTextColor),
                   filled: true,
-                  fillColor: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
+                  fillColor: isDark
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : const Color(0xFFF3F4F6),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide(color: borderColor),
@@ -184,7 +197,10 @@ class _ProductSelectionScreenState extends ConsumerState<ProductSelectionScreen>
                     borderRadius: BorderRadius.circular(24),
                     borderSide: const BorderSide(color: primaryColor, width: 2),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
                 ),
               ),
             ),
@@ -192,99 +208,103 @@ class _ProductSelectionScreenState extends ConsumerState<ProductSelectionScreen>
             // コンテンツ
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: primaryColor))
+                  ? const Center(
+                      child: CircularProgressIndicator(color: primaryColor),
+                    )
                   : displayProducts.isEmpty
-                      ? Center(
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _searchController.text.isNotEmpty
+                                ? Icons.search_off
+                                : Icons.inbox_outlined,
+                            size: 64,
+                            color: mutedTextColor,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _searchController.text.isNotEmpty
+                                ? '商品が見つかりませんでした'
+                                : 'まだレビューがありません',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: mutedTextColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      children: [
+                        if (_searchController.text.isEmpty) ...[
+                          Text(
+                            '最近レビューされた商品',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: mutedTextColor,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        ...displayProducts.map(
+                          (product) => _buildProductItem(
+                            product,
+                            textColor,
+                            mutedTextColor,
+                            cardColor,
+                            borderColor,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        // 新しい商品を追加ボタン
+                        Container(
+                          padding: const EdgeInsets.only(top: 16),
+                          decoration: BoxDecoration(
+                            border: Border(top: BorderSide(color: borderColor)),
+                          ),
                           child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                _searchController.text.isNotEmpty
-                                    ? Icons.search_off
-                                    : Icons.inbox_outlined,
-                                size: 64,
-                                color: mutedTextColor,
-                              ),
-                              const SizedBox(height: 16),
                               Text(
-                                _searchController.text.isNotEmpty
-                                    ? '商品が見つかりませんでした'
-                                    : 'まだレビューがありません',
+                                'お探しの商品が見つかりませんか？',
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 14,
                                   color: mutedTextColor,
                                 ),
+                                textAlign: TextAlign.center,
                               ),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 48,
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    context.push('/add-product');
+                                  },
+                                  icon: const Icon(Icons.add_circle_outline),
+                                  label: const Text('新しい商品を追加する'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isDark
+                                        ? Colors.white.withValues(alpha: 0.1)
+                                        : const Color(0xFFE5E7EB),
+                                    foregroundColor: textColor,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
                             ],
                           ),
-                        )
-                      : ListView(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          children: [
-                            if (_searchController.text.isEmpty) ...[
-                              Text(
-                                '最近レビューされた商品',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: mutedTextColor,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                            ],
-                            ...displayProducts.map((product) => _buildProductItem(
-                                  product,
-                                  textColor,
-                                  mutedTextColor,
-                                  cardColor,
-                                  borderColor,
-                                )),
-                            const SizedBox(height: 24),
-                            // 新しい商品を追加ボタン
-                            Container(
-                              padding: const EdgeInsets.only(top: 16),
-                              decoration: BoxDecoration(
-                                border: Border(top: BorderSide(color: borderColor)),
-                              ),
-                              child: Column(
-                                children: [
-                                  Text(
-                                    'お探しの商品が見つかりませんか？',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: mutedTextColor,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: 48,
-                                    child: ElevatedButton.icon(
-                                      onPressed: () {
-                                        context.push('/add-product');
-                                      },
-                                      icon: const Icon(Icons.add_circle_outline),
-                                      label: const Text('新しい商品を追加する'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: isDark
-                                            ? Colors.white.withValues(alpha: 0.1)
-                                            : const Color(0xFFE5E7EB),
-                                        foregroundColor: textColor,
-                                        elevation: 0,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                ],
-                              ),
-                            ),
-                          ],
                         ),
+                      ],
+                    ),
             ),
           ],
         ),
@@ -360,19 +380,12 @@ class _ProductSelectionScreenState extends ConsumerState<ProductSelectionScreen>
                     const SizedBox(height: 4),
                     Text(
                       product.category ?? '',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: mutedTextColor,
-                      ),
+                      style: TextStyle(fontSize: 14, color: mutedTextColor),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: mutedTextColor,
-              ),
+              Icon(Icons.arrow_forward_ios, size: 16, color: mutedTextColor),
             ],
           ),
         ),

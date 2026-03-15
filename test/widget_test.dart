@@ -2,7 +2,6 @@
 
 // import 'package:favlog_app/main.dart'; // Commented out to prevent compilation errors
 
-
 void main() {
   // Commented out the default Flutter counter test.
   // This test will be revisited once the core application logic is stable and Supabase is properly mocked.

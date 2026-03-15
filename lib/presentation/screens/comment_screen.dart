@@ -1,4 +1,4 @@
-﻿import 'package:go_router/go_router.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -10,7 +10,10 @@ import '../../core/providers/profile_providers.dart';
 import '../widgets/review_info_card.dart';
 import '../providers/comment_screen_provider.dart';
 
-final commentListProvider = FutureProvider.family<List<Comment>, String>((ref, reviewId) async {
+final commentListProvider = FutureProvider.family<List<Comment>, String>((
+  ref,
+  reviewId,
+) async {
   final commentRepository = ref.watch(commentRepositoryProvider);
   return commentRepository.getCommentsByReviewId(reviewId);
 });
@@ -48,9 +51,12 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
 
     try {
       final likeRepository = ref.read(likeRepositoryProvider);
-      final isLiked = await likeRepository.hasUserLiked(widget.reviewId, currentUserId);
+      final isLiked = await likeRepository.hasUserLiked(
+        widget.reviewId,
+        currentUserId,
+      );
       final likeCounts = await likeRepository.getLikeCounts([widget.reviewId]);
-      
+
       if (mounted) {
         setState(() {
           _isLiked = isLiked;
@@ -68,7 +74,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
 
     try {
       final likeRepository = ref.read(likeRepositoryProvider);
-      
+
       if (_isLiked) {
         await likeRepository.removeLike(widget.reviewId);
         setState(() {
@@ -84,9 +90,9 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('いいねの操作に失敗しました: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('いいねの操作に失敗しました: $e')));
       }
     }
   }
@@ -120,12 +126,12 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
       );
 
       await commentRepository.addComment(newComment);
-      
+
       _commentController.clear();
-      
+
       // リストを更新
       ref.invalidate(commentListProvider(widget.reviewId));
-      
+
       // 最下部にスクロール
       Future.delayed(const Duration(milliseconds: 300), () {
         if (_scrollController.hasClients) {
@@ -138,9 +144,9 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('コメントの投稿に失敗しました: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('コメントの投稿に失敗しました: $e')));
       }
     } finally {
       if (mounted) {
@@ -169,7 +175,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
 
   Future<void> _editComment(Comment comment) async {
     final controller = TextEditingController(text: comment.commentText);
-    
+
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
@@ -207,20 +213,20 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
         commentText: result.trim(),
         createdAt: comment.createdAt,
       );
-      
+
       await commentRepository.updateComment(updatedComment);
       ref.invalidate(commentListProvider(widget.reviewId));
-      
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('コメントを編集しました')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('コメントを編集しました')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('編集に失敗しました: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('編集に失敗しました: $e')));
       }
     }
   }
@@ -251,17 +257,17 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
       final commentRepository = ref.read(commentRepositoryProvider);
       await commentRepository.deleteComment(commentId);
       ref.invalidate(commentListProvider(widget.reviewId));
-      
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('コメントを削除しました')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('コメントを削除しました')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('削除に失敗しました: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('削除に失敗しました: $e')));
       }
     }
   }
@@ -272,14 +278,22 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final currentUserId = ref.read(authRepositoryProvider).getCurrentUser()?.id;
     final commentsAsync = ref.watch(commentListProvider(widget.reviewId));
-    final reviewDetailsAsync = ref.watch(reviewDetailsProvider(widget.reviewId));
+    final reviewDetailsAsync = ref.watch(
+      reviewDetailsProvider(widget.reviewId),
+    );
 
     const primaryColor = Color(0xFF13ec5b);
-    final backgroundColor = isDark ? const Color(0xFF102216) : const Color(0xFFF6F8F6);
+    final backgroundColor = isDark
+        ? const Color(0xFF102216)
+        : const Color(0xFFF6F8F6);
     final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-    final mutedTextColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-    final borderColor = isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
+    final mutedTextColor = isDark
+        ? const Color(0xFF9CA3AF)
+        : const Color(0xFF6B7280);
+    final borderColor = isDark
+        ? const Color(0xFF374151)
+        : const Color(0xFFE5E7EB);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -315,7 +329,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
               data: (details) {
                 final review = details.review;
                 final product = details.product;
-                
+
                 return ListView(
                   controller: _scrollController,
                   children: [
@@ -368,7 +382,9 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                         return Column(
                           children: comments.map((comment) {
                             final isOwner = currentUserId == comment.userId;
-                            final commentAuthorProfile = ref.watch(userProfileProvider(comment.userId));
+                            final commentAuthorProfile = ref.watch(
+                              userProfileProvider(comment.userId),
+                            );
 
                             return Container(
                               padding: const EdgeInsets.all(16),
@@ -389,15 +405,22 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                                         height: 32,
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
-                                          image: avatarUrl != null && avatarUrl.isNotEmpty
+                                          image:
+                                              avatarUrl != null &&
+                                                  avatarUrl.isNotEmpty
                                               ? DecorationImage(
-                                                  image: CachedNetworkImageProvider(avatarUrl),
+                                                  image:
+                                                      CachedNetworkImageProvider(
+                                                        avatarUrl,
+                                                      ),
                                                   fit: BoxFit.cover,
                                                 )
                                               : null,
                                           color: Colors.grey[300],
                                         ),
-                                        child: avatarUrl == null || avatarUrl.isEmpty
+                                        child:
+                                            avatarUrl == null ||
+                                                avatarUrl.isEmpty
                                             ? const Icon(Icons.person, size: 16)
                                             : null,
                                       );
@@ -426,13 +449,15 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                                   // コメント内容
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
                                             Text(
                                               commentAuthorProfile.when(
-                                                data: (p) => p?.username ?? 'ユーザー',
+                                                data: (p) =>
+                                                    p?.username ?? 'ユーザー',
                                                 loading: () => '読み込み中...',
                                                 error: (_, s) => 'ユーザー',
                                               ),
@@ -468,7 +493,11 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                                   // 自分のコメントの場合、メニューボタンを表示
                                   if (isOwner)
                                     PopupMenuButton<String>(
-                                      icon: Icon(Icons.more_vert, size: 20, color: mutedTextColor),
+                                      icon: Icon(
+                                        Icons.more_vert,
+                                        size: 20,
+                                        color: mutedTextColor,
+                                      ),
                                       onSelected: (value) {
                                         if (value == 'edit') {
                                           _editComment(comment);
@@ -491,9 +520,18 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                                           value: 'delete',
                                           child: Row(
                                             children: [
-                                              Icon(Icons.delete, size: 18, color: Colors.red),
+                                              Icon(
+                                                Icons.delete,
+                                                size: 18,
+                                                color: Colors.red,
+                                              ),
                                               SizedBox(width: 8),
-                                              Text('削除', style: TextStyle(color: Colors.red)),
+                                              Text(
+                                                '削除',
+                                                style: TextStyle(
+                                                  color: Colors.red,
+                                                ),
+                                              ),
                                             ],
                                           ),
                                         ),
@@ -507,7 +545,9 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                       },
                       loading: () => const Padding(
                         padding: EdgeInsets.all(32),
-                        child: Center(child: CircularProgressIndicator(color: primaryColor)),
+                        child: Center(
+                          child: CircularProgressIndicator(color: primaryColor),
+                        ),
                       ),
                       error: (error, stack) => Padding(
                         padding: const EdgeInsets.all(32),
@@ -524,8 +564,11 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                   ],
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator(color: primaryColor)),
-              error: (error, stack) => Center(child: Text('エラーが発生しました: $error')),
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: primaryColor),
+              ),
+              error: (error, stack) =>
+                  Center(child: Text('エラーが発生しました: $error')),
             ),
           ),
         ],
@@ -534,9 +577,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: cardColor,
-          border: Border(
-            top: BorderSide(color: borderColor),
-          ),
+          border: Border(top: BorderSide(color: borderColor)),
         ),
         child: SafeArea(
           child: Row(
@@ -551,7 +592,9 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                     hintText: 'コメントを追加...',
                     hintStyle: TextStyle(color: mutedTextColor),
                     filled: true,
-                    fillColor: isDark ? const Color(0xFF374151) : const Color(0xFFF3F4F6),
+                    fillColor: isDark
+                        ? const Color(0xFF374151)
+                        : const Color(0xFFF3F4F6),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(24),
                       borderSide: BorderSide.none,
@@ -583,7 +626,11 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(Icons.arrow_upward, color: Colors.white, size: 20),
+                      : const Icon(
+                          Icons.arrow_upward,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                   padding: EdgeInsets.zero,
                 ),
               ),

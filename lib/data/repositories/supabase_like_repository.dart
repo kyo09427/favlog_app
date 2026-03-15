@@ -1,4 +1,4 @@
-﻿import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/repositories/like_repository.dart';
 import '../../main.dart';
@@ -13,7 +13,7 @@ class SupabaseLikeRepository implements LikeRepository {
   final PushNotificationHelper _pushNotificationHelper;
 
   SupabaseLikeRepository(this._supabaseClient)
-      : _pushNotificationHelper = PushNotificationHelper(_supabaseClient);
+    : _pushNotificationHelper = PushNotificationHelper(_supabaseClient);
 
   @override
   Future<void> addLike(String reviewId) async {
@@ -27,7 +27,7 @@ class SupabaseLikeRepository implements LikeRepository {
         'user_id': userId,
         'review_id': reviewId,
       });
-      
+
       // 通知の生成（いいね追加時）
       await _createLikeNotification(reviewId, userId);
     } catch (e) {
@@ -38,24 +38,21 @@ class SupabaseLikeRepository implements LikeRepository {
   /// いいね追加時に通知を作成
   Future<void> _createLikeNotification(String reviewId, String likerId) async {
     try {
-
-      
       // レビュー情報を取得してレビュー投稿者を特定
       final reviewResponse = await _supabaseClient
           .from('reviews')
           .select('user_id, product_id')
           .eq('id', reviewId)
           .single();
-      
+
       final reviewOwnerId = reviewResponse['user_id'] as String;
       final productId = reviewResponse['product_id'] as String;
-      
+
       // 自分のレビューに自分でいいねした場合は通知しない
       if (reviewOwnerId == likerId) {
-
         return;
       }
-      
+
       // 商品名を取得
       String productName = '商品';
       try {
@@ -65,21 +62,20 @@ class SupabaseLikeRepository implements LikeRepository {
             .eq('id', productId)
             .single();
         productName = productResponse['name'] as String? ?? '商品';
-      } catch (_) {
-      }
-      
+      } catch (_) {}
+
       // レビュー投稿者の通知設定を確認
       final settingsResponse = await _supabaseClient
           .from('user_settings')
           .select('enable_like_notifications')
           .eq('id', reviewOwnerId)
           .maybeSingle();
-      
+
       // 設定が存在しない場合はデフォルトでtrue
-      final enableNotifications = settingsResponse == null 
-          ? true 
+      final enableNotifications = settingsResponse == null
+          ? true
           : (settingsResponse['enable_like_notifications'] as bool? ?? true);
-      
+
       if (enableNotifications) {
         // アプリ内通知を作成
         await _supabaseClient.from('notifications').insert({
@@ -90,7 +86,7 @@ class SupabaseLikeRepository implements LikeRepository {
           'related_review_id': reviewId,
           'related_user_id': likerId,
         });
-        
+
         // プッシュ通知を送信
         await _pushNotificationHelper.sendPushNotifications(
           userIds: [reviewOwnerId],
@@ -98,11 +94,8 @@ class SupabaseLikeRepository implements LikeRepository {
           body: '$productNameのレビューにいいねされました',
           data: {'review_id': reviewId},
         );
-      } else {
-
-      }
-    } catch (_) {
-    }
+      } else {}
+    } catch (_) {}
   }
 
   @override
@@ -161,7 +154,9 @@ class SupabaseLikeRepository implements LikeRepository {
 
   @override
   Future<List<String>> getUserLikedReviewIds(
-      String userId, List<String> reviewIds) async {
+    String userId,
+    List<String> reviewIds,
+  ) async {
     if (reviewIds.isEmpty) return [];
 
     try {

@@ -4,4 +4,6 @@ import '../services/image_compressor.dart';
 
 final imagePickerProvider = Provider<ImagePicker>((ref) => ImagePicker());
 
-final imageCompressorProvider = Provider<ImageCompressor>((ref) => ImageCompressor());
+final imageCompressorProvider = Provider<ImageCompressor>(
+  (ref) => ImageCompressor(),
+);

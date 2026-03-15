@@ -16,14 +16,16 @@ class SupabaseReviewRepository implements ReviewRepository {
   final PushNotificationHelper _pushNotificationHelper;
 
   SupabaseReviewRepository(this._supabaseClient)
-      : _pushNotificationHelper = PushNotificationHelper(_supabaseClient);
+    : _pushNotificationHelper = PushNotificationHelper(_supabaseClient);
 
   @override
-  Future<List<Review>> getReviews({String? category, String? visibility, String? currentUserId}) async {
+  Future<List<Review>> getReviews({
+    String? category,
+    String? visibility,
+    String? currentUserId,
+  }) async {
     try {
-      var query = _supabaseClient
-          .from('reviews')
-          .select();
+      var query = _supabaseClient.from('reviews').select();
 
       if (category != null && category != 'すべて') {
         query = query.eq('category', category);
@@ -31,15 +33,19 @@ class SupabaseReviewRepository implements ReviewRepository {
 
       if (currentUserId != null) {
         // 現在のユーザーIDに基づいてフィルタリング
-        query = query.or('visibility.eq.public,'
-                        'and(visibility.eq.friends,user_id.eq.$currentUserId),' // フォロー機能未実装のため、一旦自身のみ
-                        'and(visibility.eq.private,user_id.eq.$currentUserId)');
+        query = query.or(
+          'visibility.eq.public,'
+          'and(visibility.eq.friends,user_id.eq.$currentUserId),' // フォロー機能未実装のため、一旦自身のみ
+          'and(visibility.eq.private,user_id.eq.$currentUserId)',
+        );
       } else {
         // ログインしていないユーザーは公開レビューのみ閲覧可能
         query = query.eq('visibility', 'public');
       }
 
-      final response = await query.order('created_at', ascending: false).limit(100);
+      final response = await query
+          .order('created_at', ascending: false)
+          .limit(100);
 
       return (response as List).map((json) => Review.fromJson(json)).toList();
     } catch (e) {
@@ -76,7 +82,10 @@ class SupabaseReviewRepository implements ReviewRepository {
   }
 
   @override
-  Future<Map<String, Review>> getLatestReviewsByProductIds(List<String> productIds, {String? currentUserId}) async {
+  Future<Map<String, Review>> getLatestReviewsByProductIds(
+    List<String> productIds, {
+    String? currentUserId,
+  }) async {
     if (productIds.isEmpty) {
       return {};
     }
@@ -92,7 +101,9 @@ class SupabaseReviewRepository implements ReviewRepository {
         params: params,
       );
 
-      final reviews = (response as List).map((json) => Review.fromJson(json)).toList();
+      final reviews = (response as List)
+          .map((json) => Review.fromJson(json))
+          .toList();
 
       final latestReviews = <String, Review>{};
       for (final review in reviews) {
@@ -124,7 +135,7 @@ class SupabaseReviewRepository implements ReviewRepository {
   Future<void> createReview(Review review) async {
     try {
       await _supabaseClient.from('reviews').insert(review.toJson());
-      
+
       // 通知の生成（新規レビュー投稿時）
       await _createNewReviewNotifications(review);
     } catch (e) {
@@ -135,8 +146,6 @@ class SupabaseReviewRepository implements ReviewRepository {
   /// 新規レビュー投稿時に通知を作成
   Future<void> _createNewReviewNotifications(Review review) async {
     try {
-
-      
       // 商品情報を取得
       String productName = '商品';
       try {
@@ -146,7 +155,6 @@ class SupabaseReviewRepository implements ReviewRepository {
             .eq('id', review.productId)
             .single();
         productName = productResponse['name'] as String? ?? '商品';
-
       } catch (_) {
         // 商品名の取得失敗時はデフォルト値を使用
       }
@@ -156,21 +164,18 @@ class SupabaseReviewRepository implements ReviewRepository {
           .from('profiles')
           .select('id')
           .neq('id', review.userId);
-      
+
       final allUserIds = (allUsersResponse as List)
           .map((user) => user['id'] as String)
           .toList();
-      
 
-      
       if (allUserIds.isEmpty) {
-
         return;
       }
 
       // 各ユーザーの通知設定を確認してDB通知を作成し、プッシュ通知も送信
       final notificationEnabledUserIds = <String>[];
-      
+
       for (final userId in allUserIds) {
         try {
           final settingsResponse = await _supabaseClient
@@ -178,12 +183,13 @@ class SupabaseReviewRepository implements ReviewRepository {
               .select('enable_new_review_notifications')
               .eq('id', userId)
               .maybeSingle();
-          
+
           // 設定が存在しない場合はデフォルトでtrue、存在する場合は設定値を使用
-          final enableNotifications = settingsResponse == null 
-              ? true 
-              : (settingsResponse['enable_new_review_notifications'] as bool? ?? true);
-          
+          final enableNotifications = settingsResponse == null
+              ? true
+              : (settingsResponse['enable_new_review_notifications'] as bool? ??
+                    true);
+
           if (enableNotifications) {
             // アプリ内通知を作成
             await _supabaseClient.from('notifications').insert({
@@ -194,12 +200,11 @@ class SupabaseReviewRepository implements ReviewRepository {
               'related_review_id': review.id,
               'related_user_id': review.userId,
             });
-            
+
             // プッシュ通知送信対象に追加
             notificationEnabledUserIds.add(userId);
           }
-        } catch (_) {
-        }
+        } catch (_) {}
       }
 
       // プッシュ通知を送信
@@ -211,9 +216,7 @@ class SupabaseReviewRepository implements ReviewRepository {
           data: {'review_id': review.id},
         );
       }
-
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 
   @override
@@ -221,7 +224,7 @@ class SupabaseReviewRepository implements ReviewRepository {
     try {
       // 更新前のレビューを取得して、削除された画像を特定
       final oldReview = await getReviewById(review.id);
-      
+
       await _supabaseClient
           .from('reviews')
           .update(review.toJson())
@@ -234,8 +237,12 @@ class SupabaseReviewRepository implements ReviewRepository {
 
       if (deletedUrls.isNotEmpty) {
         try {
-          final fileNames = deletedUrls.map((url) => url.split('/').last).toList();
-          await _supabaseClient.storage.from('product_images').remove(fileNames);
+          final fileNames = deletedUrls
+              .map((url) => url.split('/').last)
+              .toList();
+          await _supabaseClient.storage
+              .from('product_images')
+              .remove(fileNames);
         } catch (e) {
           // 画像削除の失敗はメイン処理に影響させない
           // print('Failed to delete old review images: $e');
@@ -257,8 +264,12 @@ class SupabaseReviewRepository implements ReviewRepository {
       // レビューに関連付けられた画像を削除
       if (review.imageUrls.isNotEmpty) {
         try {
-          final fileNames = review.imageUrls.map((url) => url.split('/').last).toList();
-          await _supabaseClient.storage.from('product_images').remove(fileNames);
+          final fileNames = review.imageUrls
+              .map((url) => url.split('/').last)
+              .toList();
+          await _supabaseClient.storage
+              .from('product_images')
+              .remove(fileNames);
         } catch (e) {
           // print('Failed to delete review images: $e');
         }
@@ -286,4 +297,3 @@ class SupabaseReviewRepository implements ReviewRepository {
     }
   }
 }
-

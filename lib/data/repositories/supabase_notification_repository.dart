@@ -49,10 +49,13 @@ class SupabaseNotificationRepository implements NotificationRepository {
   @override
   Future<void> markAsRead(String notificationId) async {
     try {
-      await _supabaseClient.from('notifications').update({
-        'is_read': true,
-        'read_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', notificationId);
+      await _supabaseClient
+          .from('notifications')
+          .update({
+            'is_read': true,
+            'read_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', notificationId);
     } catch (e) {
       throw Exception('Failed to mark notification as read: $e');
     }
@@ -61,10 +64,14 @@ class SupabaseNotificationRepository implements NotificationRepository {
   @override
   Future<void> markAllAsRead(String userId) async {
     try {
-      await _supabaseClient.from('notifications').update({
-        'is_read': true,
-        'read_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('user_id', userId).eq('is_read', false);
+      await _supabaseClient
+          .from('notifications')
+          .update({
+            'is_read': true,
+            'read_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('user_id', userId)
+          .eq('is_read', false);
     } catch (e) {
       throw Exception('Failed to mark all notifications as read: $e');
     }
@@ -73,9 +80,7 @@ class SupabaseNotificationRepository implements NotificationRepository {
   @override
   Future<void> createNotification(AppNotification notification) async {
     try {
-      await _supabaseClient
-          .from('notifications')
-          .insert(notification.toJson());
+      await _supabaseClient.from('notifications').insert(notification.toJson());
     } catch (e) {
       throw Exception('Failed to create notification: $e');
     }

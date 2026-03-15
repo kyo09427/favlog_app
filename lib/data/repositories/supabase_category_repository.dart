@@ -29,7 +29,6 @@ class SupabaseCategoryRepository implements CategoryRepository {
         return '#$keyword';
       }).toList();
       return keywords;
-
     } catch (e) {
       // For now, we'll just rethrow the error.
       // In a real application, you would want to log this to a service.

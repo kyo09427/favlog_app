@@ -1,4 +1,4 @@
-﻿import 'dart:typed_data';
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/product.dart';
@@ -15,7 +15,11 @@ class SupabaseProductRepository implements ProductRepository {
   SupabaseProductRepository(this._supabaseClient);
 
   @override
-  Future<List<Product>> getProducts({String? category, String? searchQuery, List<String>? tags}) async {
+  Future<List<Product>> getProducts({
+    String? category,
+    String? searchQuery,
+    List<String>? tags,
+  }) async {
     try {
       var query = _supabaseClient.from('products').select();
 
@@ -26,39 +30,44 @@ class SupabaseProductRepository implements ProductRepository {
       // スペース区切りの複数ワードでAND検索
       if (searchQuery != null && searchQuery.isNotEmpty) {
         final keywords = searchQuery.trim().split(RegExp(r'\s+'));
-        
+
         // 最初のキーワードでデータベース検索（商品名、カテゴリ、サブカテゴリ）
         if (keywords.isNotEmpty && keywords.first.isNotEmpty) {
           final firstKeyword = keywords.first;
           query = query.or(
             'name.ilike.%$firstKeyword%,'
             'category.ilike.%$firstKeyword%,'
-            'subcategory_tags.cs.{$firstKeyword}'
+            'subcategory_tags.cs.{$firstKeyword}',
           );
         }
       }
-      
+
       if (tags != null && tags.isNotEmpty) {
         // subcategory_tagsはTEXT[]型なので、containsで複数のタグを含むかをチェック
         query = query.contains('subcategory_tags', tags);
       }
 
-      final response = await query.order('created_at', ascending: false).limit(100);
-      var products = (response as List).map((json) => Product.fromJson(json)).toList();
+      final response = await query
+          .order('created_at', ascending: false)
+          .limit(100);
+      var products = (response as List)
+          .map((json) => Product.fromJson(json))
+          .toList();
 
       // 2つ目以降のキーワードでクライアント側フィルタリング（AND条件）
       if (searchQuery != null && searchQuery.isNotEmpty) {
         final keywords = searchQuery.trim().split(RegExp(r'\s+'));
-        
+
         for (int i = 1; i < keywords.length; i++) {
           final keyword = keywords[i].toLowerCase();
           if (keyword.isEmpty) continue;
-          
+
           products = products.where((product) {
             final matchesName = product.name.toLowerCase().contains(keyword);
-            final matchesCategory = product.category?.toLowerCase().contains(keyword) ?? false;
+            final matchesCategory =
+                product.category?.toLowerCase().contains(keyword) ?? false;
             final matchesSubcategory = product.subcategoryTags.any(
-              (tag) => tag.toLowerCase().contains(keyword)
+              (tag) => tag.toLowerCase().contains(keyword),
             );
             return matchesName || matchesCategory || matchesSubcategory;
           }).toList();
@@ -109,20 +118,20 @@ class SupabaseProductRepository implements ProductRepository {
       print('Product user_id: ${product.userId}');
       print('Product data: ${product.toJson()}');
       */
-      
+
       // まず、商品が存在するか確認
       final existingProduct = await _supabaseClient
           .from('products')
           .select()
           .eq('id', product.id)
           .maybeSingle();
-      
+
       // print('Existing product: $existingProduct');
-      
+
       if (existingProduct == null) {
         throw Exception('商品が見つかりません（ID: ${product.id}）');
       }
-      
+
       // 更新を実行して結果を取得
       final result = await _supabaseClient
           .from('products')
@@ -135,18 +144,18 @@ class SupabaseProductRepository implements ProductRepository {
           })
           .eq('id', product.id)
           .select();
-      
+
       // print('Update result: $result');
-      
+
       // 更新された行が0行の場合はRLSポリシーで拒否された可能性が高い
       if (result.isEmpty) {
         throw Exception('商品の更新に失敗しました。この商品を編集する権限がない可能性があります。');
       }
-      
+
       // print('Update completed successfully');
 
       // 画像が変更された場合、古い画像を削除
-      if (existingProduct['image_url'] != null && 
+      if (existingProduct['image_url'] != null &&
           existingProduct['image_url'] != product.imageUrl) {
         await deleteProductImage(existingProduct['image_url'] as String);
       }
@@ -157,7 +166,7 @@ class SupabaseProductRepository implements ProductRepository {
       print('Hint: ${e.hint}');
       print('Code: ${e.code}');
       */
-      
+
       if (e.code == '42501') {
         throw Exception('更新権限がありません。この商品を編集する権限がない可能性があります。');
       }
@@ -173,7 +182,7 @@ class SupabaseProductRepository implements ProductRepository {
     try {
       // 削除前に商品情報を取得して画像URLを確保
       final product = await getProductById(productId);
-      
+
       await _supabaseClient.from('products').delete().eq('id', productId);
 
       // 画像があれば削除
@@ -196,15 +205,26 @@ class SupabaseProductRepository implements ProductRepository {
   }
 
   @override
-  Future<String> uploadProductImage(String userId, Uint8List imageData, String fileExtension, {String contentType = 'image/webp'}) async {
+  Future<String> uploadProductImage(
+    String userId,
+    Uint8List imageData,
+    String fileExtension, {
+    String contentType = 'image/webp',
+  }) async {
     try {
-      final fileName = '${userId}_${DateTime.now().microsecondsSinceEpoch}.$fileExtension';
+      final fileName =
+          '${userId}_${DateTime.now().microsecondsSinceEpoch}.$fileExtension';
       await _supabaseClient.storage
           .from('product_images')
-          .uploadBinary(fileName, imageData,
-              fileOptions: FileOptions(upsert: false, contentType: contentType));
-      
-      return _supabaseClient.storage.from('product_images').getPublicUrl(fileName);
+          .uploadBinary(
+            fileName,
+            imageData,
+            fileOptions: FileOptions(upsert: false, contentType: contentType),
+          );
+
+      return _supabaseClient.storage
+          .from('product_images')
+          .getPublicUrl(fileName);
     } on StorageException catch (e) {
       throw Exception('Failed to upload image: ${e.message}');
     } catch (e) {
@@ -228,7 +248,7 @@ class SupabaseProductRepository implements ProductRepository {
           subcategories.addAll(tags.cast<String>());
         }
       }
-          
+
       return subcategories.toList();
     } catch (e) {
       rethrow;

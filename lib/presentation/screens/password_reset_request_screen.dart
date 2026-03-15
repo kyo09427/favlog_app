@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/password_reset_controller.dart';
@@ -25,18 +25,19 @@ class _PasswordResetRequestScreenState
   @override
   Widget build(BuildContext context) {
     final passwordResetState = ref.watch(passwordResetControllerProvider);
-    final passwordResetController =
-        ref.read(passwordResetControllerProvider.notifier);
+    final passwordResetController = ref.read(
+      passwordResetControllerProvider.notifier,
+    );
 
     // メール送信完了時の画面遷移
-    ref.listen<PasswordResetState>(
-      passwordResetControllerProvider,
-      (previous, next) {
-        if (next.isEmailSent && !previous!.isEmailSent) {
-          context.push('/password-reset-email-sent');
-        }
-      },
-    );
+    ref.listen<PasswordResetState>(passwordResetControllerProvider, (
+      previous,
+      next,
+    ) {
+      if (next.isEmailSent && !previous!.isEmailSent) {
+        context.push('/password-reset-email-sent');
+      }
+    });
 
     const backgroundDark = Color(0xFF102216);
     const inputBackground = Color(0xFF1C271F);
@@ -66,11 +67,7 @@ class _PasswordResetRequestScreenState
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(
-                      Icons.lock_reset,
-                      size: 64,
-                      color: primaryColor,
-                    ),
+                    const Icon(Icons.lock_reset, size: 64, color: primaryColor),
                     const SizedBox(height: 24),
                     const Text(
                       'パスワードの再設定',
@@ -85,10 +82,7 @@ class _PasswordResetRequestScreenState
                     const Text(
                       'ご登録のメールアドレスを入力してください。\nパスワード再設定用のリンクをお送りします。',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: mutedTextColor,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: mutedTextColor, fontSize: 14),
                     ),
                     const SizedBox(height: 32),
 
@@ -165,10 +159,7 @@ class _PasswordResetRequestScreenState
                       const SizedBox(height: 12),
                       Text(
                         passwordResetState.error!,
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontSize: 14,
-                        ),
+                        style: const TextStyle(color: Colors.red, fontSize: 14),
                         textAlign: TextAlign.center,
                       ),
                     ],

@@ -50,9 +50,7 @@ class SupabaseSettingsRepository implements SettingsRepository {
   @override
   Future<void> createUserSettings(UserSettings settings) async {
     try {
-      await _supabaseClient
-          .from('user_settings')
-          .insert(settings.toJson());
+      await _supabaseClient.from('user_settings').insert(settings.toJson());
     } catch (e) {
       throw Exception('Failed to create user settings: $e');
     }

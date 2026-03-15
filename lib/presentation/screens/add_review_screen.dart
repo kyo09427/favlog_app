@@ -28,7 +28,9 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
     super.initState();
     if (widget.selectedProduct != null) {
       Future.microtask(() {
-        ref.read(addReviewControllerProvider.notifier).setProduct(widget.selectedProduct!);
+        ref
+            .read(addReviewControllerProvider.notifier)
+            .setProduct(widget.selectedProduct!);
       });
     }
   }
@@ -42,9 +44,11 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
 
   Future<void> _handleSubmit() async {
     final controller = ref.read(addReviewControllerProvider.notifier);
-    final selectedProduct = ref.read(addReviewControllerProvider).selectedProduct;
+    final selectedProduct = ref
+        .read(addReviewControllerProvider)
+        .selectedProduct;
     final success = await controller.submitReview();
-    
+
     if (success && mounted && selectedProduct != null) {
       context.go('/product/${selectedProduct.id}');
     }
@@ -81,12 +85,16 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
         maxHeight: 1024,
         imageQuality: 85,
       );
-      
+
       if (image != null) {
         if (source == ImageSource.camera) {
-           ref.read(addReviewControllerProvider.notifier).addImage(ImageSource.camera);
+          ref
+              .read(addReviewControllerProvider.notifier)
+              .addImage(ImageSource.camera);
         } else {
-           ref.read(addReviewControllerProvider.notifier).addImage(ImageSource.gallery);
+          ref
+              .read(addReviewControllerProvider.notifier)
+              .addImage(ImageSource.gallery);
         }
       }
     }
@@ -96,15 +104,21 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(addReviewControllerProvider);
     final controller = ref.read(addReviewControllerProvider.notifier);
-    
+
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
-    final backgroundColor = isDark ? const Color(0xFF102216) : const Color(0xFFF6F8F6);
+
+    final backgroundColor = isDark
+        ? const Color(0xFF102216)
+        : const Color(0xFFF6F8F6);
     final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-    final mutedTextColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-    final borderColor = isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
+    final mutedTextColor = isDark
+        ? const Color(0xFF9CA3AF)
+        : const Color(0xFF6B7280);
+    final borderColor = isDark
+        ? const Color(0xFF374151)
+        : const Color(0xFFE5E7EB);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -116,7 +130,7 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                   SizedBox(
+                  SizedBox(
                     width: 48,
                     height: 48,
                     child: IconButton(
@@ -169,7 +183,7 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                 ],
               ),
             ),
-            
+
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
@@ -188,13 +202,18 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                               borderRadius: BorderRadius.circular(8),
                               image: state.selectedProduct!.imageUrl != null
                                   ? DecorationImage(
-                                      image: CachedNetworkImageProvider(state.selectedProduct!.imageUrl!),
+                                      image: CachedNetworkImageProvider(
+                                        state.selectedProduct!.imageUrl!,
+                                      ),
                                       fit: BoxFit.cover,
                                     )
                                   : null,
                             ),
                             child: state.selectedProduct!.imageUrl == null
-                                ? const Icon(Icons.shopping_bag, color: Colors.grey)
+                                ? const Icon(
+                                    Icons.shopping_bag,
+                                    color: Colors.grey,
+                                  )
                                 : null,
                           ),
                           const SizedBox(width: 12),
@@ -212,7 +231,6 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-
                               ],
                             ),
                           ),
@@ -261,7 +279,9 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF13ec5b)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF13ec5b),
+                          ),
                         ),
                       ),
                     ),
@@ -277,7 +297,14 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildImageGrid(state, controller, cardColor, borderColor, textColor, mutedTextColor),
+                    _buildImageGrid(
+                      state,
+                      controller,
+                      cardColor,
+                      borderColor,
+                      textColor,
+                      mutedTextColor,
+                    ),
                     const SizedBox(height: 24),
 
                     // タグ
@@ -294,12 +321,18 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        ...state.subcategoryTags.map((tag) => Chip(
-                              label: Text(tag, style: const TextStyle(fontSize: 12)),
-                              backgroundColor: cardColor,
-                              side: BorderSide(color: borderColor),
-                              onDeleted: () => controller.removeSubcategoryTag(tag),
-                            )),
+                        ...state.subcategoryTags.map(
+                          (tag) => Chip(
+                            label: Text(
+                              tag,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            backgroundColor: cardColor,
+                            side: BorderSide(color: borderColor),
+                            onDeleted: () =>
+                                controller.removeSubcategoryTag(tag),
+                          ),
+                        ),
                         SizedBox(
                           width: 120,
                           child: TextField(
@@ -309,7 +342,10 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                               hintText: 'タグを追加',
                               hintStyle: TextStyle(color: mutedTextColor),
                               isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 8,
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(20),
                                 borderSide: BorderSide(color: borderColor),
@@ -344,11 +380,9 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                         border: Border.all(color: borderColor),
                       ),
                       child: Column(
-                        children: [
-                          'public',
-                          'friends',
-                          'private'
-                        ].map((visibility) {
+                        children: ['public', 'friends', 'private'].map((
+                          visibility,
+                        ) {
                           final isSelected = state.visibility == visibility;
                           final isLast = visibility == 'private';
                           return Column(
@@ -366,23 +400,33 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                                     Icon(
                                       _getVisibilityIcon(visibility),
                                       size: 20,
-                                      color: isSelected ? const Color(0xFF13ec5b) : mutedTextColor,
+                                      color: isSelected
+                                          ? const Color(0xFF13ec5b)
+                                          : mutedTextColor,
                                     ),
                                     const SizedBox(width: 12),
                                     Text(
                                       _getVisibilityLabel(visibility),
                                       style: TextStyle(
-                                        color: isSelected ? textColor : mutedTextColor,
-                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                        color: isSelected
+                                            ? textColor
+                                            : mutedTextColor,
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
                                       ),
                                     ),
                                   ],
                                 ),
                                 activeColor: const Color(0xFF13ec5b),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 0,
+                                ),
                                 dense: true,
                               ),
-                              if (!isLast) Divider(height: 1, color: borderColor),
+                              if (!isLast)
+                                Divider(height: 1, color: borderColor),
                             ],
                           );
                         }).toList(),
@@ -416,10 +460,12 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
             isFilled
                 ? Icons.star
                 : isHalf
-                    ? Icons.star_half
-                    : Icons.star_border,
+                ? Icons.star_half
+                : Icons.star_border,
             size: 36,
-            color: isFilled || isHalf ? const Color(0xFF13ec5b) : Colors.grey[400],
+            color: isFilled || isHalf
+                ? const Color(0xFF13ec5b)
+                : Colors.grey[400],
           ),
         );
       }),
@@ -486,12 +532,20 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
               decoration: BoxDecoration(
                 color: cardColor,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: borderColor, width: 2, style: BorderStyle.solid),
+                border: Border.all(
+                  color: borderColor,
+                  width: 2,
+                  style: BorderStyle.solid,
+                ),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add_photo_alternate, color: mutedTextColor, size: 32),
+                  Icon(
+                    Icons.add_photo_alternate,
+                    color: mutedTextColor,
+                    size: 32,
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     '追加',

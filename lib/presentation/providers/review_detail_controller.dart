@@ -9,9 +9,9 @@ import '../../data/repositories/supabase_comment_repository.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 
 enum ReviewSortType {
-  all,      // すべて（作成日時の新しい順）
-  newest,   // 新しい順
-  highRated // 高評価順
+  all, // すべて（作成日時の新しい順）
+  newest, // 新しい順
+  highRated, // 高評価順
 }
 
 class ReviewWithStats {
@@ -59,9 +59,11 @@ class ReviewDetailState {
 }
 
 final reviewDetailControllerProvider =
-    StateNotifierProvider.family<ReviewDetailController, ReviewDetailState, String>(
-  (ref, productId) => ReviewDetailController(ref, productId),
-);
+    StateNotifierProvider.family<
+      ReviewDetailController,
+      ReviewDetailState,
+      String
+    >((ref, productId) => ReviewDetailController(ref, productId));
 
 class ReviewDetailController extends StateNotifier<ReviewDetailState> {
   final Ref _ref;
@@ -69,13 +71,13 @@ class ReviewDetailController extends StateNotifier<ReviewDetailState> {
   final _productRepository = productRepositoryProvider;
 
   ReviewDetailController(this._ref, this._productId)
-      : super(
-          ReviewDetailState(
-            reviewsWithStats: const [],
-            currentProduct: Product.empty(),
-            isLoading: true,
-          ),
-        ) {
+    : super(
+        ReviewDetailState(
+          reviewsWithStats: const [],
+          currentProduct: Product.empty(),
+          isLoading: true,
+        ),
+      ) {
     _init();
   }
 
@@ -86,7 +88,7 @@ class ReviewDetailController extends StateNotifier<ReviewDetailState> {
   /// ソートタイプを変更
   void changeSortType(ReviewSortType newSortType) {
     if (state.sortType == newSortType) return;
-    
+
     state = state.copyWith(sortType: newSortType);
     _sortReviews();
   }
@@ -94,12 +96,13 @@ class ReviewDetailController extends StateNotifier<ReviewDetailState> {
   /// 現在のソートタイプに基づいてレビューをソート
   void _sortReviews() {
     final sortedReviews = List<ReviewWithStats>.from(state.reviewsWithStats);
-    
+
     switch (state.sortType) {
       case ReviewSortType.all:
       case ReviewSortType.newest:
-        sortedReviews.sort((a, b) => 
-          b.review.createdAt.compareTo(a.review.createdAt));
+        sortedReviews.sort(
+          (a, b) => b.review.createdAt.compareTo(a.review.createdAt),
+        );
         break;
       case ReviewSortType.highRated:
         sortedReviews.sort((a, b) {
@@ -110,7 +113,7 @@ class ReviewDetailController extends StateNotifier<ReviewDetailState> {
         });
         break;
     }
-    
+
     state = state.copyWith(reviewsWithStats: sortedReviews);
   }
 
@@ -166,7 +169,7 @@ class ReviewDetailController extends StateNotifier<ReviewDetailState> {
           likeCount: likeCounts[review.id] ?? 0,
           commentCount: commentCounts[review.id] ?? 0,
         );
-        
+
         return ReviewWithStats(
           review: review,
           stats: stats,
@@ -179,14 +182,11 @@ class ReviewDetailController extends StateNotifier<ReviewDetailState> {
         currentProduct: fetchedProduct,
         isLoading: false,
       );
-      
+
       // ソートを適用
       _sortReviews();
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
@@ -194,15 +194,16 @@ class ReviewDetailController extends StateNotifier<ReviewDetailState> {
   Future<void> toggleLike(String reviewId) async {
     try {
       final likeRepository = _ref.read(likeRepositoryProvider);
-      final reviewWithStats = state.reviewsWithStats
-          .firstWhere((rws) => rws.review.id == reviewId);
-      
+      final reviewWithStats = state.reviewsWithStats.firstWhere(
+        (rws) => rws.review.id == reviewId,
+      );
+
       if (reviewWithStats.isLikedByCurrentUser) {
         await likeRepository.removeLike(reviewId);
       } else {
         await likeRepository.addLike(reviewId);
       }
-      
+
       // 状態を更新
       await refreshAll();
     } catch (e) {

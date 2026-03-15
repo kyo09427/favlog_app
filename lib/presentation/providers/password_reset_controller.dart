@@ -32,8 +32,8 @@ class PasswordResetState {
 
 final passwordResetControllerProvider =
     StateNotifierProvider<PasswordResetController, PasswordResetState>((ref) {
-  return PasswordResetController(ref);
-});
+      return PasswordResetController(ref);
+    });
 
 class PasswordResetController extends StateNotifier<PasswordResetState> {
   final Ref _ref;
@@ -55,21 +55,12 @@ class PasswordResetController extends StateNotifier<PasswordResetState> {
     try {
       final authRepository = _ref.read(authRepositoryProvider);
       await authRepository.sendPasswordResetEmail(state.email.trim());
-      
-      state = state.copyWith(
-        isLoading: false,
-        isEmailSent: true,
-      );
+
+      state = state.copyWith(isLoading: false, isEmailSent: true);
     } on AuthException catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'エラー: ${e.message}',
-      );
+      state = state.copyWith(isLoading: false, error: 'エラー: ${e.message}');
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: '予期しないエラーが発生しました',
-      );
+      state = state.copyWith(isLoading: false, error: '予期しないエラーが発生しました');
     }
   }
 }

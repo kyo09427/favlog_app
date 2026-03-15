@@ -64,25 +64,35 @@ class EditProductState {
       productName: productName ?? this.productName,
       productUrl: productUrl ?? this.productUrl,
       selectedCategory: selectedCategory ?? this.selectedCategory,
-      subcategoryTags: subcategoryTags ?? this.subcategoryTags, // subcategoryから変更
+      subcategoryTags:
+          subcategoryTags ?? this.subcategoryTags, // subcategoryから変更
       existingImageUrl: existingImageUrl ?? this.existingImageUrl,
-      newImageFile: clearNewImageFile ? null : newImageFile ?? this.newImageFile,
-      newImageBytes: clearNewImageBytes ? null : newImageBytes ?? this.newImageBytes,
+      newImageFile: clearNewImageFile
+          ? null
+          : newImageFile ?? this.newImageFile,
+      newImageBytes: clearNewImageBytes
+          ? null
+          : newImageBytes ?? this.newImageBytes,
       isLoading: isLoading ?? this.isLoading,
       error: error,
       originalProduct: originalProduct ?? this.originalProduct,
       categories: categories ?? this.categories,
-      subcategorySuggestions: subcategorySuggestions ?? this.subcategorySuggestions,
+      subcategorySuggestions:
+          subcategorySuggestions ?? this.subcategorySuggestions,
     );
   }
 }
 
 /// 商品編集コントローラーのプロバイダー
-final editProductControllerProvider = StateNotifierProvider.family<
-    EditProductController, EditProductState, Product>((ref, product) {
-  final imageCompressor = ref.watch(imageCompressorProvider);
-  return EditProductController(ref, product, imageCompressor);
-});
+final editProductControllerProvider =
+    StateNotifierProvider.family<
+      EditProductController,
+      EditProductState,
+      Product
+    >((ref, product) {
+      final imageCompressor = ref.watch(imageCompressorProvider);
+      return EditProductController(ref, product, imageCompressor);
+    });
 
 /// 商品編集コントローラー
 class EditProductController extends StateNotifier<EditProductState> {
@@ -92,14 +102,16 @@ class EditProductController extends StateNotifier<EditProductState> {
   bool _isDisposed = false;
 
   EditProductController(this._ref, Product product, this._imageCompressor)
-      : super(EditProductState(
+    : super(
+        EditProductState(
           productName: product.name,
           productUrl: product.url ?? '',
           selectedCategory: product.category ?? '',
           subcategoryTags: product.subcategoryTags, // subcategoryTagsを初期化
           existingImageUrl: product.imageUrl,
           originalProduct: product,
-        )) {
+        ),
+      ) {
     _loadCategories();
     if (product.category != null && product.category!.isNotEmpty) {
       fetchSubcategorySuggestions(product.category!);
@@ -191,7 +203,8 @@ class EditProductController extends StateNotifier<EditProductState> {
     // 重複チェック
     if (state.subcategoryTags.contains(trimmedTag)) return;
 
-    final updatedTags = List<String>.from(state.subcategoryTags)..add(trimmedTag);
+    final updatedTags = List<String>.from(state.subcategoryTags)
+      ..add(trimmedTag);
     state = state.copyWith(subcategoryTags: updatedTags);
   }
 
@@ -240,10 +253,7 @@ class EditProductController extends StateNotifier<EditProductState> {
   /// 選択した画像をクリア
   void clearImage() {
     if (_isDisposed) return;
-    state = state.copyWith(
-      clearNewImageFile: true,
-      clearNewImageBytes: true,
-    );
+    state = state.copyWith(clearNewImageFile: true, clearNewImageBytes: true);
   }
 
   /// 商品情報を更新
@@ -264,12 +274,13 @@ class EditProductController extends StateNotifier<EditProductState> {
 
       // 画像のアップロード処理（新しい画像が選択されている場合）
       String? imageUrl = state.existingImageUrl;
-      final hasNewImage = state.newImageFile != null || state.newImageBytes != null;
+      final hasNewImage =
+          state.newImageFile != null || state.newImageBytes != null;
 
       if (hasNewImage) {
         try {
           final Uint8List imageBytes;
-          
+
           if (kIsWeb) {
             imageBytes = state.newImageBytes!;
           } else {
@@ -285,7 +296,9 @@ class EditProductController extends StateNotifier<EditProductState> {
 
           // プラットフォームに応じて拡張子とContent-Typeを設定
           // Windows/LinuxはJPEG、それ以外（Web/Mobile）はWebP
-          final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isFuchsia);
+          final isDesktop =
+              !kIsWeb &&
+              (Platform.isWindows || Platform.isLinux || Platform.isFuchsia);
           final fileExtension = isDesktop ? 'jpg' : 'webp';
           final contentType = isDesktop ? 'image/jpeg' : 'image/webp';
 
@@ -305,7 +318,9 @@ class EditProductController extends StateNotifier<EditProductState> {
       final updatedProduct = state.originalProduct.copyWith(
         name: state.productName,
         url: state.productUrl.isEmpty ? null : state.productUrl,
-        category: state.selectedCategory.isEmpty ? null : state.selectedCategory,
+        category: state.selectedCategory.isEmpty
+            ? null
+            : state.selectedCategory,
         subcategoryTags: state.subcategoryTags, // ここを修正
         imageUrl: imageUrl,
       );
@@ -316,7 +331,7 @@ class EditProductController extends StateNotifier<EditProductState> {
       // 関連するプロバイダーを無効化してデータを再取得させる
       _ref.invalidate(homeScreenControllerProvider);
       _ref.invalidate(searchControllerProvider);
-      
+
       // 商品詳細画面のプロバイダーも無効化
       _ref.invalidate(reviewDetailControllerProvider(state.originalProduct.id));
 
@@ -332,17 +347,11 @@ class EditProductController extends StateNotifier<EditProductState> {
       }
     } on AuthException catch (e) {
       if (!_isDisposed) {
-        state = state.copyWith(
-          isLoading: false,
-          error: '認証エラー: ${e.message}',
-        );
+        state = state.copyWith(isLoading: false, error: '認証エラー: ${e.message}');
       }
     } catch (e) {
       if (!_isDisposed) {
-        state = state.copyWith(
-          isLoading: false,
-          error: e.toString(),
-        );
+        state = state.copyWith(isLoading: false, error: e.toString());
       }
     }
   }

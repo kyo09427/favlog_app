@@ -19,9 +19,9 @@ class Product {
     this.category,
     List<String>? subcategoryTags,
     this.imageUrl,
-  })  : id = id ?? const Uuid().v4(),
-        createdAt = createdAt ?? DateTime.now().toUtc(),
-        subcategoryTags = subcategoryTags ?? [];
+  }) : id = id ?? const Uuid().v4(),
+       createdAt = createdAt ?? DateTime.now().toUtc(),
+       subcategoryTags = subcategoryTags ?? [];
 
   factory Product.empty() {
     return Product(
@@ -46,7 +46,9 @@ class Product {
       category: json['category'] as String?,
       subcategoryTags: json['subcategory_tags'] != null
           ? List<String>.from(json['subcategory_tags'] as List)
-          : (json['subcategory'] != null ? [json['subcategory'] as String] : []), // 後方互換性
+          : (json['subcategory'] != null
+                ? [json['subcategory'] as String]
+                : []), // 後方互換性
       imageUrl: json['image_url'] as String?,
     );
   }

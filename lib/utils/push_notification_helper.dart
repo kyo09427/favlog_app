@@ -20,15 +20,19 @@ class PushNotificationHelper {
     }
 
     try {
-      print('sendPushNotifications: Sending to ${userIds.length} users: $userIds');
-      
+      print(
+        'sendPushNotifications: Sending to ${userIds.length} users: $userIds',
+      );
+
       // Supabase Edge Functionを呼び出してプッシュ通知を送信
       // Edge Function側でService Roleキーを使ってトークンを取得する
-      print('sendPushNotifications: Calling Edge Function with ${userIds.length} user IDs');
+      print(
+        'sendPushNotifications: Calling Edge Function with ${userIds.length} user IDs',
+      );
       final response = await _supabaseClient.functions.invoke(
         'send-push-notification',
         body: {
-          'user_ids': userIds,  // トークンではなくユーザーIDを送信
+          'user_ids': userIds, // トークンではなくユーザーIDを送信
           'title': title,
           'body': body,
           'data': data ?? {},
@@ -36,7 +40,9 @@ class PushNotificationHelper {
       );
 
       if (response.status != 200) {
-        print('sendPushNotifications: Failed with status ${response.status}: ${response.data}');
+        print(
+          'sendPushNotifications: Failed with status ${response.status}: ${response.data}',
+        );
       } else {
         print('sendPushNotifications: Success! Response: ${response.data}');
       }

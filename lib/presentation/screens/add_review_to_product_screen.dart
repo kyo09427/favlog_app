@@ -23,10 +23,12 @@ class _AddReviewToProductScreenState
   @override
   void initState() {
     super.initState();
-    final addReviewToProductState =
-        ref.read(addReviewToProductControllerProvider(widget.product));
-    _reviewTextController =
-        TextEditingController(text: addReviewToProductState.reviewText);
+    final addReviewToProductState = ref.read(
+      addReviewToProductControllerProvider(widget.product),
+    );
+    _reviewTextController = TextEditingController(
+      text: addReviewToProductState.reviewText,
+    );
   }
 
   @override
@@ -38,10 +40,12 @@ class _AddReviewToProductScreenState
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
-    final addReviewToProductState =
-        ref.watch(addReviewToProductControllerProvider(product));
-    final addReviewToProductController =
-        ref.read(addReviewToProductControllerProvider(product).notifier);
+    final addReviewToProductState = ref.watch(
+      addReviewToProductControllerProvider(product),
+    );
+    final addReviewToProductController = ref.read(
+      addReviewToProductControllerProvider(product).notifier,
+    );
 
     // エラー監視
     ref.listen<AddReviewToProductState>(
@@ -63,12 +67,13 @@ class _AddReviewToProductScreenState
 
       await addReviewToProductController.submitReview();
 
-      final latestState =
-          ref.read(addReviewToProductControllerProvider(product));
+      final latestState = ref.read(
+        addReviewToProductControllerProvider(product),
+      );
       if (context.mounted && latestState.error == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('レビューを投稿しました！')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('レビューを投稿しました！')));
         context.pop();
       }
     }
@@ -81,17 +86,12 @@ class _AddReviewToProductScreenState
 
         IconData icon;
 
-
         if (rating >= starPosition) {
           icon = Icons.star;
-
-        } else if (rating >= starPosition - 0.5 &&
-            rating < starPosition) {
+        } else if (rating >= starPosition - 0.5 && rating < starPosition) {
           icon = Icons.star_half;
-
         } else {
           icon = Icons.star_border;
-
         }
 
         return IconButton(
@@ -205,8 +205,7 @@ class _AddReviewToProductScreenState
                           ...buildStars(),
                           const SizedBox(width: 8),
                           Text(
-                            addReviewToProductState.rating
-                                .toStringAsFixed(1),
+                            addReviewToProductState.rating.toStringAsFixed(1),
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: theme.brightness == Brightness.dark
@@ -245,8 +244,7 @@ class _AddReviewToProductScreenState
                         controller: _reviewTextController,
                         maxLines: 6,
                         decoration: InputDecoration(
-                          hintText:
-                              '感じたことや良かったところ、イマイチだったところなどをメモしておきましょう。',
+                          hintText: '感じたことや良かったところ、イマイチだったところなどをメモしておきましょう。',
                           filled: true,
                           fillColor: theme.brightness == Brightness.dark
                               ? Colors.white.withValues(alpha: 0.04)
@@ -282,8 +280,7 @@ class _AddReviewToProductScreenState
                         onChanged:
                             addReviewToProductController.updateReviewText,
                         validator: (value) {
-                          if (value == null ||
-                              value.trim().length < 10) {
+                          if (value == null || value.trim().length < 10) {
                             return 'レビュー本文は10文字以上で入力してください';
                           }
                           return null;
@@ -297,10 +294,7 @@ class _AddReviewToProductScreenState
 
             // 下部ボタン
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: theme.brightness == Brightness.dark
                     ? const Color(0xFF050B07)

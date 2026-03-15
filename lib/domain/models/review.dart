@@ -21,11 +21,11 @@ class Review {
     List<String>? imageUrls,
     List<String>? subcategoryTags,
     String? visibility,
-  })  : id = id ?? const Uuid().v4(),
-        createdAt = createdAt ?? DateTime.now().toUtc(),
-        imageUrls = imageUrls ?? [],
-        subcategoryTags = subcategoryTags ?? [],
-        visibility = visibility ?? 'public';
+  }) : id = id ?? const Uuid().v4(),
+       createdAt = createdAt ?? DateTime.now().toUtc(),
+       imageUrls = imageUrls ?? [],
+       subcategoryTags = subcategoryTags ?? [],
+       visibility = visibility ?? 'public';
 
   factory Review.empty() {
     return Review(

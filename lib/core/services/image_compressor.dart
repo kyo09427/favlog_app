@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -15,8 +15,14 @@ class ImageCompressor {
     int quality = 85,
   }) async {
     // Windows/Linux/Fuchsiaはflutter_image_compressが非対応のためimageパッケージを使用
-    if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isFuchsia)) {
-      return _compressWithImageLibrary(imageBytes, maxWidth, maxHeight, quality);
+    if (!kIsWeb &&
+        (Platform.isWindows || Platform.isLinux || Platform.isFuchsia)) {
+      return _compressWithImageLibrary(
+        imageBytes,
+        maxWidth,
+        maxHeight,
+        quality,
+      );
     } else {
       // Web, Android, iOS, macOSはflutter_image_compressを使用（WebP有効）
       return _compressImageNative(imageBytes, maxWidth, maxHeight, quality);

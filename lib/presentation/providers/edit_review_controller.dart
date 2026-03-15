@@ -63,22 +63,26 @@ class ImageData {
   final String? id; // 一意のID
   final String? url; // 既存画像のURL
 
-  ImageData({
-    this.file,
-    this.bytes,
-    String? id,
-    this.url,
-  }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString();
+  ImageData({this.file, this.bytes, String? id, this.url})
+    : id = id ?? DateTime.now().millisecondsSinceEpoch.toString();
 
   bool get hasData => file != null || bytes != null || url != null;
 }
 
 /// レビュー編集コントローラーのプロバイダー
-final editReviewControllerProvider = StateNotifierProvider.family<
-    EditReviewController, EditReviewState, Review>((ref, review) {
-  final imageCompressor = ref.watch(imageCompressorProvider); // Add this line
-  return EditReviewController(ref, review, imageCompressor); // Modify constructor
-});
+final editReviewControllerProvider =
+    StateNotifierProvider.family<EditReviewController, EditReviewState, Review>(
+      (ref, review) {
+        final imageCompressor = ref.watch(
+          imageCompressorProvider,
+        ); // Add this line
+        return EditReviewController(
+          ref,
+          review,
+          imageCompressor,
+        ); // Modify constructor
+      },
+    );
 
 /// レビュー編集コントローラー
 class EditReviewController extends StateNotifier<EditReviewState> {
@@ -89,14 +93,18 @@ class EditReviewController extends StateNotifier<EditReviewState> {
 
   // Modify constructor
   EditReviewController(this._ref, Review review, this._imageCompressor)
-      : super(EditReviewState(
+    : super(
+        EditReviewState(
           reviewText: review.reviewText,
           rating: review.rating,
-          images: review.imageUrls.map((url) => ImageData(url: url, id: url)).toList(), // Initialize images from imageUrls, using url as id for existing images
+          images: review.imageUrls
+              .map((url) => ImageData(url: url, id: url))
+              .toList(), // Initialize images from imageUrls, using url as id for existing images
           subcategoryTags: review.subcategoryTags, // Initialize subcategoryTags
           visibility: review.visibility, // Initialize visibility
           originalReview: review,
-        ));
+        ),
+      );
 
   @override
   void dispose() {
@@ -120,7 +128,7 @@ class EditReviewController extends StateNotifier<EditReviewState> {
   /// 画像を追加（最大3枚まで）
   Future<void> addImage(ImageSource source) async {
     if (_isDisposed) return;
-    
+
     // 最大3枚まで
     if (state.images.length >= 3) {
       state = state.copyWith(error: '画像は最大3枚までです');
@@ -143,8 +151,9 @@ class EditReviewController extends StateNotifier<EditReviewState> {
         } else {
           imageData = ImageData(file: File(pickedFile.path));
         }
-        
-        final updatedImages = List<ImageData>.from(state.images)..add(imageData);
+
+        final updatedImages = List<ImageData>.from(state.images)
+          ..add(imageData);
         state = state.copyWith(images: updatedImages);
       }
     } catch (e) {
@@ -157,7 +166,9 @@ class EditReviewController extends StateNotifier<EditReviewState> {
   /// 画像を削除
   void removeImage(String imageId) {
     if (_isDisposed) return;
-    final updatedImages = state.images.where((img) => img.id != imageId).toList();
+    final updatedImages = state.images
+        .where((img) => img.id != imageId)
+        .toList();
     state = state.copyWith(images: updatedImages);
   }
 
@@ -166,11 +177,12 @@ class EditReviewController extends StateNotifier<EditReviewState> {
     if (_isDisposed) return;
     final trimmedTag = tag.trim();
     if (trimmedTag.isEmpty) return;
-    
+
     // 重複チェック
     if (state.subcategoryTags.contains(trimmedTag)) return;
-    
-    final updatedTags = List<String>.from(state.subcategoryTags)..add(trimmedTag);
+
+    final updatedTags = List<String>.from(state.subcategoryTags)
+      ..add(trimmedTag);
     state = state.copyWith(subcategoryTags: updatedTags);
   }
 
@@ -196,7 +208,9 @@ class EditReviewController extends StateNotifier<EditReviewState> {
     try {
       final authRepository = _ref.read(authRepositoryProvider);
       final reviewRepository = _ref.read(reviewRepositoryProvider);
-      final productRepository = _ref.read(productRepositoryProvider); // Add this line
+      final productRepository = _ref.read(
+        productRepositoryProvider,
+      ); // Add this line
 
       // ユーザー認証チェック
       final user = authRepository.getCurrentUser();
@@ -216,7 +230,7 @@ class EditReviewController extends StateNotifier<EditReviewState> {
 
       // 既存の画像URLと新しいImageDataを比較
       final originalImageUrls = state.originalReview.imageUrls;
-      
+
       for (final imgData in state.images) {
         if (imgData.url != null) {
           // 既存の画像（URLを持つ）
@@ -228,9 +242,13 @@ class EditReviewController extends StateNotifier<EditReviewState> {
       }
 
       // 削除された画像を特定し、Supabase Storageから削除
-      final imagesToDelete = originalImageUrls.where((url) => !imagesToKeep.contains(url)).toList();
+      final imagesToDelete = originalImageUrls
+          .where((url) => !imagesToKeep.contains(url))
+          .toList();
       for (final imageUrl in imagesToDelete) {
-        await productRepository.deleteProductImage(imageUrl); // productRepositoryを流用
+        await productRepository.deleteProductImage(
+          imageUrl,
+        ); // productRepositoryを流用
       }
 
       // 新しくアップロードされる画像のURL
@@ -240,20 +258,21 @@ class EditReviewController extends StateNotifier<EditReviewState> {
           final imageBytes = kIsWeb
               ? imageData.bytes!
               : await imageData.file!.readAsBytes();
-          
+
           // 画像を圧縮
           final compressedBytes = await _imageCompressor.compressImage(
             imageBytes,
             maxWidth: 1024,
             quality: 80,
           );
-          
+
           // プラットフォームに応じて拡張子とContent-Typeを設定
           final fileExtension = kIsWeb ? 'jpg' : 'webp';
           final contentType = kIsWeb ? 'image/jpeg' : 'image/webp';
-          
+
           // Supabase Storageにアップロード
-          final imageUrl = await productRepository.uploadProductImage( // productRepositoryを流用
+          final imageUrl = await productRepository.uploadProductImage(
+            // productRepositoryを流用
             user.id,
             compressedBytes,
             fileExtension,
@@ -283,24 +302,15 @@ class EditReviewController extends StateNotifier<EditReviewState> {
 
       // 成功したら状態を更新
       if (!_isDisposed) {
-        state = state.copyWith(
-          isLoading: false,
-          originalReview: updatedReview,
-        );
+        state = state.copyWith(isLoading: false, originalReview: updatedReview);
       }
     } on AuthException catch (e) {
       if (!_isDisposed) {
-        state = state.copyWith(
-          isLoading: false,
-          error: '認証エラー: ${e.message}',
-        );
+        state = state.copyWith(isLoading: false, error: '認証エラー: ${e.message}');
       }
     } catch (e) {
       if (!_isDisposed) {
-        state = state.copyWith(
-          isLoading: false,
-          error: e.toString(),
-        );
+        state = state.copyWith(isLoading: false, error: e.toString());
       }
     }
   }

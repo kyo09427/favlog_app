@@ -38,16 +38,14 @@ class SupabaseProfileRepository implements ProfileRepository {
           'username': profile.username,
           'avatar_url': profile.avatarUrl,
         };
-        
+
         await _supabaseClient
             .from('profiles')
             .update(updateData)
             .eq('id', profile.id);
       } else {
         // 新規作成
-        await _supabaseClient
-            .from('profiles')
-            .insert(profile.toJson());
+        await _supabaseClient.from('profiles').insert(profile.toJson());
       }
     } catch (e) {
       rethrow;

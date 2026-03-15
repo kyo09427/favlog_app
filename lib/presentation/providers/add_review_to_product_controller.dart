@@ -34,15 +34,21 @@ class AddReviewToProductState {
 }
 
 final addReviewToProductControllerProvider =
-    StateNotifierProvider.family<AddReviewToProductController, AddReviewToProductState, Product>((ref, product) {
-  return AddReviewToProductController(ref, product);
-});
+    StateNotifierProvider.family<
+      AddReviewToProductController,
+      AddReviewToProductState,
+      Product
+    >((ref, product) {
+      return AddReviewToProductController(ref, product);
+    });
 
-class AddReviewToProductController extends StateNotifier<AddReviewToProductState> {
+class AddReviewToProductController
+    extends StateNotifier<AddReviewToProductState> {
   final Ref _ref;
   final Product _product;
 
-  AddReviewToProductController(this._ref, this._product) : super(AddReviewToProductState());
+  AddReviewToProductController(this._ref, this._product)
+    : super(AddReviewToProductState());
 
   void updateReviewText(String text) {
     state = state.copyWith(reviewText: text);

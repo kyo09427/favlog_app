@@ -11,10 +11,7 @@ import '../widgets/edit_product/edit_product_tags_input.dart';
 class EditProductScreen extends ConsumerStatefulWidget {
   final Product product;
 
-  const EditProductScreen({
-    super.key,
-    required this.product,
-  });
+  const EditProductScreen({super.key, required this.product});
 
   @override
   ConsumerState<EditProductScreen> createState() => _EditProductScreenState();
@@ -30,11 +27,15 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
   void initState() {
     super.initState();
     _productNameController = TextEditingController(text: widget.product.name);
-    _productUrlController = TextEditingController(text: widget.product.url ?? '');
+    _productUrlController = TextEditingController(
+      text: widget.product.url ?? '',
+    );
     _tagInputController = TextEditingController();
     // Set initial tags from originalProduct
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final controller = ref.read(editProductControllerProvider(widget.product).notifier);
+      final controller = ref.read(
+        editProductControllerProvider(widget.product).notifier,
+      );
       for (var tag in widget.product.subcategoryTags) {
         controller.addSubcategoryTag(tag);
       }
@@ -51,8 +52,12 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final editProductState = ref.watch(editProductControllerProvider(widget.product));
-    final editProductController = ref.read(editProductControllerProvider(widget.product).notifier);
+    final editProductState = ref.watch(
+      editProductControllerProvider(widget.product),
+    );
+    final editProductController = ref.read(
+      editProductControllerProvider(widget.product).notifier,
+    );
 
     // エラー発生時ダイアログ
     ref.listen<EditProductState>(
@@ -76,11 +81,13 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
 
       await editProductController.updateProduct();
 
-      final latestState = ref.read(editProductControllerProvider(widget.product));
+      final latestState = ref.read(
+        editProductControllerProvider(widget.product),
+      );
       if (context.mounted && latestState.error == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('商品情報を更新しました！')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('商品情報を更新しました！')));
         context.pop(true);
       }
     }
@@ -189,9 +196,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                             ),
                           ),
                           focusedBorder: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(12),
-                            ),
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
                             borderSide: BorderSide(
                               color: Color(0xFF22A06B),
                               width: 1.5,
@@ -255,9 +260,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                             ),
                           ),
                           focusedBorder: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(12),
-                            ),
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
                             borderSide: BorderSide(
                               color: Color(0xFF22A06B),
                               width: 1.5,

@@ -26,7 +26,7 @@ class AddReviewState {
   AddReviewState({
     this.selectedProduct,
     this.reviewText = '',
-    this.rating =3.5,
+    this.rating = 3.5,
     this.images = const [],
     this.subcategoryTags = const [],
     this.visibility = 'public',
@@ -63,21 +63,20 @@ class ImageData {
   final Uint8List? bytes; // Web用
   final String? id; // 一意のID
 
-  ImageData({
-    this.file,
-    this.bytes,
-    String? id,
-  }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString();
+  ImageData({this.file, this.bytes, String? id})
+    : id = id ?? DateTime.now().millisecondsSinceEpoch.toString();
 
   bool get hasData => file != null || bytes != null;
 }
 
 /// レビュー追加コントローラーのプロバイダー
 final addReviewControllerProvider =
-    StateNotifierProvider.autoDispose<AddReviewController, AddReviewState>((ref) {
-  final imageCompressor = ref.watch(imageCompressorProvider);
-  return AddReviewController(ref, imageCompressor);
-});
+    StateNotifierProvider.autoDispose<AddReviewController, AddReviewState>((
+      ref,
+    ) {
+      final imageCompressor = ref.watch(imageCompressorProvider);
+      return AddReviewController(ref, imageCompressor);
+    });
 
 /// レビュー追加コントローラー
 class AddReviewController extends StateNotifier<AddReviewState> {
@@ -86,8 +85,11 @@ class AddReviewController extends StateNotifier<AddReviewState> {
   final ImagePicker _picker = ImagePicker();
   bool _isDisposed = false;
 
-  AddReviewController(this._ref, this._imageCompressor, {Product? selectedProduct})
-      : super(AddReviewState(selectedProduct: selectedProduct));
+  AddReviewController(
+    this._ref,
+    this._imageCompressor, {
+    Product? selectedProduct,
+  }) : super(AddReviewState(selectedProduct: selectedProduct));
 
   @override
   void dispose() {
@@ -119,7 +121,7 @@ class AddReviewController extends StateNotifier<AddReviewState> {
   /// 画像を追加（最大3枚まで）
   Future<void> addImage(ImageSource source) async {
     if (_isDisposed) return;
-    
+
     // 最大3枚まで
     if (state.images.length >= 3) {
       state = state.copyWith(error: '画像は最大3枚までです');
@@ -142,8 +144,9 @@ class AddReviewController extends StateNotifier<AddReviewState> {
         } else {
           imageData = ImageData(file: File(pickedFile.path));
         }
-        
-        final updatedImages = List<ImageData>.from(state.images)..add(imageData);
+
+        final updatedImages = List<ImageData>.from(state.images)
+          ..add(imageData);
         state = state.copyWith(images: updatedImages);
       }
     } catch (e) {
@@ -156,7 +159,9 @@ class AddReviewController extends StateNotifier<AddReviewState> {
   /// 画像を削除
   void removeImage(String imageId) {
     if (_isDisposed) return;
-    final updatedImages = state.images.where((img) => img.id != imageId).toList();
+    final updatedImages = state.images
+        .where((img) => img.id != imageId)
+        .toList();
     state = state.copyWith(images: updatedImages);
   }
 
@@ -165,11 +170,12 @@ class AddReviewController extends StateNotifier<AddReviewState> {
     if (_isDisposed) return;
     final trimmedTag = tag.trim();
     if (trimmedTag.isEmpty) return;
-    
+
     // 重複チェック
     if (state.subcategoryTags.contains(trimmedTag)) return;
-    
-    final updatedTags = List<String>.from(state.subcategoryTags)..add(trimmedTag);
+
+    final updatedTags = List<String>.from(state.subcategoryTags)
+      ..add(trimmedTag);
     state = state.copyWith(subcategoryTags: updatedTags);
   }
 
@@ -189,20 +195,20 @@ class AddReviewController extends StateNotifier<AddReviewState> {
   /// レビューを投稿
   Future<bool> submitReview() async {
     if (_isDisposed) return false;
-    
+
     // バリデーション
     if (state.selectedProduct == null) {
       state = state.copyWith(error: '商品が選択されていません');
       return false;
     }
-    
+
     if (state.reviewText.trim().isEmpty) {
       state = state.copyWith(error: 'レビュー本文を入力してください');
       return false;
     }
-    
+
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final authRepository = _ref.read(authRepositoryProvider);
       final productRepository = _ref.read(productRepositoryProvider);
@@ -221,20 +227,22 @@ class AddReviewController extends StateNotifier<AddReviewState> {
           final imageBytes = kIsWeb
               ? imageData.bytes!
               : await imageData.file!.readAsBytes();
-          
+
           // 画像を圧縮
           final compressedBytes = await _imageCompressor.compressImage(
             imageBytes,
             maxWidth: 1024,
             quality: 80,
           );
-          
+
           // プラットフォームに応じて拡張子とContent-Typeを設定
           // Windows/LinuxはJPEG、それ以外（Web/Mobile）はWebP
-          final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isFuchsia);
+          final isDesktop =
+              !kIsWeb &&
+              (Platform.isWindows || Platform.isLinux || Platform.isFuchsia);
           final fileExtension = isDesktop ? 'jpg' : 'webp';
           final contentType = isDesktop ? 'image/jpeg' : 'image/webp';
-          
+
           // Supabase Storageにアップロード
           final imageUrl = await productRepository.uploadProductImage(
             user.id,
@@ -242,7 +250,7 @@ class AddReviewController extends StateNotifier<AddReviewState> {
             fileExtension,
             contentType: contentType,
           );
-          
+
           imageUrls.add(imageUrl);
         } catch (imageError) {
           throw Exception('画像のアップロードに失敗しました: ${imageError.toString()}');
@@ -271,24 +279,18 @@ class AddReviewController extends StateNotifier<AddReviewState> {
           error: null,
         );
       }
-      
+
       return true;
     } on AuthException catch (e) {
       // 認証エラー
       if (!_isDisposed) {
-        state = state.copyWith(
-          isLoading: false,
-          error: '認証エラー: ${e.message}',
-        );
+        state = state.copyWith(isLoading: false, error: '認証エラー: ${e.message}');
       }
       return false;
     } catch (e) {
       // その他のエラー
       if (!_isDisposed) {
-        state = state.copyWith(
-          isLoading: false,
-          error: e.toString(),
-        );
+        state = state.copyWith(isLoading: false, error: e.toString());
       }
       return false;
     }
