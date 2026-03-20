@@ -2,7 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/fcm_token.dart';
 import '../../domain/repositories/fcm_token_repository.dart';
-import '../../main.dart';
+import "package:favlog_app/core/providers/supabase_provider.dart";
 
 final fcmTokenRepositoryProvider = Provider<FCMTokenRepository>((ref) {
   return SupabaseFCMTokenRepository(ref.watch(supabaseProvider));

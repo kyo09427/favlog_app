@@ -2,7 +2,7 @@ import 'package:favlog_app/domain/models/profile.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/supabase_profile_repository.dart';
 import '../../domain/repositories/profile_repository.dart';
-import '../../main.dart'; // Import the main.dart to use supabaseProvider
+import "package:favlog_app/core/providers/supabase_provider.dart";
 
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return SupabaseProfileRepository(ref.watch(supabaseProvider));

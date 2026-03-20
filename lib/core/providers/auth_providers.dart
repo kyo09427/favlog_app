@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../main.dart';
+import 'supabase_provider.dart';
 
 final authStateChangesProvider = StreamProvider<AuthState>((ref) {
   final supabase = ref.watch(supabaseProvider);

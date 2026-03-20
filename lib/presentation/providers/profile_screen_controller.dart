@@ -10,7 +10,7 @@ import '../../domain/repositories/profile_repository.dart';
 import '../../domain/repositories/auth_repository.dart';
 import 'package:favlog_app/core/providers/profile_providers.dart';
 import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
-import 'package:favlog_app/main.dart';
+import "package:favlog_app/core/providers/supabase_provider.dart";
 import 'package:favlog_app/core/providers/common_providers.dart';
 import 'package:favlog_app/core/services/image_compressor.dart';
 

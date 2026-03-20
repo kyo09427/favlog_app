@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../providers/auth_providers.dart';
+import '../providers/supabase_provider.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../domain/models/product.dart';
 import '../../domain/models/review.dart';
@@ -65,9 +65,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     refreshListenable: GoRouterRefreshStream(
       ref.watch(authRepositoryProvider).authStateChanges,
     ),
-    redirect: (BuildContext context, GoRouterState state) async {
-      final authState = await ref.watch(authStateChangesProvider.future);
-      final loggedIn = authState.session != null;
+    redirect: (BuildContext context, GoRouterState state) {
+      final session = ref.read(supabaseProvider).auth.currentSession;
+      final loggedIn = session != null;
 
       // ログイン不要でアクセスできる公開ページ
       const publicRoutes = [
@@ -90,8 +90,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 
       // ② ログインしている場合
 
-      // authStateがnullでないことはloggedInチェックで保証されている
-      final user = authState.session!.user;
+      // sessionがnullでないことはloggedInチェックで保証されている
+      final user = session.user;
 
       // ②-a メール認証が済んでいない場合
       final emailVerified = user.emailConfirmedAt != null;
