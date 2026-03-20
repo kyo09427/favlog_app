@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "ENTER_YOUR_TEAM_ID_HERE.com.example.favlogApp",
+        "paths": ["*"]
+      }
+    ]
+  }
+}

@@ -109,9 +109,13 @@
                     // 自動リダイレクトを試行
                     window.location.href = appUrl;
 
-                    // 5秒後に何も起きなければ、Web版としてアプリをロードさせる（任意）
-                    // リンクを辿った直後に真っ白になるのを防ぐため、ここでは何もしないか、
-                    // または通常通りFlutterを起動させる
+                    // 3秒後にまだこのページにいたら、ボタンをより強調するなどの処理
+                    setTimeout(function() {
+                        var btn = document.getElementById('app-link');
+                        btn.style.transform = 'scale(1.1)';
+                        btn.style.transition = 'transform 0.3s';
+                        btn.textContent = 'アプリを開く（再試行）';
+                    }, 3000);
                 }
             }
         })();
