@@ -56,7 +56,7 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<void> sendPasswordResetEmail(String email) async {
     await _supabaseClient.auth.resetPasswordForEmail(
       email,
-      redirectTo: 'com.example.favlog_app://reset-password',
+      redirectTo: 'https://kyo09427.github.io/favlog_app/',
     );
   }
 
@@ -69,6 +69,9 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> updateEmail(String newEmail) async {
-    await _supabaseClient.auth.updateUser(UserAttributes(email: newEmail));
+    await _supabaseClient.auth.updateUser(
+      UserAttributes(email: newEmail),
+      emailRedirectTo: 'https://kyo09427.github.io/favlog_app/',
+    );
   }
 }
