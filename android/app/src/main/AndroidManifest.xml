@@ -33,7 +33,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="kyo09427.github.io" />
+                <data android:scheme="https" android:host="favlog.okasis.win" />
             </intent-filter>
 
             <!-- Custom URL Scheme -->
