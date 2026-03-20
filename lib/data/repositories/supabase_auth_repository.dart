@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../main.dart'; // Import the main.dart to use supabaseProvider
+import '../../core/config/constants.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return SupabaseAuthRepository(ref.watch(supabaseProvider));
@@ -22,7 +23,7 @@ class SupabaseAuthRepository implements AuthRepository {
       email: email,
       password: password,
       data: data,
-      emailRedirectTo: 'https://favlog.okasis.win/',
+      emailRedirectTo: Constants.siteUrl,
     );
   }
 
@@ -44,7 +45,7 @@ class SupabaseAuthRepository implements AuthRepository {
     await _supabaseClient.auth.resend(
       type: OtpType.signup,
       email: email,
-      emailRedirectTo: 'https://favlog.okasis.win/',
+      emailRedirectTo: Constants.siteUrl,
     );
   }
 
@@ -61,7 +62,7 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<void> sendPasswordResetEmail(String email) async {
     await _supabaseClient.auth.resetPasswordForEmail(
       email,
-      redirectTo: 'https://favlog.okasis.win/',
+      redirectTo: Constants.siteUrl,
     );
   }
 
@@ -76,7 +77,7 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<void> updateEmail(String newEmail) async {
     await _supabaseClient.auth.updateUser(
       UserAttributes(email: newEmail),
-      emailRedirectTo: 'https://favlog.okasis.win/',
+      emailRedirectTo: Constants.siteUrl,
     );
   }
 }

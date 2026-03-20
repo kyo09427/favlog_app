@@ -58,8 +58,8 @@ class UpdateEmailController extends StateNotifier<UpdateEmailState> {
 
     try {
       final authRepository = _ref.read(authRepositoryProvider);
-      // SupabaseのupdateUserメソッドは、redirectToを指定しない場合、
-      // 現在のセッション内でメールアドレスが変更され、確認メールが送信されます。
+      // SupabaseのupdateUserメソッドを使用してメールアドレスの更新をリクエストします。
+      // 新しいメールアドレスに確認メールが送信されます。
       // 確認メールのリンクをクリックすると、メールアドレスの変更が確定します。
       await authRepository.updateEmail(state.newEmail.trim());
 
