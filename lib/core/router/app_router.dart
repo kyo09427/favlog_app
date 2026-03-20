@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../main.dart';
-import '../providers/auth_providers.dart';
+import '../providers/supabase_provider.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../domain/models/product.dart';
 import '../../domain/models/review.dart';
@@ -92,7 +91,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       // ② ログインしている場合
 
       // sessionがnullでないことはloggedInチェックで保証されている
-      final user = session!.user;
+      final user = session.user;
 
       // ②-a メール認証が済んでいない場合
       final emailVerified = user.emailConfirmedAt != null;

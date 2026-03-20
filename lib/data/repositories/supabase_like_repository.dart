@@ -1,7 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/repositories/like_repository.dart';
-import '../../main.dart';
+import "package:favlog_app/core/providers/supabase_provider.dart";
 import '../../utils/push_notification_helper.dart';
 
 final likeRepositoryProvider = Provider<LikeRepository>((ref) {

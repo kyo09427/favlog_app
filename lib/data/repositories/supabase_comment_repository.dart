@@ -2,7 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/comment.dart';
 import '../../domain/repositories/comment_repository.dart';
-import '../../main.dart';
+import "package:favlog_app/core/providers/supabase_provider.dart";
 import '../../utils/push_notification_helper.dart';
 
 final commentRepositoryProvider = Provider<CommentRepository>((ref) {

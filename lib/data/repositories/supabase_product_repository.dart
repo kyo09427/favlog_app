@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/product.dart';
 import '../../domain/repositories/product_repository.dart';
-import '../../main.dart';
+import "package:favlog_app/core/providers/supabase_provider.dart";
 
 final productRepositoryProvider = Provider<ProductRepository>((ref) {
   return SupabaseProductRepository(ref.watch(supabaseProvider));

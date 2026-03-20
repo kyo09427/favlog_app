@@ -15,11 +15,6 @@ import 'package:favlog_app/models/version_info.dart';
 import 'package:favlog_app/utils/update_ui_helper.dart';
 import 'package:favlog_app/services/fcm_service.dart';
 
-// Define a Riverpod provider for SupabaseClient
-final supabaseProvider = Provider<SupabaseClient>((ref) {
-  return Supabase.instance.client;
-});
-
 Future<void> main() async {
   usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();

@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/review.dart';
 import '../../domain/repositories/review_repository.dart';
-import '../../main.dart';
+import "package:favlog_app/core/providers/supabase_provider.dart";
 import '../../utils/push_notification_helper.dart';
 
 final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {

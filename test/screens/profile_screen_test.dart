@@ -24,7 +24,7 @@ import 'package:favlog_app/data/repositories/supabase_product_repository.dart';
 import 'package:favlog_app/data/repositories/supabase_comment_repository.dart';
 import 'package:favlog_app/data/repositories/supabase_like_repository.dart';
 import 'package:favlog_app/core/providers/common_providers.dart';
-import 'package:favlog_app/main.dart';
+import "package:favlog_app/core/providers/supabase_provider.dart";
 
 // Mock classes
 class MockProfileRepository extends Mock implements ProfileRepository {}
