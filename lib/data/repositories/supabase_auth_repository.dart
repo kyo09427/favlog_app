@@ -22,6 +22,7 @@ class SupabaseAuthRepository implements AuthRepository {
       email: email,
       password: password,
       data: data,
+      emailRedirectTo: 'https://favlog.okasis.win/',
     );
   }
 
@@ -40,7 +41,11 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> resendEmail(String email) async {
-    await _supabaseClient.auth.resend(type: OtpType.signup, email: email);
+    await _supabaseClient.auth.resend(
+      type: OtpType.signup,
+      email: email,
+      emailRedirectTo: 'https://favlog.okasis.win/',
+    );
   }
 
   @override

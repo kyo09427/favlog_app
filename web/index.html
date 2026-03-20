@@ -20,6 +20,11 @@
     <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <link rel="manifest" href="manifest.json">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap" rel="stylesheet">
     
     <style>
         html, body {
@@ -27,7 +32,7 @@
             height: 100%;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Kosugi Maru', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         #app-container {
@@ -37,29 +42,95 @@
         
         .loading {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #13EC5B 0%, #102216 100%);
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background-color: white;
+            color: #102216;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
     </style>
 </head>
 <body>
     <div class="loading" id="loading">
-        <div style="color: white; text-align: center;">
-            <p>Loading FavLog...</p>
+        <div id="loading-content">
+            <p id="status-text">Loading FavLog...</p>
+            <div id="redirect-ui" style="display: none;">
+                <p>アプリを起動しています...</p>
+                <p style="font-size: 0.8em; margin-top: 10px; opacity: 0.8;">
+                    自動的に切り替わらない場合は、以下のボタンを押してください。
+                </p>
+                <a id="app-link" href="#" class="btn">アプリを開く</a>
+            </div>
         </div>
     </div>
     
+    <script>
+        (function() {
+            var url = new URL(window.location.href);
+            var params = new URLSearchParams(url.search || url.hash.substring(1));
+
+            // Supabaseの認証関連パラメータ（コード、リカバリ、メール変更など）をチェック
+            var hasAuthParams = params.has('code') ||
+                               params.has('access_token') ||
+                               params.get('type') === 'recovery' ||
+                               params.get('type') === 'email_change' ||
+                               params.get('type') === 'signup';
+
+            if (hasAuthParams) {
+                var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+                if (isMobile) {
+                    document.getElementById('status-text').style.display = 'none';
+                    document.getElementById('redirect-ui').style.display = 'block';
+
+                    // カスタムURLスキームを構築
+                    // com.example.favlog_app://?code=xxx...
+                    var customScheme = 'com.example.favlog_app://';
+                    var query = url.search || (url.hash ? '?' + url.hash.substring(1) : '');
+                    var appUrl = customScheme + query;
+
+                    document.getElementById('app-link').href = appUrl;
+
+                    // 自動リダイレクトを試行
+                    window.location.href = appUrl;
+
+                    // 5秒後に何も起きなければ、Web版としてアプリをロードさせる（任意）
+                    // リンクを辿った直後に真っ白になるのを防ぐため、ここでは何もしないか、
+                    // または通常通りFlutterを起動させる
+                }
+            }
+        })();
+    </script>
+
     <script src="flutter.js" defer></script>
     <script>
         window.addEventListener('load', function(ev) {
-            document.getElementById('loading').style.display = 'none';
             _flutter.loader.loadEntrypoint({
                 serviceWorkerVersion: null,
                 onEntrypointLoaded: function(engineInitializer) {
                     engineInitializer.initializeEngine().then(function(appRunner) {
-                        appRunner.runApp();
+                        appRunner.runApp().then(function() {
+                            // Flutterアプリが起動したらローディングを消す
+                            var loadingDiv = document.getElementById('loading');
+                            if (loadingDiv) {
+                                loadingDiv.style.display = 'none';
+                            }
+                        });
                     });
                 }
             });
