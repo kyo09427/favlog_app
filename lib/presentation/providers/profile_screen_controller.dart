@@ -82,8 +82,7 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
           user.email?.split('@').first ??
           'user';
       // ユーザーIDの先頭8文字を付与して重複を防ぐ
-      final uniqueUsername =
-          '${defaultUsername}_${user.id.substring(0, 8)}';
+      final uniqueUsername = '${defaultUsername}_${user.id.substring(0, 8)}';
       final newProfile = Profile(
         id: user.id,
         username: uniqueUsername,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../data/repositories/supabase_auth_repository.dart';
 import '../providers/update_password_controller.dart';
 
 class UpdatePasswordScreen extends ConsumerStatefulWidget {
@@ -38,7 +39,8 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
       next,
     ) {
       if (next.isPasswordUpdated && !previous!.isPasswordUpdated) {
-        context.go('/auth');
+        // パスワード更新後はセキュリティのためにログアウトし、ログイン画面へリダイレクトさせる
+        ref.read(authRepositoryProvider).signOut();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('パスワードを更新しました。新しいパスワードでログインしてください。'),

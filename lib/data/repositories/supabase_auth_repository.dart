@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../domain/repositories/auth_repository.dart';
 import '../../core/providers/supabase_provider.dart';
 import '../../core/config/constants.dart';
@@ -25,7 +24,7 @@ class SupabaseAuthRepository implements AuthRepository {
       email: email,
       password: password,
       data: data,
-      emailRedirectTo: Constants.siteUrl,
+      emailRedirectTo: Constants.getRedirectUrl(),
     );
   }
 
@@ -47,7 +46,7 @@ class SupabaseAuthRepository implements AuthRepository {
     await _supabaseClient.auth.resend(
       type: OtpType.signup,
       email: email,
-      emailRedirectTo: Constants.siteUrl,
+      emailRedirectTo: Constants.getRedirectUrl(),
     );
   }
 
@@ -64,7 +63,7 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<void> sendPasswordResetEmail(String email) async {
     await _supabaseClient.auth.resetPasswordForEmail(
       email,
-      redirectTo: Constants.siteUrl,
+      redirectTo: Constants.getRedirectUrl(),
     );
   }
 
@@ -79,7 +78,7 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<void> updateEmail(String newEmail) async {
     await _supabaseClient.auth.updateUser(
       UserAttributes(email: newEmail),
-      emailRedirectTo: Constants.siteUrl,
+      emailRedirectTo: Constants.getRedirectUrl(),
     );
   }
 
@@ -87,7 +86,7 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<void> signInWithDiscord() async {
     await _supabaseClient.auth.signInWithOAuth(
       OAuthProvider.discord,
-      redirectTo: kIsWeb ? null : Constants.customScheme,
+      redirectTo: Constants.getRedirectUrl(),
       scopes: 'identify email guilds',
     );
   }
