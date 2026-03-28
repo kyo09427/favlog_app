@@ -89,7 +89,9 @@ class FCMService {
   /// トークンをサーバーに保存
   Future<void> _saveToken(String token) async {
     try {
-      debugPrint('_saveToken: Starting to save token: ${token.substring(0, 20)}...');
+      debugPrint(
+        '_saveToken: Starting to save token: ${token.substring(0, 20)}...',
+      );
 
       final authRepository = _ref.read(authRepositoryProvider);
       final currentUser = authRepository.getCurrentUser();

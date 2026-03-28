@@ -38,7 +38,8 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
       next,
     ) {
       if (next.isPasswordUpdated && !previous!.isPasswordUpdated) {
-        context.go('/auth');
+        // パスワード更新後はセキュリティのためにログアウトし、ログイン画面へリダイレクトさせる
+        ref.read(authRepositoryProvider).signOut();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('パスワードを更新しました。新しいパスワードでログインしてください。'),

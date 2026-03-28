@@ -44,7 +44,9 @@ class PushNotificationHelper {
           'sendPushNotifications: Failed with status ${response.status}: ${response.data}',
         );
       } else {
-        debugPrint('sendPushNotifications: Success! Response: ${response.data}');
+        debugPrint(
+          'sendPushNotifications: Success! Response: ${response.data}',
+        );
       }
     } catch (e) {
       debugPrint('sendPushNotifications: Error - $e');

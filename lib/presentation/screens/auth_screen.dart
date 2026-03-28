@@ -547,8 +547,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF5865F2),
                         foregroundColor: Colors.white,
-                        disabledBackgroundColor:
-                            const Color(0xFF5865F2).withValues(alpha: 0.5),
+                        disabledBackgroundColor: const Color(
+                          0xFF5865F2,
+                        ).withValues(alpha: 0.5),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),

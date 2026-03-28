@@ -25,7 +25,7 @@ class SupabaseAuthRepository implements AuthRepository {
       email: email,
       password: password,
       data: data,
-      emailRedirectTo: Constants.siteUrl,
+      emailRedirectTo: Constants.getRedirectUrl(),
     );
   }
 
@@ -47,7 +47,7 @@ class SupabaseAuthRepository implements AuthRepository {
     await _supabaseClient.auth.resend(
       type: OtpType.signup,
       email: email,
-      emailRedirectTo: Constants.siteUrl,
+      emailRedirectTo: Constants.getRedirectUrl(),
     );
   }
 
@@ -64,7 +64,7 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<void> sendPasswordResetEmail(String email) async {
     await _supabaseClient.auth.resetPasswordForEmail(
       email,
-      redirectTo: Constants.siteUrl,
+      redirectTo: Constants.getRedirectUrl(),
     );
   }
 
@@ -79,7 +79,7 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<void> updateEmail(String newEmail) async {
     await _supabaseClient.auth.updateUser(
       UserAttributes(email: newEmail),
-      emailRedirectTo: Constants.siteUrl,
+      emailRedirectTo: Constants.getRedirectUrl(),
     );
   }
 
@@ -87,7 +87,7 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<void> signInWithDiscord() async {
     await _supabaseClient.auth.signInWithOAuth(
       OAuthProvider.discord,
-      redirectTo: kIsWeb ? null : Constants.customScheme,
+      redirectTo: Constants.getRedirectUrl(),
       scopes: 'identify email guilds',
     );
   }

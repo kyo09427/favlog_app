@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -108,10 +108,12 @@ class _MyAppState extends ConsumerState<MyApp> {
   }
 
   void _handleDeepLink(Uri uri) async {
+    debugPrint('Handling deep link: $uri');
     // Supabaseが発行したディープリンク（マジックリンク、パスワードリセット、メールアドレス変更確認など）は
     // URLにセッション情報を含んでいる可能性があるため、常にセッション回復を試みる。
     try {
-      await Supabase.instance.client.auth.getSessionFromUrl(uri);
+      final res = await Supabase.instance.client.auth.getSessionFromUrl(uri);
+      debugPrint('Deep link session recovery success: ${res.session != null}');
     } catch (e) {
       debugPrint('Deep link error: $e');
       // エラーの種類に応じて適切な処理を行う
@@ -143,6 +145,8 @@ class _MyAppState extends ConsumerState<MyApp> {
       data,
     ) {
       final AuthChangeEvent event = data.event;
+      debugPrint('Auth State Change: $event');
+
       if (event == AuthChangeEvent.passwordRecovery) {
         ref.read(goRouterProvider).go('/reset-password');
       } else if (event == AuthChangeEvent.signedIn) {
@@ -155,6 +159,13 @@ class _MyAppState extends ConsumerState<MyApp> {
         }
       } else if (event == AuthChangeEvent.userUpdated) {
         // メールアドレス変更完了時など
+        final session = data.session;
+        // userUpdatedイベントが発生し、且つセッションが存在する場合は
+        // メールアドレス変更が完了した可能性があるため、確認画面へ遷移
+        if (session != null) {
+          ref.read(goRouterProvider).go('/confirm-email-change');
+        }
+
         // SnackBarを表示してユーザーに通知する
         final context = ref
             .read(goRouterProvider)
@@ -181,13 +192,16 @@ class _MyAppState extends ConsumerState<MyApp> {
     if (providerToken == null) return;
 
     final user = session.user;
-    final isDiscord = user.appMetadata['provider'] == 'discord' ||
+    final isDiscord =
+        user.appMetadata['provider'] == 'discord' ||
         (user.appMetadata['providers'] as List?)?.contains('discord') == true;
     if (!isDiscord) return;
 
     try {
       final authRepo = ref.read(authRepositoryProvider);
-      final isVerified = await authRepo.verifyDiscordGuildMembership(providerToken);
+      final isVerified = await authRepo.verifyDiscordGuildMembership(
+        providerToken,
+      );
       if (!isVerified) {
         await Supabase.instance.client.auth.signOut();
         if (mounted) {

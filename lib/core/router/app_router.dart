@@ -65,7 +65,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     refreshListenable: GoRouterRefreshStream(
       ref.watch(authRepositoryProvider).authStateChanges,
     ),
-    redirect: (BuildContext context, GoRouterState state) {
+    redirect: (BuildContext context, GoRouterState state) async {
+      // 認証状態の変更を待つ必要がある場合があるため、現在のセッションを確実に取得
       final session = ref.read(supabaseProvider).auth.currentSession;
       final loggedIn = session != null;
 
@@ -75,10 +76,17 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         '/password-reset-request',
         '/password-reset-email-sent',
         '/reset-password',
+        '/confirm-email-change',
       ];
 
       final currentLocation = state.matchedLocation;
       final isPublic = publicRoutes.contains(currentLocation);
+
+      // パスワードリセット中やメール変更確認中の場合は、リダイレクトを抑制
+      if (currentLocation == '/reset-password' ||
+          currentLocation == '/confirm-email-change') {
+        return null;
+      }
 
       // --- ログイン状態に基づくリダイレクト ---
 
@@ -97,7 +105,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final emailVerified = user.emailConfirmedAt != null;
       if (!emailVerified) {
         // メール認証ページ以外なら、メール認証ページへ
-        return currentLocation == '/verify-email' ? null : '/verify-email';
+        return (currentLocation == '/verify-email' || isPublic)
+            ? null
+            : '/verify-email';
       }
 
       // ②-b メール認証済みの場合

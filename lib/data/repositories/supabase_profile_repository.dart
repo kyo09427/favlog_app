@@ -23,13 +23,10 @@ class SupabaseProfileRepository implements ProfileRepository {
 
   @override
   Future<void> updateProfile(Profile profile) async {
-    await _supabaseClient.from('profiles').upsert(
-      {
-        'id': profile.id,
-        'username': profile.username,
-        'avatar_url': profile.avatarUrl,
-      },
-      onConflict: 'id',
-    );
+    await _supabaseClient.from('profiles').upsert({
+      'id': profile.id,
+      'username': profile.username,
+      'avatar_url': profile.avatarUrl,
+    }, onConflict: 'id');
   }
 }
