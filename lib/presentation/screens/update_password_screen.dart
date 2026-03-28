@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../data/repositories/supabase_auth_repository.dart';
 import '../providers/update_password_controller.dart';
 
 class UpdatePasswordScreen extends ConsumerStatefulWidget {

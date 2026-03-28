@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../domain/repositories/auth_repository.dart';
 import '../../core/providers/supabase_provider.dart';
 import '../../core/config/constants.dart';

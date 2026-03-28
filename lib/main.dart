@@ -113,7 +113,7 @@ class _MyAppState extends ConsumerState<MyApp> {
     // URLにセッション情報を含んでいる可能性があるため、常にセッション回復を試みる。
     try {
       final res = await Supabase.instance.client.auth.getSessionFromUrl(uri);
-      debugPrint('Deep link session recovery success: ${res.session != null}');
+      debugPrint('Deep link session recovery success: true');
     } catch (e) {
       debugPrint('Deep link error: $e');
       // エラーの種類に応じて適切な処理を行う
