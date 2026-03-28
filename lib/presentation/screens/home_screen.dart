@@ -768,8 +768,9 @@ class _ReviewItemWithStatsState extends ConsumerState<_ReviewItemWithStats> {
       return ReviewItem(product: widget.product, review: widget.review);
     }
 
-    // 初回のみデータを取得
+    // 初回のみデータを取得（フラグを同期的にセットして複数回の呼び出しを防ぐ）
     if (!_isInitialized) {
+      _isInitialized = true;
       _loadInitialData(commentRepository, likeRepository, currentUser.id);
     }
 
@@ -822,7 +823,6 @@ class _ReviewItemWithStatsState extends ConsumerState<_ReviewItemWithStats> {
           _commentCount = comments.length;
           _likeCount = likes[widget.review.id] ?? 0;
           _isLiked = liked;
-          _isInitialized = true;
         });
       }
     } catch (e) {
@@ -831,7 +831,6 @@ class _ReviewItemWithStatsState extends ConsumerState<_ReviewItemWithStats> {
           _commentCount = 0;
           _likeCount = 0;
           _isLiked = false;
-          _isInitialized = true;
         });
       }
     }

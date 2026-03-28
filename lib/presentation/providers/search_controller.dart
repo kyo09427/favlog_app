@@ -70,9 +70,7 @@ class SearchController extends StateNotifier<SearchScreenState> {
   // 検索履歴の読み込み（簡易実装：メモリ内のみ）
   void _loadSearchHistory() {
     // TODO: SharedPreferencesなどで永続化する場合はここで読み込み
-    state = state.copyWith(
-      searchHistory: ['オーガニックコーヒー', 'ワイヤレスイヤホン', '新宿 カフェ'],
-    );
+    state = state.copyWith(searchHistory: []);
   }
 
   // 検索クエリをStateにセットするだけ

@@ -46,19 +46,31 @@ class AddReviewToProductController
     extends StateNotifier<AddReviewToProductState> {
   final Ref _ref;
   final Product _product;
+  bool _isDisposed = false;
 
   AddReviewToProductController(this._ref, this._product)
     : super(AddReviewToProductState());
 
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
+
   void updateReviewText(String text) {
+    if (_isDisposed) return;
     state = state.copyWith(reviewText: text);
   }
 
   void updateRating(double rating) {
-    state = state.copyWith(rating: rating);
+    if (_isDisposed) return;
+    final roundedRating = (rating * 2).round() / 2;
+    final clampedRating = roundedRating.clamp(0.5, 5.0);
+    state = state.copyWith(rating: clampedRating);
   }
 
   Future<void> submitReview() async {
+    if (_isDisposed) return;
     state = state.copyWith(isLoading: true, error: null);
     try {
       final authRepository = _ref.read(authRepositoryProvider);
@@ -78,11 +90,17 @@ class AddReviewToProductController
 
       await reviewRepository.createReview(newReview);
 
-      state = AddReviewToProductState(); // Reset form
+      if (!_isDisposed) {
+        state = AddReviewToProductState(); // Reset form
+      }
     } on AuthException catch (e) {
-      state = state.copyWith(isLoading: false, error: e.message);
+      if (!_isDisposed) {
+        state = state.copyWith(isLoading: false, error: e.message);
+      }
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      if (!_isDisposed) {
+        state = state.copyWith(isLoading: false, error: e.toString());
+      }
     }
   }
 }

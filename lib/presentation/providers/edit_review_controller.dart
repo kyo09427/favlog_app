@@ -118,10 +118,11 @@ class EditReviewController extends StateNotifier<EditReviewState> {
     state = state.copyWith(reviewText: text);
   }
 
-  /// 評価を更新（1.0〜5.0の範囲に制限）
+  /// 評価を更新（0.5刻み、0.5〜5.0の範囲に制限）
   void updateRating(double rating) {
     if (_isDisposed) return;
-    final clampedRating = rating.clamp(1.0, 5.0);
+    final roundedRating = (rating * 2).round() / 2;
+    final clampedRating = roundedRating.clamp(0.5, 5.0);
     state = state.copyWith(rating: clampedRating);
   }
 
@@ -267,8 +268,12 @@ class EditReviewController extends StateNotifier<EditReviewState> {
           );
 
           // プラットフォームに応じて拡張子とContent-Typeを設定
-          final fileExtension = kIsWeb ? 'jpg' : 'webp';
-          final contentType = kIsWeb ? 'image/jpeg' : 'image/webp';
+          // Windows/LinuxはJPEG、それ以外（Web/Mobile）はWebP
+          final isDesktop =
+              !kIsWeb &&
+              (Platform.isWindows || Platform.isLinux || Platform.isFuchsia);
+          final fileExtension = isDesktop ? 'jpg' : 'webp';
+          final contentType = isDesktop ? 'image/jpeg' : 'image/webp';
 
           // Supabase Storageにアップロード
           final imageUrl = await productRepository.uploadProductImage(

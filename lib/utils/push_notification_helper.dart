@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// プッシュ通知を送信するヘルパークラス
@@ -14,18 +15,18 @@ class PushNotificationHelper {
     Map<String, String>? data,
   }) async {
     if (userIds.isEmpty) {
-      print('sendPushNotifications: No user IDs provided');
+      debugPrint('sendPushNotifications: No user IDs provided');
       return;
     }
 
     try {
-      print(
+      debugPrint(
         'sendPushNotifications: Sending to ${userIds.length} users: $userIds',
       );
 
       // Supabase Edge Functionを呼び出してプッシュ通知を送信
       // Edge Function側でService Roleキーを使ってトークンを取得する
-      print(
+      debugPrint(
         'sendPushNotifications: Calling Edge Function with ${userIds.length} user IDs',
       );
       final response = await _supabaseClient.functions.invoke(
@@ -39,14 +40,14 @@ class PushNotificationHelper {
       );
 
       if (response.status != 200) {
-        print(
+        debugPrint(
           'sendPushNotifications: Failed with status ${response.status}: ${response.data}',
         );
       } else {
-        print('sendPushNotifications: Success! Response: ${response.data}');
+        debugPrint('sendPushNotifications: Success! Response: ${response.data}');
       }
     } catch (e) {
-      print('sendPushNotifications: Error - $e');
+      debugPrint('sendPushNotifications: Error - $e');
       // プッシュ通知の失敗は致命的エラーとしない（アプリ内通知は別途送信される）
     }
   }

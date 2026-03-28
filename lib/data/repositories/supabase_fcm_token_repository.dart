@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/fcm_token.dart';
@@ -20,8 +21,8 @@ class SupabaseFCMTokenRepository implements FCMTokenRepository {
     String? deviceType,
   ) async {
     try {
-      print('saveToken: Attempting to save token for user $userId');
-      print(
+      debugPrint('saveToken: Attempting to save token for user $userId');
+      debugPrint(
         'saveToken: Token: ${token.substring(0, 20)}..., Device: $deviceType',
       );
 
@@ -39,9 +40,9 @@ class SupabaseFCMTokenRepository implements FCMTokenRepository {
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       }, onConflict: 'user_id,device_type');
 
-      print('saveToken: Successfully saved token to database');
+      debugPrint('saveToken: Successfully saved token to database');
     } catch (e) {
-      print('saveToken: Error - $e');
+      debugPrint('saveToken: Error - $e');
       throw Exception('Failed to save FCM token: $e');
     }
   }
@@ -49,12 +50,12 @@ class SupabaseFCMTokenRepository implements FCMTokenRepository {
   @override
   Future<List<String>> getTokensByUserIds(List<String> userIds) async {
     if (userIds.isEmpty) {
-      print('getTokensByUserIds: Empty user IDs list');
+      debugPrint('getTokensByUserIds: Empty user IDs list');
       return [];
     }
 
     try {
-      print(
+      debugPrint(
         'getTokensByUserIds: Fetching tokens for ${userIds.length} users: $userIds',
       );
       final response = await _supabaseClient
@@ -62,14 +63,14 @@ class SupabaseFCMTokenRepository implements FCMTokenRepository {
           .select('token')
           .inFilter('user_id', userIds);
 
-      print('getTokensByUserIds: Raw response: $response');
+      debugPrint('getTokensByUserIds: Raw response: $response');
       final tokens = (response as List)
           .map((json) => json['token'] as String)
           .toList();
-      print('getTokensByUserIds: Extracted ${tokens.length} tokens');
+      debugPrint('getTokensByUserIds: Extracted ${tokens.length} tokens');
       return tokens;
     } catch (e) {
-      print('getTokensByUserIds: Error - $e');
+      debugPrint('getTokensByUserIds: Error - $e');
       throw Exception('Failed to get FCM tokens by user IDs: $e');
     }
   }
