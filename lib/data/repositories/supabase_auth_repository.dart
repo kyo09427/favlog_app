@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../domain/repositories/auth_repository.dart';
 import '../../core/providers/supabase_provider.dart';
 import '../../core/config/constants.dart';
@@ -79,5 +81,32 @@ class SupabaseAuthRepository implements AuthRepository {
       UserAttributes(email: newEmail),
       emailRedirectTo: Constants.siteUrl,
     );
+  }
+
+  @override
+  Future<void> signInWithDiscord() async {
+    await _supabaseClient.auth.signInWithOAuth(
+      OAuthProvider.discord,
+      redirectTo: kIsWeb ? null : Constants.customScheme,
+      scopes: 'identify email guilds',
+    );
+  }
+
+  @override
+  String? getProviderToken() {
+    return _supabaseClient.auth.currentSession?.providerToken;
+  }
+
+  @override
+  Future<bool> verifyDiscordGuildMembership(String providerToken) async {
+    final response = await _supabaseClient.functions.invoke(
+      'verify-discord-guild',
+      body: {'provider_token': providerToken},
+    );
+    if (response.status == 200) {
+      final data = jsonDecode(response.data as String);
+      return data['verified'] == true;
+    }
+    return false;
   }
 }

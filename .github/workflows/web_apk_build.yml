@@ -47,7 +47,7 @@ jobs:
       - name: Build Web
         run: |
           flutter config --enable-web
-          flutter build web --release --base-href / --no-tree-shake-icons
+          flutter build web --release --base-href / --no-tree-shake-icons --dart-define=DISCORD_TARGET_GUILD_ID=${{ secrets.DISCORD_TARGET_GUILD_ID }}
 
       - name: Create 404 redirect
         run: |

@@ -21,6 +21,26 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   bool _obscurePassword = true;
   bool _isSignUp = false; // ログインと新規登録を切り替えるフラグ
 
+  Future<void> _signInWithDiscord() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final authRepository = ref.read(authRepositoryProvider);
+      await authRepository.signInWithDiscord();
+    } catch (error) {
+      if (mounted) {
+        await ErrorDialog.show(context, 'Discord ログインに失敗しました: $error');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -492,6 +512,49 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       ],
                     ),
                     textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // セパレーター
+                  Row(
+                    children: [
+                      const Expanded(child: Divider(color: borderColor)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'または',
+                          style: TextStyle(color: Color(0xFF6B7280)),
+                        ),
+                      ),
+                      const Expanded(child: Divider(color: borderColor)),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Discord ログインボタン
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _signInWithDiscord,
+                      icon: Image.asset(
+                        'assets/icon/discord_icon.png',
+                        height: 24,
+                      ),
+                      label: const Text('Discordでログイン'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF5865F2),
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor:
+                            const Color(0xFF5865F2).withValues(alpha: 0.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
                   ),
 
                   const SizedBox(height: 32),

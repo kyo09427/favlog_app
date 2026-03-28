@@ -131,11 +131,11 @@ jobs:
 
       - name: Build APK
         if: github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both'
-        run: flutter build apk --release
+        run: flutter build apk --release --dart-define=DISCORD_TARGET_GUILD_ID=${{ secrets.DISCORD_TARGET_GUILD_ID }}
 
       - name: Build AAB
         if: github.event.inputs.build_type == 'aab' || github.event.inputs.build_type == 'both'
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --dart-define=DISCORD_TARGET_GUILD_ID=${{ secrets.DISCORD_TARGET_GUILD_ID }}
 
       # Artifacts アップロード
       - name: Upload APK artifact

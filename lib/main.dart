@@ -145,6 +145,8 @@ class _MyAppState extends ConsumerState<MyApp> {
       if (event == AuthChangeEvent.passwordRecovery) {
         ref.read(goRouterProvider).go('/reset-password');
       } else if (event == AuthChangeEvent.signedIn) {
+        // Discord ログインの場合、ギルドメンバーシップを検証
+        _verifyDiscordMembershipIfNeeded();
         // ログイン時にFCMトークンを取得・保存
         if (!kIsWeb) {
           final fcmService = ref.read(fcmServiceProvider);
@@ -168,6 +170,46 @@ class _MyAppState extends ConsumerState<MyApp> {
         }
       }
     });
+  }
+
+  Future<void> _verifyDiscordMembershipIfNeeded() async {
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session == null) return;
+
+    final providerToken = session.providerToken;
+    if (providerToken == null) return;
+
+    final user = session.user;
+    final isDiscord = user.appMetadata['provider'] == 'discord' ||
+        (user.appMetadata['providers'] as List?)?.contains('discord') == true;
+    if (!isDiscord) return;
+
+    try {
+      final authRepo = ref.read(authRepositoryProvider);
+      final isVerified = await authRepo.verifyDiscordGuildMembership(providerToken);
+      if (!isVerified) {
+        await Supabase.instance.client.auth.signOut();
+        if (mounted) {
+          final ctx = ref
+              .read(goRouterProvider)
+              .routerDelegate
+              .navigatorKey
+              .currentContext;
+          if (ctx != null && ctx.mounted) {
+            ScaffoldMessenger.of(ctx).showSnackBar(
+              const SnackBar(
+                content: Text('指定された Discord サーバーに参加していないため、ログインできません。'),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 5),
+              ),
+            );
+          }
+          ref.read(goRouterProvider).go('/auth');
+        }
+      }
+    } catch (e) {
+      debugPrint('Discord guild verification error: $e');
+    }
   }
 
   /// FCMサービスの初期化
