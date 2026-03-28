@@ -77,12 +77,16 @@ class ProfileScreenController extends StateNotifier<AsyncValue<Profile?>> {
     if (_isDisposed) return;
 
     try {
+      final defaultUsername =
+          user.userMetadata?['username'] as String? ??
+          user.email?.split('@').first ??
+          'user';
+      // ユーザーIDの先頭8文字を付与して重複を防ぐ
+      final uniqueUsername =
+          '${defaultUsername}_${user.id.substring(0, 8)}';
       final newProfile = Profile(
         id: user.id,
-        username:
-            user.userMetadata?['username'] ??
-            user.email?.split('@').first ??
-            'User',
+        username: uniqueUsername,
         avatarUrl: null,
       );
 
