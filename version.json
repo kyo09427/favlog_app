@@ -1,8 +1,8 @@
 {
-  "version": "2.0.0",
-  "versionCode": 26020129,
-  "downloadUrl": "https://github.com/kyo09427/favlog_app/releases/download/v2.0.0-26020129/app-release.apk",
-  "releaseNotes": "- chore: bump version counter [skip ci]\n- feat: いいね・コメント時のプッシュ通知統合\n- fix: Flutter analyze warningsを修正\n- feat: プッシュ通知機能の実装\n- feat: 最近レビューされた商品を全ユーザーに変更 (v1.7.9)\n- fix: 人気のキーワード機能の修正 - subcategory_tags対応\n- chore: bump version counter [skip ci]\n- 提供元不明アプリからのインストールを設定する画面に正しく遷移するように修正\n- chore: bump version counter [skip ci]\n- chore: bump version counter [skip ci]",
+  "version": "2.5.0",
+  "versionCode": 26032830,
+  "downloadUrl": "https://github.com/kyo09427/favlog_app/releases/download/v2.5.0-26032830/app-release.apk",
+  "releaseNotes": "- chore: bump version counter [skip ci]\n- Merge pull request #42 from kyo09427/fix/redirect-issues-7132231379226526065\n- fix: resolve unused variable warning in main.dart\n- fix: fix lint and undefined identifier issues after redirect logic update\n- fix: improve authentication redirect logic for Discord, password reset, and email change\n- ci: migrate web deploy from GitHub Pages to Cloudflare Pages\n- test: update profile_screen_test to match new unique username format\n- fix: resolve duplicate username constraint error on initial profile creation\n- fix: add missing import for authRepositoryProvider in main.dart\n- feat: add Discord OAuth login with guild membership verification",
   "minSupportedVersion": "0.0.1",
   "forceUpdate": false
 }
