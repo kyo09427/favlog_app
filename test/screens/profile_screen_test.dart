@@ -396,18 +396,21 @@ void main() {
       await tester.pumpAndSettle();
 
       // 初期プロフィールが作成されることを確認
+      // ユーザー名は "<emailプレフィックス>_<userIdの先頭8文字>" の形式
+      // test@example.com + test_user_id → test_test_use
+      const expectedUsername = 'test_test_use';
       verify(
         () => mockProfileRepository.updateProfile(
           any(
             that: isA<Profile>()
                 .having((p) => p.id, 'id', 'test_user_id')
-                .having((p) => p.username, 'username', 'test'),
+                .having((p) => p.username, 'username', expectedUsername),
           ),
         ),
       ).called(1);
 
       // デフォルトのユーザー名が表示されることを確認
-      expect(find.text('test'), findsOneWidget);
+      expect(find.text(expectedUsername), findsOneWidget);
     });
   });
 }
