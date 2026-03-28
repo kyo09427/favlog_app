@@ -14,6 +14,7 @@ import 'package:favlog_app/providers/update_provider.dart';
 import 'package:favlog_app/models/version_info.dart';
 import 'package:favlog_app/utils/update_ui_helper.dart';
 import 'package:favlog_app/services/fcm_service.dart';
+import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
 
 Future<void> main() async {
   usePathUrlStrategy();
