@@ -7,6 +7,7 @@ import '../../data/repositories/supabase_comment_repository.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../data/repositories/supabase_like_repository.dart';
 import '../../core/providers/profile_providers.dart';
+import '../../core/config/constants.dart';
 import '../widgets/review_info_card.dart';
 import '../providers/comment_screen_provider.dart';
 
@@ -108,6 +109,19 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
 
+    if (text.length > ValidationLimits.commentTextMaxLength) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'コメントは${ValidationLimits.commentTextMaxLength}文字以内で入力してください',
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() => _isSubmitting = true);
 
     try {
@@ -202,7 +216,21 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
       ),
     );
 
-    if (result == null || result.trim().isEmpty) return;
+    final trimmedResult = result?.trim() ?? '';
+    if (trimmedResult.isEmpty) return;
+
+    if (trimmedResult.length > ValidationLimits.commentTextMaxLength) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'コメントは${ValidationLimits.commentTextMaxLength}文字以内で入力してください',
+            ),
+          ),
+        );
+      }
+      return;
+    }
 
     try {
       final commentRepository = ref.read(commentRepositoryProvider);
@@ -210,7 +238,7 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
         id: comment.id,
         userId: comment.userId,
         reviewId: comment.reviewId,
-        commentText: result.trim(),
+        commentText: trimmedResult,
         createdAt: comment.createdAt,
       );
 

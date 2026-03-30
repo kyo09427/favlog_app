@@ -68,8 +68,12 @@ class SupabaseCommentRepository implements CommentRepository {
           .eq('id', comment.reviewId)
           .single();
 
-      final reviewOwnerId = reviewResponse['user_id'] as String;
-      final productId = reviewResponse['product_id'] as String;
+      final reviewOwnerId = reviewResponse['user_id'] as String?;
+      final productId = reviewResponse['product_id'] as String?;
+
+      if (reviewOwnerId == null || productId == null) {
+        return;
+      }
 
       // 自分のレビューに自分でコメントした場合は通知しない
       if (reviewOwnerId == comment.userId) {
@@ -117,7 +121,7 @@ class SupabaseCommentRepository implements CommentRepository {
           body: '$productNameのレビューにコメントが追加されました',
           data: {'review_id': comment.reviewId},
         );
-      } else {}
+      }
     } catch (_) {}
   }
 

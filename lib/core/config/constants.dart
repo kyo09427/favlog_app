@@ -14,3 +14,19 @@ class Constants {
     return kIsWeb ? siteUrl : customScheme;
   }
 }
+
+class ValidationLimits {
+  // 商品
+  static const int productNameMaxLength = 100;
+  static const int productUrlMaxLength = 2048;
+
+  // タグ
+  static const int tagMaxLength = 30;
+  static const int tagMaxCount = 10;
+
+  // レビュー
+  static const int reviewTextMaxLength = 2000;
+
+  // コメント
+  static const int commentTextMaxLength = 500;
+}
