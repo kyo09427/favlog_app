@@ -10,6 +10,7 @@ import '../../data/repositories/asset_category_repository.dart';
 import '../../domain/models/product.dart';
 import '../../core/providers/common_providers.dart';
 import '../../core/services/image_compressor.dart';
+import '../../core/config/constants.dart';
 import 'home_screen_controller.dart';
 import 'search_controller.dart';
 import 'review_detail_controller.dart';
@@ -200,6 +201,20 @@ class EditProductController extends StateNotifier<EditProductState> {
     final trimmedTag = tag.trim();
     if (trimmedTag.isEmpty) return;
 
+    if (trimmedTag.length > ValidationLimits.tagMaxLength) {
+      state = state.copyWith(
+        error: 'タグは${ValidationLimits.tagMaxLength}文字以内で入力してください',
+      );
+      return;
+    }
+
+    if (state.subcategoryTags.length >= ValidationLimits.tagMaxCount) {
+      state = state.copyWith(
+        error: 'タグは最大${ValidationLimits.tagMaxCount}個までです',
+      );
+      return;
+    }
+
     // 重複チェック
     if (state.subcategoryTags.contains(trimmedTag)) return;
 
@@ -259,6 +274,33 @@ class EditProductController extends StateNotifier<EditProductState> {
   /// 商品情報を更新
   Future<void> updateProduct() async {
     if (_isDisposed) return;
+
+    final trimmedName = state.productName.trim();
+    if (trimmedName.isEmpty) {
+      state = state.copyWith(error: '商品名を入力してください');
+      return;
+    }
+    if (trimmedName.length > ValidationLimits.productNameMaxLength) {
+      state = state.copyWith(
+        error: '商品名は${ValidationLimits.productNameMaxLength}文字以内で入力してください',
+      );
+      return;
+    }
+
+    final trimmedUrl = state.productUrl.trim();
+    if (trimmedUrl.isNotEmpty) {
+      if (trimmedUrl.length > ValidationLimits.productUrlMaxLength) {
+        state = state.copyWith(
+          error: 'URLが長すぎます（${ValidationLimits.productUrlMaxLength}文字以内）',
+        );
+        return;
+      }
+      final uri = Uri.tryParse(trimmedUrl);
+      if (uri == null || (!uri.isScheme('http') && !uri.isScheme('https'))) {
+        state = state.copyWith(error: '有効なURL（http/https）を入力してください');
+        return;
+      }
+    }
 
     state = state.copyWith(isLoading: true, error: null);
 

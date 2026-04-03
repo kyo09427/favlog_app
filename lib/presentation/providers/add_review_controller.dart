@@ -11,6 +11,7 @@ import '../../domain/models/product.dart';
 import '../../domain/models/review.dart';
 import '../../core/providers/common_providers.dart';
 import '../../core/services/image_compressor.dart';
+import '../../core/config/constants.dart';
 
 /// レビュー追加画面の状態
 class AddReviewState {
@@ -171,6 +172,20 @@ class AddReviewController extends StateNotifier<AddReviewState> {
     final trimmedTag = tag.trim();
     if (trimmedTag.isEmpty) return;
 
+    if (trimmedTag.length > ValidationLimits.tagMaxLength) {
+      state = state.copyWith(
+        error: 'タグは${ValidationLimits.tagMaxLength}文字以内で入力してください',
+      );
+      return;
+    }
+
+    if (state.subcategoryTags.length >= ValidationLimits.tagMaxCount) {
+      state = state.copyWith(
+        error: 'タグは最大${ValidationLimits.tagMaxCount}個までです',
+      );
+      return;
+    }
+
     // 重複チェック
     if (state.subcategoryTags.contains(trimmedTag)) return;
 
@@ -202,8 +217,16 @@ class AddReviewController extends StateNotifier<AddReviewState> {
       return false;
     }
 
-    if (state.reviewText.trim().isEmpty) {
+    final trimmedText = state.reviewText.trim();
+    if (trimmedText.isEmpty) {
       state = state.copyWith(error: 'レビュー本文を入力してください');
+      return false;
+    }
+
+    if (trimmedText.length > ValidationLimits.reviewTextMaxLength) {
+      state = state.copyWith(
+        error: 'レビュー本文は${ValidationLimits.reviewTextMaxLength}文字以内で入力してください',
+      );
       return false;
     }
 
