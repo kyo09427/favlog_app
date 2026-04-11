@@ -1,8 +1,8 @@
 {
-  "version": "2.6.0",
-  "versionCode": 26041131,
-  "downloadUrl": "https://github.com/kyo09427/favlog_app/releases/download/v2.6.0-26041131/app-release.apk",
-  "releaseNotes": "- chore: bump version counter [skip ci]\n- fix: Android 11+ でURLが開けない問題を修正\n- refactor: v2.6.0 コード品質・安定性・アーキテクチャの全面改善\n- Merge pull request #44 from kyo09427/claude/improve-code-robustness-DGIbT\n- コードの堅牢性を向上: 入力バリデーションとnullセーフ処理を追加\n- Merge pull request #43 from kyo09427/update-android-workflow-secrets-8993701759107956396\n- chore: add DISCORD_TARGET_GUILD_ID to .env in android build workflow\n- chore: bump version counter [skip ci]\n- Merge pull request #42 from kyo09427/fix/redirect-issues-7132231379226526065\n- fix: resolve unused variable warning in main.dart",
+  "version": "2.7.0",
+  "versionCode": 26041132,
+  "downloadUrl": "https://github.com/kyo09427/favlog_app/releases/download/v2.7.0-26041132/app-release.apk",
+  "releaseNotes": "- chore: bump version counter [skip ci]\n- feat: v2.7.0 - 起動時自動アップデートチェックとAndroid URL修正\n- chore: bump version counter [skip ci]\n- fix: Android 11+ でURLが開けない問題を修正\n- refactor: v2.6.0 コード品質・安定性・アーキテクチャの全面改善\n- Merge pull request #44 from kyo09427/claude/improve-code-robustness-DGIbT\n- コードの堅牢性を向上: 入力バリデーションとnullセーフ処理を追加\n- Merge pull request #43 from kyo09427/update-android-workflow-secrets-8993701759107956396\n- chore: add DISCORD_TARGET_GUILD_ID to .env in android build workflow\n- chore: bump version counter [skip ci]",
   "minSupportedVersion": "0.0.1",
   "forceUpdate": false
 }
