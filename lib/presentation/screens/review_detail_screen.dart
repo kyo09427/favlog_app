@@ -653,19 +653,17 @@ class _UrlLink extends StatelessWidget {
   Future<void> _launchUrl(BuildContext context, String urlString) async {
     final uri = Uri.tryParse(urlString);
     if (uri == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('無効なURLです: $urlString')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('無効なURLです: $urlString')));
       return;
     }
 
-    if (await canLaunchUrl(uri)) {
+    try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+    } catch (_) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('このURLを開けませんでした')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('このURLを開けませんでした')));
       }
     }
   }

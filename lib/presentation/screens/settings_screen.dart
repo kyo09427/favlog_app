@@ -143,9 +143,9 @@ class SettingsScreen extends ConsumerWidget {
                 icon: Icons.contact_support_outlined,
                 onTap: () async {
                   final url = Uri.parse('https://forms.gle/5ZfCAKHD8hZLRT647');
-                  if (await canLaunchUrl(url)) {
+                  try {
                     await launchUrl(url, mode: LaunchMode.externalApplication);
-                  } else {
+                  } catch (_) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
