@@ -4,17 +4,23 @@ import '../../domain/models/comment.dart';
 import '../../domain/repositories/comment_repository.dart';
 import "package:favlog_app/core/providers/supabase_provider.dart";
 import '../../utils/push_notification_helper.dart';
+import 'package:favlog_app/core/utils/app_logger.dart';
 
 final commentRepositoryProvider = Provider<CommentRepository>((ref) {
-  return SupabaseCommentRepository(ref.watch(supabaseProvider));
+  return SupabaseCommentRepository(
+    ref.watch(supabaseProvider),
+    ref.watch(pushNotificationHelperProvider),
+  );
 });
 
 class SupabaseCommentRepository implements CommentRepository {
   final SupabaseClient _supabaseClient;
   final PushNotificationHelper _pushNotificationHelper;
 
-  SupabaseCommentRepository(this._supabaseClient)
-    : _pushNotificationHelper = PushNotificationHelper(_supabaseClient);
+  SupabaseCommentRepository(
+    this._supabaseClient,
+    this._pushNotificationHelper,
+  );
 
   @override
   Future<List<Comment>> getCommentsByReviewId(String reviewId) async {
@@ -122,7 +128,9 @@ class SupabaseCommentRepository implements CommentRepository {
           data: {'review_id': comment.reviewId},
         );
       }
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.log('_createCommentNotification: Failed to send notification: $e');
+    }
   }
 
   @override

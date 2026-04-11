@@ -5,17 +5,23 @@ import '../../domain/models/review.dart';
 import '../../domain/repositories/review_repository.dart';
 import "package:favlog_app/core/providers/supabase_provider.dart";
 import '../../utils/push_notification_helper.dart';
+import 'package:favlog_app/core/utils/app_logger.dart';
 
 final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
-  return SupabaseReviewRepository(ref.watch(supabaseProvider));
+  return SupabaseReviewRepository(
+    ref.watch(supabaseProvider),
+    ref.watch(pushNotificationHelperProvider),
+  );
 });
 
 class SupabaseReviewRepository implements ReviewRepository {
   final SupabaseClient _supabaseClient;
   final PushNotificationHelper _pushNotificationHelper;
 
-  SupabaseReviewRepository(this._supabaseClient)
-    : _pushNotificationHelper = PushNotificationHelper(_supabaseClient);
+  SupabaseReviewRepository(
+    this._supabaseClient,
+    this._pushNotificationHelper,
+  );
 
   @override
   Future<List<Review>> getReviews({
@@ -172,50 +178,54 @@ class SupabaseReviewRepository implements ReviewRepository {
         return;
       }
 
-      // 各ユーザーの通知設定を確認してDB通知を作成し、プッシュ通知も送信
-      final notificationEnabledUserIds = <String>[];
+      // 全ユーザーの通知設定を一括取得
+      final settingsResponse = await _supabaseClient
+          .from('user_settings')
+          .select('id, enable_new_review_notifications')
+          .inFilter('id', allUserIds);
 
-      for (final userId in allUserIds) {
-        try {
-          final settingsResponse = await _supabaseClient
-              .from('user_settings')
-              .select('enable_new_review_notifications')
-              .eq('id', userId)
-              .maybeSingle();
+      // 通知設定をマップ化（設定が存在しないユーザーはデフォルトでtrue）
+      final settingsMap = <String, bool>{
+        for (final s in (settingsResponse as List))
+          s['id'] as String:
+              s['enable_new_review_notifications'] as bool? ?? true,
+      };
 
-          // 設定が存在しない場合はデフォルトでtrue、存在する場合は設定値を使用
-          final enableNotifications = settingsResponse == null
-              ? true
-              : (settingsResponse['enable_new_review_notifications'] as bool? ??
-                    true);
+      // 通知有効ユーザーを抽出
+      final notificationEnabledUserIds = allUserIds
+          .where((userId) => settingsMap[userId] ?? true)
+          .toList();
 
-          if (enableNotifications) {
-            // アプリ内通知を作成
-            await _supabaseClient.from('notifications').insert({
+      if (notificationEnabledUserIds.isEmpty) {
+        return;
+      }
+
+      // アプリ内通知を一括作成
+      final notifications = notificationEnabledUserIds
+          .map(
+            (userId) => {
               'user_id': userId,
               'type': 'new_review',
               'title': '新しいレビューが投稿されました',
               'body': '$productNameのレビューが投稿されました',
               'related_review_id': review.id,
               'related_user_id': review.userId,
-            });
+            },
+          )
+          .toList();
 
-            // プッシュ通知送信対象に追加
-            notificationEnabledUserIds.add(userId);
-          }
-        } catch (_) {}
-      }
+      await _supabaseClient.from('notifications').insert(notifications);
 
       // プッシュ通知を送信
-      if (notificationEnabledUserIds.isNotEmpty) {
-        await _pushNotificationHelper.sendPushNotifications(
-          userIds: notificationEnabledUserIds,
-          title: '新しいレビューが投稿されました',
-          body: '$productNameのレビューが投稿されました',
-          data: {'review_id': review.id},
-        );
-      }
-    } catch (_) {}
+      await _pushNotificationHelper.sendPushNotifications(
+        userIds: notificationEnabledUserIds,
+        title: '新しいレビューが投稿されました',
+        body: '$productNameのレビューが投稿されました',
+        data: {'review_id': review.id},
+      );
+    } catch (e) {
+      AppLogger.log('_createNewReviewNotifications: Failed to send notifications: $e');
+    }
   }
 
   @override

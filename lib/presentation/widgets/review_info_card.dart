@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/product.dart';
 import '../../domain/models/review.dart';
 import '../../core/providers/profile_providers.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class ReviewInfoCard extends ConsumerWidget {
   final Review review;
@@ -48,15 +49,15 @@ class ReviewInfoCard extends ConsumerWidget {
     final reviewAuthorProfileAsync = ref.watch(
       userProfileProvider(review.userId),
     );
-    const primaryColor = Color(0xFF13ec5b);
-    final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+    const primaryColor = AppColors.primary;
+    final cardColor = isDark ? AppColors.cardDark : Colors.white;
+    final textColor = isDark ? Colors.white : AppColors.textLight;
     final mutedTextColor = isDark
-        ? const Color(0xFF9CA3AF)
-        : const Color(0xFF6B7280);
+        ? AppColors.subtextDark
+        : AppColors.subtextLight;
     final borderColor = isDark
-        ? const Color(0xFF374151)
-        : const Color(0xFFE5E7EB);
+        ? AppColors.dividerDark
+        : AppColors.dividerLight;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -159,13 +160,13 @@ class ReviewInfoCard extends ConsumerWidget {
                   return const Icon(
                     Icons.star,
                     size: 18,
-                    color: Color(0xFFFBBF24),
+                    color: AppColors.star,
                   );
                 } else if (index < review.rating && review.rating % 1 >= 0.5) {
                   return const Icon(
                     Icons.star_half,
                     size: 18,
-                    color: Color(0xFFFBBF24),
+                    color: AppColors.star,
                   );
                 } else {
                   return Icon(

@@ -3,17 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/repositories/like_repository.dart';
 import "package:favlog_app/core/providers/supabase_provider.dart";
 import '../../utils/push_notification_helper.dart';
+import 'package:favlog_app/core/utils/app_logger.dart';
 
 final likeRepositoryProvider = Provider<LikeRepository>((ref) {
-  return SupabaseLikeRepository(ref.watch(supabaseProvider));
+  return SupabaseLikeRepository(
+    ref.watch(supabaseProvider),
+    ref.watch(pushNotificationHelperProvider),
+  );
 });
 
 class SupabaseLikeRepository implements LikeRepository {
   final SupabaseClient _supabaseClient;
   final PushNotificationHelper _pushNotificationHelper;
 
-  SupabaseLikeRepository(this._supabaseClient)
-    : _pushNotificationHelper = PushNotificationHelper(_supabaseClient);
+  SupabaseLikeRepository(
+    this._supabaseClient,
+    this._pushNotificationHelper,
+  );
 
   @override
   Future<void> addLike(String reviewId) async {
@@ -94,8 +100,10 @@ class SupabaseLikeRepository implements LikeRepository {
           body: '$productNameのレビューにいいねされました',
           data: {'review_id': reviewId},
         );
-      } else {}
-    } catch (_) {}
+      }
+    } catch (e) {
+      AppLogger.log('_createLikeNotification: Failed to send notification: $e');
+    }
   }
 
   @override

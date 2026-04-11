@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../providers/edit_product_controller.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class EditProductCategorySelector extends StatelessWidget {
   final EditProductState state;
@@ -53,14 +54,14 @@ class EditProductCategorySelector extends StatelessWidget {
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: selected
-                              ? const Color(0xFF102216)
+                              ? AppColors.backgroundDark
                               : (theme.brightness == Brightness.dark
                                     ? Colors.white
                                     : Colors.black87),
                         ),
                       ),
                       selected: selected,
-                      selectedColor: const Color(0xFF22A06B),
+                      selectedColor: AppColors.calmGreen,
                       backgroundColor: theme.brightness == Brightness.dark
                           ? Colors.white10
                           : Colors.grey.shade100,
@@ -68,7 +69,7 @@ class EditProductCategorySelector extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                         side: BorderSide(
                           color: selected
-                              ? const Color(0xFF22A06B)
+                              ? AppColors.calmGreen
                               : (theme.brightness == Brightness.dark
                                     ? Colors.white24
                                     : Colors.grey.shade300),

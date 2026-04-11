@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 import '../providers/category_providers.dart';
 import '../providers/search_controller.dart';
+import '../providers/text_editing_controller_provider.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -14,20 +15,10 @@ class SearchScreen extends ConsumerStatefulWidget {
 }
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
-  late final TextEditingController _searchController;
   final List<String> _filters = ['すべて', '商品', 'サービス', 'ユーザー'];
 
-  @override
-  void initState() {
-    super.initState();
-    _searchController = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
+  TextEditingController get _searchController =>
+      ref.read(searchScreenControllerProvider);
 
   void _onClearAllHistory() {
     ref.read(searchControllerProvider.notifier).clearAllHistory();
@@ -202,6 +193,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final theme = Theme.of(context);
     final searchState = ref.watch(searchControllerProvider);
     final searchController = ref.read(searchControllerProvider.notifier);
+    // watchしてautoDisposeを防ぐ（コントローラーのインスタンスを安定させる）
+    ref.watch(searchScreenControllerProvider);
 
     if (_searchController.text != searchState.searchQuery) {
       _searchController.text = searchState.searchQuery;

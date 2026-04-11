@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 // StatefulShellRouteと共に使用するナビゲーションバーを持つScaffold
 class ScaffoldWithNavBar extends StatefulWidget {
@@ -98,7 +99,7 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar>
           ),
         ],
         currentIndex: widget.navigationShell.currentIndex,
-        selectedItemColor: const Color(0xFF4CAF50),
+        selectedItemColor: AppColors.selectedNav,
         unselectedItemColor: Colors.grey,
         onTap: _onTap,
         type: BottomNavigationBarType.fixed,

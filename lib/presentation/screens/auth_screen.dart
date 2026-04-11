@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../presentation/widgets/error_dialog.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
@@ -78,7 +79,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('登録が完了しました。メールを確認してください。'),
-              backgroundColor: Color(0xFF13ec5b),
+              backgroundColor: AppColors.primary,
             ),
           );
           // 登録成功後、入力欄をクリアしてログインモードに切り替える
@@ -133,7 +134,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('ログインしました。'),
-              backgroundColor: Color(0xFF13ec5b),
+              backgroundColor: AppColors.primary,
             ),
           );
           // GoRouterが自動的にホーム画面にリダイレクトします
@@ -163,9 +164,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color(0xFF13ec5b);
-    const backgroundColor = Color(0xFFF6F8F6);
-    const textColor = Color(0xFF1F2937);
+    const primaryColor = AppColors.primary;
+    const backgroundColor = AppColors.backgroundLight;
+    const textColor = AppColors.textLight;
     const borderColor = Color(0xFFD1D5DB);
 
     return Scaffold(
@@ -242,7 +243,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           decoration: InputDecoration(
                             hintText: 'ユーザー名を入力',
                             hintStyle: const TextStyle(
-                              color: Color(0xFF9CA3AF),
+                              color: AppColors.subtextDark,
                             ),
                             filled: true,
                             fillColor: Colors.white,
@@ -291,7 +292,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         enabled: !_isLoading,
                         decoration: InputDecoration(
                           hintText: 'メールアドレスを入力',
-                          hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                          hintStyle: const TextStyle(color: AppColors.subtextDark),
                           filled: true,
                           fillColor: Colors.white,
                           contentPadding: const EdgeInsets.all(15),
@@ -339,7 +340,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         enabled: !_isLoading,
                         decoration: InputDecoration(
                           hintText: 'パスワードを入力',
-                          hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                          hintStyle: const TextStyle(color: AppColors.subtextDark),
                           filled: true,
                           fillColor: Colors.white,
                           contentPadding: const EdgeInsets.all(15),
@@ -363,7 +364,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               _obscurePassword
                                   ? Icons.visibility
                                   : Icons.visibility_off,
-                              color: const Color(0xFF9CA3AF),
+                              color: AppColors.subtextDark,
                             ),
                             onPressed: () {
                               setState(() {
@@ -401,7 +402,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           decoration: InputDecoration(
                             hintText: 'パスワードを再入力',
                             hintStyle: const TextStyle(
-                              color: Color(0xFF9CA3AF),
+                              color: AppColors.subtextDark,
                             ),
                             filled: true,
                             fillColor: Colors.white,
@@ -462,7 +463,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  Color(0xFF1F2937),
+                                  AppColors.textLight,
                                 ),
                               ),
                             )
@@ -484,7 +485,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     TextSpan(
                       style: const TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF6B7280),
+                        color: AppColors.subtextLight,
                       ),
                       children: [
                         TextSpan(
@@ -524,7 +525,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           'または',
-                          style: TextStyle(color: Color(0xFF6B7280)),
+                          style: TextStyle(color: AppColors.subtextLight),
                         ),
                       ),
                       const Expanded(child: Divider(color: borderColor)),
@@ -567,7 +568,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     },
                     child: const Text(
                       'パスワードをお忘れですか？',
-                      style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                      style: TextStyle(fontSize: 14, color: AppColors.subtextLight),
                     ),
                   ),
 

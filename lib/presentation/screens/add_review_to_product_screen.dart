@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:favlog_app/domain/models/product.dart';
 import 'package:favlog_app/presentation/providers/add_review_to_product_controller.dart';
 import 'package:favlog_app/presentation/widgets/error_dialog.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class AddReviewToProductScreen extends ConsumerStatefulWidget {
   final Product product; // 既存の商品
@@ -59,8 +60,8 @@ class _AddReviewToProductScreenState
 
     final theme = Theme.of(context);
     final bgColor = theme.brightness == Brightness.dark
-        ? const Color(0xFF102216)
-        : const Color(0xFFF6F8F6);
+        ? AppColors.backgroundDark
+        : AppColors.backgroundLight;
 
     Future<void> handleSubmit() async {
       if (!_formKey.currentState!.validate()) return;
@@ -110,7 +111,7 @@ class _AddReviewToProductScreenState
                   if (newRating > 5) newRating = 5;
                   addReviewToProductController.updateRating(newRating);
                 },
-          icon: Icon(icon, color: const Color(0xFF22A06B)),
+          icon: Icon(icon, color: AppColors.calmGreen),
         );
       });
     }
@@ -268,7 +269,7 @@ class _AddReviewToProductScreenState
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: const Color(0xFF22A06B),
+                              color: AppColors.calmGreen,
                               width: 1.5,
                             ),
                           ),
@@ -330,7 +331,7 @@ class _AddReviewToProductScreenState
                           ? null
                           : handleSubmit,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF22A06B),
+                        backgroundColor: AppColors.calmGreen,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(999),

@@ -123,9 +123,8 @@ class AddReviewController extends StateNotifier<AddReviewState> {
   Future<void> addImage(ImageSource source) async {
     if (_isDisposed) return;
 
-    // 最大3枚まで
-    if (state.images.length >= 3) {
-      state = state.copyWith(error: '画像は最大3枚までです');
+    if (state.images.length >= AppLimits.reviewImageMaxCount) {
+      state = state.copyWith(error: '画像は最大${AppLimits.reviewImageMaxCount}枚までです');
       return;
     }
 
@@ -212,7 +211,8 @@ class AddReviewController extends StateNotifier<AddReviewState> {
     if (_isDisposed) return false;
 
     // バリデーション
-    if (state.selectedProduct == null) {
+    final selectedProduct = state.selectedProduct;
+    if (selectedProduct == null) {
       state = state.copyWith(error: '商品が選択されていません');
       return false;
     }
@@ -247,9 +247,18 @@ class AddReviewController extends StateNotifier<AddReviewState> {
       final List<String> imageUrls = [];
       for (final imageData in state.images) {
         try {
-          final imageBytes = kIsWeb
-              ? imageData.bytes!
-              : await imageData.file!.readAsBytes();
+          final Uint8List imageBytes;
+          if (kIsWeb) {
+            if (imageData.bytes == null) {
+              throw Exception('画像データが見つかりません');
+            }
+            imageBytes = imageData.bytes!;
+          } else {
+            if (imageData.file == null) {
+              throw Exception('画像ファイルが見つかりません');
+            }
+            imageBytes = await imageData.file!.readAsBytes();
+          }
 
           // 画像を圧縮
           final compressedBytes = await _imageCompressor.compressImage(
@@ -283,7 +292,7 @@ class AddReviewController extends StateNotifier<AddReviewState> {
       // レビュー情報を作成
       final newReview = Review(
         userId: user.id,
-        productId: state.selectedProduct!.id,
+        productId: selectedProduct.id,
         reviewText: state.reviewText,
         rating: state.rating,
         imageUrls: imageUrls,

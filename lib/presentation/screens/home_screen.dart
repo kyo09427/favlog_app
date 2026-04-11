@@ -14,6 +14,7 @@ import 'package:favlog_app/data/repositories/supabase_like_repository.dart';
 import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
 import 'package:favlog_app/core/providers/notification_providers.dart';
 import 'package:favlog_app/presentation/providers/announcement_providers.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -46,7 +47,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent * 0.9) {
+        _scrollController.position.maxScrollExtent * AppLimits.scrollLoadThreshold) {
       // TODO: ページネーション実装時にここで次ページを読み込む
     }
   }
@@ -234,7 +235,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                             children: [
                               RatingStars(
                                 rating: stats.averageRating,
-                                color: const Color(0xFF4CAF50),
+                                color: AppColors.selectedNav,
                               ),
                               const SizedBox(width: 6),
                               Text(
@@ -364,7 +365,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     );
     final categoriesAsyncValue = ref.watch(categoriesProvider);
     final theme = Theme.of(context);
-    final primaryColor = const Color(0xFF4CAF50);
+    final primaryColor = AppColors.selectedNav;
 
     ref.listen<HomeScreenState>(homeScreenControllerProvider, (previous, next) {
       if (next.error != null && next.error != previous?.error) {
@@ -393,7 +394,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: theme.brightness == Brightness.dark
-            ? const Color(0xFF1B5E20)
+            ? AppColors.deepGreen
             : primaryColor,
         leading: Consumer(
           builder: (context, ref, child) {
@@ -694,7 +695,7 @@ class RatingStars extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final starColor = color ?? const Color(0xFF4CAF50);
+    final starColor = color ?? AppColors.selectedNav;
 
     return Row(
       mainAxisSize: MainAxisSize.min,

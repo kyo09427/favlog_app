@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../providers/edit_product_controller.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class EditProductTagsInput extends StatelessWidget {
   final EditProductState state;
@@ -58,7 +59,7 @@ class EditProductTagsInput extends StatelessWidget {
             ),
             focusedBorder: const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(12)),
-              borderSide: BorderSide(color: Color(0xFF22A06B), width: 1.5),
+              borderSide: BorderSide(color: AppColors.calmGreen, width: 1.5),
             ),
             suffixIcon: IconButton(
               icon: const Icon(Icons.add),
@@ -91,12 +92,12 @@ class EditProductTagsInput extends StatelessWidget {
                 label: Text('#$tag'),
                 deleteIcon: const Icon(Icons.close, size: 16),
                 onDeleted: () => controller.removeSubcategoryTag(tag),
-                backgroundColor: const Color(0xFF22A06B).withValues(alpha: 0.2),
+                backgroundColor: AppColors.calmGreen.withValues(alpha: 0.2),
                 labelStyle: const TextStyle(
-                  color: Color(0xFF22A06B),
+                  color: AppColors.calmGreen,
                   fontWeight: FontWeight.w500,
                 ),
-                deleteIconColor: const Color(0xFF22A06B),
+                deleteIconColor: AppColors.calmGreen,
               );
             }).toList(),
           ),

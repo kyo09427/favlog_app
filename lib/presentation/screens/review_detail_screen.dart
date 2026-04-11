@@ -13,6 +13,7 @@ import '../../data/repositories/supabase_product_repository.dart';
 import '../../data/repositories/supabase_review_repository.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../core/providers/profile_providers.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class ReviewDetailScreen extends ConsumerStatefulWidget {
   final String productId;
@@ -24,9 +25,9 @@ class ReviewDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
-  static const Color _backgroundLight = Color(0xFFF6F8F6);
-  static const Color _backgroundDark = Color(0xFF102216);
-  static const Color _primary = Color(0xFF22A06B);
+  static const Color _backgroundLight = AppColors.backgroundLight;
+  static const Color _backgroundDark = AppColors.backgroundDark;
+  static const Color _primary = AppColors.calmGreen;
 
   @override
   void didChangeDependencies() {
@@ -50,7 +51,7 @@ class _ReviewDetailScreenState extends ConsumerState<ReviewDetailScreen> {
     await showModalBottomSheet(
       context: context,
       backgroundColor: theme.brightness == Brightness.dark
-          ? const Color(0xFF1C1C1E)
+          ? AppColors.cardDark
           : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -713,7 +714,7 @@ class _SortTab extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: isActive ? const Color(0xFF22A06B) : Colors.transparent,
+              color: isActive ? AppColors.calmGreen : Colors.transparent,
               width: 2,
             ),
           ),

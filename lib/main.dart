@@ -10,11 +10,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:favlog_app/core/router/app_router.dart';
 import 'package:favlog_app/presentation/providers/theme_provider.dart';
-import 'package:favlog_app/providers/update_provider.dart';
+import 'package:favlog_app/core/providers/update_provider.dart';
 import 'package:favlog_app/models/version_info.dart';
 import 'package:favlog_app/utils/update_ui_helper.dart';
 import 'package:favlog_app/services/fcm_service.dart';
 import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 Future<void> main() async {
   usePathUrlStrategy();
@@ -302,53 +303,53 @@ class _MyAppState extends ConsumerState<MyApp> {
         fontFamily: 'KosugiMaru',
         brightness: Brightness.light,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF13EC5B),
+          seedColor: AppColors.primary,
           brightness: Brightness.light,
-          primary: const Color(0xFF13EC5B),
+          primary: AppColors.primary,
           surface: Colors.white,
-          onSurface: const Color(0xFF1F2937), // Text color
+          onSurface: AppColors.textLight, // Text color
         ),
-        scaffoldBackgroundColor: const Color(0xFFF6F8F6),
+        scaffoldBackgroundColor: AppColors.backgroundLight,
         cardColor: Colors.white,
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 0,
-          backgroundColor: Color(0xFFF6F8F6),
-          foregroundColor: Color(0xFF1F2937),
+          backgroundColor: AppColors.backgroundLight,
+          foregroundColor: AppColors.textLight,
           surfaceTintColor: Colors.transparent, // Disable Material 3 tint
         ),
         textTheme: const TextTheme(
           headlineSmall: TextStyle(
             fontSize: 24.0,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
+            color: AppColors.textLight,
           ),
           titleLarge: TextStyle(
             fontSize: 18.0,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
+            color: AppColors.textLight,
           ),
           titleMedium: TextStyle(
             fontSize: 16.0,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
+            color: AppColors.textLight,
           ),
           bodyMedium: TextStyle(
             fontSize: 14.0,
             height: 1.5,
-            color: Color(0xFF1F2937),
+            color: AppColors.textLight,
           ),
           bodySmall: TextStyle(
             fontSize: 12.0,
             height: 1.5,
-            color: Color(0xFF6B7280),
+            color: AppColors.subtextLight,
           ),
           labelLarge: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold),
         ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: Colors.white,
-          selectedItemColor: Color(0xFF13EC5B),
-          unselectedItemColor: Color(0xFF9CA3AF),
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: AppColors.subtextDark,
         ),
       ),
       darkTheme: ThemeData(
@@ -356,18 +357,18 @@ class _MyAppState extends ConsumerState<MyApp> {
         fontFamily: 'KosugiMaru',
         brightness: Brightness.dark,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF13EC5B),
+          seedColor: AppColors.primary,
           brightness: Brightness.dark,
-          primary: const Color(0xFF13EC5B),
-          surface: const Color(0xFF1C1C1E),
+          primary: AppColors.primary,
+          surface: AppColors.cardDark,
           onSurface: Colors.white,
         ),
-        scaffoldBackgroundColor: const Color(0xFF102216),
-        cardColor: const Color(0xFF1C1C1E),
+        scaffoldBackgroundColor: AppColors.backgroundDark,
+        cardColor: AppColors.cardDark,
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 0,
-          backgroundColor: Color(0xFF102216),
+          backgroundColor: AppColors.backgroundDark,
           foregroundColor: Colors.white,
           surfaceTintColor: Colors.transparent,
         ),
@@ -395,14 +396,14 @@ class _MyAppState extends ConsumerState<MyApp> {
           bodySmall: TextStyle(
             fontSize: 12.0,
             height: 1.5,
-            color: Color(0xFF9CA3AF),
+            color: AppColors.subtextDark,
           ),
           labelLarge: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold),
         ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Color(0xFF1C1C1E),
-          selectedItemColor: Color(0xFF13EC5B),
-          unselectedItemColor: Color(0xFF9CA3AF),
+          backgroundColor: AppColors.cardDark,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: AppColors.subtextDark,
         ),
       ),
       themeMode: ref.watch(themeModeProvider),

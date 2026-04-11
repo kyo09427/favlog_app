@@ -1,9 +1,9 @@
-import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/fcm_token.dart';
 import '../../domain/repositories/fcm_token_repository.dart';
 import "package:favlog_app/core/providers/supabase_provider.dart";
+import 'package:favlog_app/core/utils/app_logger.dart';
 
 final fcmTokenRepositoryProvider = Provider<FCMTokenRepository>((ref) {
   return SupabaseFCMTokenRepository(ref.watch(supabaseProvider));
@@ -21,8 +21,8 @@ class SupabaseFCMTokenRepository implements FCMTokenRepository {
     String? deviceType,
   ) async {
     try {
-      debugPrint('saveToken: Attempting to save token for user $userId');
-      debugPrint(
+      AppLogger.log('saveToken: Attempting to save token for user $userId');
+      AppLogger.log(
         'saveToken: Token: ${token.substring(0, 20)}..., Device: $deviceType',
       );
 
@@ -40,9 +40,9 @@ class SupabaseFCMTokenRepository implements FCMTokenRepository {
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       }, onConflict: 'user_id,device_type');
 
-      debugPrint('saveToken: Successfully saved token to database');
+      AppLogger.log('saveToken: Successfully saved token to database');
     } catch (e) {
-      debugPrint('saveToken: Error - $e');
+      AppLogger.log('saveToken: Error - $e');
       throw Exception('Failed to save FCM token: $e');
     }
   }
@@ -50,12 +50,12 @@ class SupabaseFCMTokenRepository implements FCMTokenRepository {
   @override
   Future<List<String>> getTokensByUserIds(List<String> userIds) async {
     if (userIds.isEmpty) {
-      debugPrint('getTokensByUserIds: Empty user IDs list');
+      AppLogger.log('getTokensByUserIds: Empty user IDs list');
       return [];
     }
 
     try {
-      debugPrint(
+      AppLogger.log(
         'getTokensByUserIds: Fetching tokens for ${userIds.length} users: $userIds',
       );
       final response = await _supabaseClient
@@ -63,14 +63,14 @@ class SupabaseFCMTokenRepository implements FCMTokenRepository {
           .select('token')
           .inFilter('user_id', userIds);
 
-      debugPrint('getTokensByUserIds: Raw response: $response');
+      AppLogger.log('getTokensByUserIds: Raw response: $response');
       final tokens = (response as List)
           .map((json) => json['token'] as String)
           .toList();
-      debugPrint('getTokensByUserIds: Extracted ${tokens.length} tokens');
+      AppLogger.log('getTokensByUserIds: Extracted ${tokens.length} tokens');
       return tokens;
     } catch (e) {
-      debugPrint('getTokensByUserIds: Error - $e');
+      AppLogger.log('getTokensByUserIds: Error - $e');
       throw Exception('Failed to get FCM tokens by user IDs: $e');
     }
   }

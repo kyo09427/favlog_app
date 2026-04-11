@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/update_service.dart';
-import '../services/apk_installer.dart';
-import '../models/version_info.dart';
+import '../../services/update_service.dart';
+import '../../services/apk_installer.dart';
+import '../../models/version_info.dart';
 
 /// UpdateServiceのプロバイダー
 final updateServiceProvider = Provider<UpdateService>((ref) {

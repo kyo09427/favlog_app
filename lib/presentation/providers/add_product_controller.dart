@@ -198,6 +198,22 @@ class AddProductController extends StateNotifier<AddProductState> {
     state = state.copyWith(clearImage: true);
   }
 
+  /// 内部ネットワークアドレスかどうかを判定
+  bool _isPrivateHost(String host) {
+    if (host == 'localhost') return true;
+    final parts = host.split('.');
+    if (parts.length != 4) return false;
+    final first = int.tryParse(parts[0]);
+    final second = int.tryParse(parts[1]);
+    if (first == null || second == null) return false;
+    // 127.x.x.x / 10.x.x.x / 192.168.x.x / 172.16-31.x.x
+    if (first == 127) return true;
+    if (first == 10) return true;
+    if (first == 192 && second == 168) return true;
+    if (first == 172 && second >= 16 && second <= 31) return true;
+    return false;
+  }
+
   /// バリデーション
   bool _validate() {
     final trimmedName = state.productName.trim();
@@ -222,7 +238,10 @@ class AddProductController extends StateNotifier<AddProductState> {
         return false;
       }
       final uri = Uri.tryParse(trimmedUrl);
-      if (uri == null || (!uri.isScheme('http') && !uri.isScheme('https'))) {
+      if (uri == null ||
+          (!uri.isScheme('http') && !uri.isScheme('https')) ||
+          uri.host.isEmpty ||
+          _isPrivateHost(uri.host)) {
         state = state.copyWith(error: '有効なURL（http/https）を入力してください');
         return false;
       }
@@ -265,9 +284,18 @@ class AddProductController extends StateNotifier<AddProductState> {
       // 画像のアップロード処理
       String? imageUrl;
       try {
-        final imageBytes = kIsWeb
-            ? state.imageBytes!
-            : await state.imageFile!.readAsBytes();
+        final Uint8List imageBytes;
+        if (kIsWeb) {
+          if (state.imageBytes == null) {
+            throw Exception('画像データが見つかりません');
+          }
+          imageBytes = state.imageBytes!;
+        } else {
+          if (state.imageFile == null) {
+            throw Exception('画像ファイルが見つかりません');
+          }
+          imageBytes = await state.imageFile!.readAsBytes();
+        }
 
         // 画像を圧縮
         final compressedBytes = await _imageCompressor.compressImage(

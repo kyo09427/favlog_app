@@ -5,6 +5,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../providers/announcement_providers.dart';
 import '../../core/providers/profile_providers.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 /// お知らせ一覧画面
 class AnnouncementsScreen extends ConsumerWidget {
@@ -19,8 +20,8 @@ class AnnouncementsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('お知らせ'),
         backgroundColor: theme.brightness == Brightness.dark
-            ? const Color(0xFF1B5E20)
-            : const Color(0xFF4CAF50),
+            ? AppColors.deepGreen
+            : AppColors.selectedNav,
         foregroundColor: Colors.white,
       ),
       body: announcementsAsync.when(
@@ -159,7 +160,7 @@ class AnnouncementsScreen extends ConsumerWidget {
           onPressed: () {
             context.push('/announcements/create');
           },
-          backgroundColor: const Color(0xFF4CAF50),
+          backgroundColor: AppColors.selectedNav,
           foregroundColor: Colors.white,
           child: const Icon(Icons.add),
         );

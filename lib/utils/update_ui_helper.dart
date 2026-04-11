@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/version_info.dart';
-import '../providers/update_provider.dart';
+import '../core/providers/update_provider.dart';
 import '../widgets/update_dialog.dart';
 import '../widgets/download_progress_dialog.dart';
 import 'package:go_router/go_router.dart';

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../providers/announcement_providers.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 /// お知らせ作成画面
 class CreateAnnouncementScreen extends ConsumerStatefulWidget {
@@ -111,8 +112,8 @@ class _CreateAnnouncementScreenState
       appBar: AppBar(
         title: const Text('お知らせ作成'),
         backgroundColor: theme.brightness == Brightness.dark
-            ? const Color(0xFF1B5E20)
-            : const Color(0xFF4CAF50),
+            ? AppColors.deepGreen
+            : AppColors.selectedNav,
         foregroundColor: Colors.white,
       ),
       body: Form(
@@ -230,7 +231,7 @@ class _CreateAnnouncementScreenState
                   : const Icon(Icons.send),
               label: Text(_isLoading ? '作成中...' : '作成'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4CAF50),
+                backgroundColor: AppColors.selectedNav,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 textStyle: const TextStyle(fontSize: 16),

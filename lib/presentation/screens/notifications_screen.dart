@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../core/providers/notification_providers.dart';
 import '../../domain/models/app_notification.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -27,13 +28,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final backgroundColor = isDark
-        ? const Color(0xFF102216)
-        : const Color(0xFFF6F8F6);
-    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+        ? AppColors.backgroundDark
+        : AppColors.backgroundLight;
+    final textColor = isDark ? Colors.white : AppColors.textLight;
     final mutedTextColor = isDark
-        ? const Color(0xFF9CA3AF)
-        : const Color(0xFF6B7280);
-    const primaryColor = Color(0xFF13ec5b);
+        ? AppColors.subtextDark
+        : AppColors.subtextLight;
+    const primaryColor = AppColors.primary;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -144,7 +145,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     switch (notification.type) {
       case 'new_review':
         icon = Icons.rate_review;
-        iconColor = const Color(0xFF13ec5b);
+        iconColor = AppColors.primary;
         break;
       case 'like':
         icon = Icons.favorite;
@@ -156,7 +157,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         break;
       default:
         icon = Icons.notifications;
-        iconColor = const Color(0xFF13ec5b);
+        iconColor = AppColors.primary;
     }
 
     return Dismissible(
@@ -185,8 +186,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           color: notification.isRead
               ? Colors.transparent
               : (isDark
-                    ? const Color(0xFF1C1C1E).withValues(alpha: 0.5)
-                    : const Color(0xFF13ec5b).withValues(alpha: 0.05)),
+                    ? AppColors.cardDark.withValues(alpha: 0.5)
+                    : AppColors.primary.withValues(alpha: 0.05)),
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,7 +239,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   width: 8,
                   height: 8,
                   decoration: const BoxDecoration(
-                    color: Color(0xFF13ec5b),
+                    color: AppColors.primary,
                     shape: BoxShape.circle,
                   ),
                 ),

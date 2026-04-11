@@ -7,7 +7,8 @@ import 'package:permission_handler/permission_handler.dart';
 import '../providers/theme_provider.dart';
 import '../../core/providers/notification_providers.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
-import '../../providers/update_provider.dart';
+import '../../core/providers/update_provider.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -18,17 +19,17 @@ class SettingsScreen extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final backgroundColor = isDark
-        ? const Color(0xFF102216)
-        : const Color(0xFFF6F8F6);
-    final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+        ? AppColors.backgroundDark
+        : AppColors.backgroundLight;
+    final cardColor = isDark ? AppColors.cardDark : Colors.white;
+    final textColor = isDark ? Colors.white : AppColors.textLight;
     final mutedTextColor = isDark
-        ? const Color(0xFF9CA3AF)
-        : const Color(0xFF6B7280);
+        ? AppColors.subtextDark
+        : AppColors.subtextLight;
     final borderColor = isDark
-        ? const Color(0xFF374151)
-        : const Color(0xFFE5E7EB);
-    const primaryColor = Color(0xFF13EC5B);
+        ? AppColors.dividerDark
+        : AppColors.dividerLight;
+    const primaryColor = AppColors.primary;
 
     return Scaffold(
       backgroundColor: backgroundColor,

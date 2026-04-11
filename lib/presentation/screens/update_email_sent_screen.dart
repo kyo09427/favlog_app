@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class UpdateEmailSentScreen extends StatelessWidget {
   const UpdateEmailSentScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const backgroundDark = Color(0xFF102216);
-    const primaryColor = Color(0xFF13EC5B);
-    const mutedTextColor = Color(0xFF9DB9A6);
+    const backgroundDark = AppColors.backgroundDark;
+    const primaryColor = AppColors.primary;
+    const mutedTextColor = AppColors.primaryMuted;
 
     return Scaffold(
       backgroundColor: backgroundDark,

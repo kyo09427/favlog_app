@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/update_email_controller.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class UpdateEmailRequestScreen extends ConsumerStatefulWidget {
   const UpdateEmailRequestScreen({super.key});
@@ -39,11 +40,11 @@ class _UpdateEmailRequestScreenState
       }
     });
 
-    const backgroundDark = Color(0xFF102216);
+    const backgroundDark = AppColors.backgroundDark;
     const inputBackground = Color(0xFF1C271F);
     const borderColor = Color(0xFF3B5443);
-    const primaryColor = Color(0xFF13EC5B);
-    const mutedTextColor = Color(0xFF9DB9A6);
+    const primaryColor = AppColors.primary;
+    const mutedTextColor = AppColors.primaryMuted;
 
     return Scaffold(
       backgroundColor: backgroundDark,

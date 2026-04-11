@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/edit_product_controller.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class EditProductImagePicker extends StatelessWidget {
   final EditProductState state;
@@ -21,7 +22,7 @@ class EditProductImagePicker extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: theme.brightness == Brightness.dark
-          ? const Color(0xFF1C1C1E)
+          ? AppColors.cardDark
           : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -33,7 +34,7 @@ class EditProductImagePicker extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.camera_alt, color: Color(0xFF22A06B)),
+                leading: const Icon(Icons.camera_alt, color: AppColors.calmGreen),
                 title: const Text('カメラで撮影'),
                 onTap: () {
                   context.pop();
@@ -43,7 +44,7 @@ class EditProductImagePicker extends StatelessWidget {
               ListTile(
                 leading: const Icon(
                   Icons.photo_library,
-                  color: Color(0xFF22A06B),
+                  color: AppColors.calmGreen,
                 ),
                 title: const Text('ギャラリーから選択'),
                 onTap: () {

@@ -1,9 +1,13 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/config/constants.dart';
 import '../../data/repositories/supabase_product_repository.dart';
 import '../../data/repositories/supabase_review_repository.dart';
 import '../../domain/models/product.dart';
 import '../../domain/models/review.dart';
+
+const _kSearchHistoryKey = 'search_history';
 
 // 検索結果を格納するクラス
 class SearchResult {
@@ -67,10 +71,19 @@ class SearchController extends StateNotifier<SearchScreenState> {
     _loadSearchHistory();
   }
 
-  // 検索履歴の読み込み（簡易実装：メモリ内のみ）
-  void _loadSearchHistory() {
-    // TODO: SharedPreferencesなどで永続化する場合はここで読み込み
-    state = state.copyWith(searchHistory: []);
+  // 検索履歴の読み込み（SharedPreferencesから復元）
+  Future<void> _loadSearchHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final history = prefs.getStringList(_kSearchHistoryKey) ?? [];
+    if (mounted) {
+      state = state.copyWith(searchHistory: history);
+    }
+  }
+
+  // 検索履歴をSharedPreferencesに保存
+  Future<void> _saveSearchHistory(List<String> history) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_kSearchHistoryKey, history);
   }
 
   // 検索クエリをStateにセットするだけ
@@ -177,20 +190,18 @@ class SearchController extends StateNotifier<SearchScreenState> {
     // 先頭に追加
     history.insert(0, query);
 
-    // 最大10件まで保持
-    if (history.length > 10) {
+    if (history.length > AppLimits.searchHistoryMaxCount) {
       history.removeLast();
     }
 
     state = state.copyWith(searchHistory: history);
-
-    // TODO: SharedPreferencesなどで永続化
+    _saveSearchHistory(history);
   }
 
   // 検索履歴をすべてクリア
   void clearAllHistory() {
     state = state.copyWith(searchHistory: []);
-    // TODO: SharedPreferencesなどで永続化
+    _saveSearchHistory([]);
   }
 
   // 検索履歴から1件削除
@@ -198,7 +209,7 @@ class SearchController extends StateNotifier<SearchScreenState> {
     final history = List<String>.from(state.searchHistory);
     history.removeAt(index);
     state = state.copyWith(searchHistory: history);
-    // TODO: SharedPreferencesなどで永続化
+    _saveSearchHistory(history);
   }
 
   // 検索履歴から検索を実行

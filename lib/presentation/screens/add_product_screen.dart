@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../providers/add_product_controller.dart';
 import '../widgets/error_dialog.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class AddProductScreen extends ConsumerStatefulWidget {
   const AddProductScreen({super.key});
@@ -77,18 +78,18 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    const primaryColor = Color(0xFF13ec5b);
+    const primaryColor = AppColors.primary;
     final backgroundColor = isDark
-        ? const Color(0xFF102216)
-        : const Color(0xFFF6F8F6);
-    final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+        ? AppColors.backgroundDark
+        : AppColors.backgroundLight;
+    final cardColor = isDark ? AppColors.cardDark : Colors.white;
+    final textColor = isDark ? Colors.white : AppColors.textLight;
     final mutedTextColor = isDark
-        ? const Color(0xFF9CA3AF)
-        : const Color(0xFF6B7280);
+        ? AppColors.subtextDark
+        : AppColors.subtextLight;
     final borderColor = isDark
-        ? const Color(0xFF374151)
-        : const Color(0xFFE5E7EB);
+        ? AppColors.dividerDark
+        : AppColors.dividerLight;
 
     // エラー表示
     if (state.error != null) {
@@ -179,7 +180,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                             filled: true,
                             fillColor: isDark
                                 ? Colors.white.withValues(alpha: 0.1)
-                                : const Color(0xFFF3F4F6),
+                                : AppColors.surfaceLight,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(color: borderColor),
@@ -243,7 +244,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                             filled: true,
                             fillColor: isDark
                                 ? Colors.white.withValues(alpha: 0.1)
-                                : const Color(0xFFF3F4F6),
+                                : AppColors.surfaceLight,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(color: borderColor),
@@ -336,7 +337,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                                             ? Colors.white.withValues(
                                                 alpha: 0.1,
                                               )
-                                            : const Color(0xFFE5E7EB)),
+                                            : AppColors.dividerLight),
                                   borderRadius: BorderRadius.circular(24),
                                 ),
                                 child: Text(
@@ -391,7 +392,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                             filled: true,
                             fillColor: isDark
                                 ? Colors.white.withValues(alpha: 0.1)
-                                : const Color(0xFFF3F4F6),
+                                : AppColors.surfaceLight,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(color: borderColor),
@@ -581,14 +582,14 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                   children: [
                     Icon(
                       Icons.add_photo_alternate,
-                      color: const Color(0xFF13ec5b),
+                      color: AppColors.primary,
                       size: 40,
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '追加',
                       style: TextStyle(
-                        color: const Color(0xFF13ec5b),
+                        color: AppColors.primary,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),

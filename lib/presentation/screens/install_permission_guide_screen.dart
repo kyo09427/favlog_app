@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class InstallPermissionGuideScreen extends StatefulWidget {
   const InstallPermissionGuideScreen({super.key});
@@ -95,7 +96,7 @@ class _InstallPermissionGuideScreenState
     final backgroundColor = isDark ? const Color(0xFF102210) : Colors.white;
     final surfaceColor = isDark
         ? const Color(0xFF1A2E1A)
-        : const Color(0xFFF6F8F6);
+        : AppColors.backgroundLight;
     final textColor = isDark ? Colors.white : const Color(0xFF111811);
     final subTextColor = isDark ? Colors.grey[400] : const Color(0xFF444444);
     const primaryColor = Color(0xFF13EC13);

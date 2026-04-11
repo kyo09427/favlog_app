@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/announcement_providers.dart';
 import '../../core/providers/profile_providers.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 /// お知らせ詳細画面
 class AnnouncementDetailScreen extends ConsumerStatefulWidget {
@@ -45,8 +46,8 @@ class _AnnouncementDetailScreenState
       appBar: AppBar(
         title: const Text('お知らせ詳細'),
         backgroundColor: theme.brightness == Brightness.dark
-            ? const Color(0xFF1B5E20)
-            : const Color(0xFF4CAF50),
+            ? AppColors.deepGreen
+            : AppColors.selectedNav,
         foregroundColor: Colors.white,
         actions: _buildAdminActions(repository),
       ),

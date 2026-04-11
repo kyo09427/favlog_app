@@ -324,8 +324,14 @@ class EditProductController extends StateNotifier<EditProductState> {
           final Uint8List imageBytes;
 
           if (kIsWeb) {
+            if (state.newImageBytes == null) {
+              throw Exception('画像データが見つかりません');
+            }
             imageBytes = state.newImageBytes!;
           } else {
+            if (state.newImageFile == null) {
+              throw Exception('画像ファイルが見つかりません');
+            }
             imageBytes = await state.newImageFile!.readAsBytes();
           }
 

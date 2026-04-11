@@ -1,5 +1,11 @@
-import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/providers/supabase_provider.dart';
+import 'package:favlog_app/core/utils/app_logger.dart';
+
+final pushNotificationHelperProvider = Provider<PushNotificationHelper>((ref) {
+  return PushNotificationHelper(ref.watch(supabaseProvider));
+});
 
 /// プッシュ通知を送信するヘルパークラス
 class PushNotificationHelper {
@@ -15,18 +21,18 @@ class PushNotificationHelper {
     Map<String, String>? data,
   }) async {
     if (userIds.isEmpty) {
-      debugPrint('sendPushNotifications: No user IDs provided');
+      AppLogger.log('sendPushNotifications: No user IDs provided');
       return;
     }
 
     try {
-      debugPrint(
+      AppLogger.log(
         'sendPushNotifications: Sending to ${userIds.length} users: $userIds',
       );
 
       // Supabase Edge Functionを呼び出してプッシュ通知を送信
       // Edge Function側でService Roleキーを使ってトークンを取得する
-      debugPrint(
+      AppLogger.log(
         'sendPushNotifications: Calling Edge Function with ${userIds.length} user IDs',
       );
       final response = await _supabaseClient.functions.invoke(
@@ -40,16 +46,16 @@ class PushNotificationHelper {
       );
 
       if (response.status != 200) {
-        debugPrint(
+        AppLogger.log(
           'sendPushNotifications: Failed with status ${response.status}: ${response.data}',
         );
       } else {
-        debugPrint(
+        AppLogger.log(
           'sendPushNotifications: Success! Response: ${response.data}',
         );
       }
     } catch (e) {
-      debugPrint('sendPushNotifications: Error - $e');
+      AppLogger.log('sendPushNotifications: Error - $e');
       // プッシュ通知の失敗は致命的エラーとしない（アプリ内通知は別途送信される）
     }
   }

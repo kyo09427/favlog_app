@@ -8,6 +8,7 @@ import '../../domain/models/review.dart';
 import '../../domain/models/review_stats.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../core/providers/profile_providers.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class ReviewItem extends ConsumerStatefulWidget {
   final Product product;
@@ -40,7 +41,7 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
 
   Widget _buildRatingStars(BuildContext context) {
     final theme = Theme.of(context);
-    const calmGreen = Color(0xFF22A06B);
+    const calmGreen = AppColors.calmGreen;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -114,7 +115,7 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+      backgroundColor: isDark ? AppColors.cardDark : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -127,7 +128,7 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
               ListTile(
                 leading: const Icon(
                   Icons.edit_outlined,
-                  color: Color(0xFF22A06B),
+                  color: AppColors.calmGreen,
                 ),
                 title: const Text('編集する'),
                 onTap: () {
@@ -361,7 +362,7 @@ class _ReviewItemState extends ConsumerState<ReviewItem> {
                   child: Text(
                     _isExpanded ? '閉じる' : 'もっと見る',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF22A06B),
+                      color: AppColors.calmGreen,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

@@ -7,6 +7,7 @@ import '../widgets/error_dialog.dart';
 import '../widgets/edit_product/edit_product_image_picker.dart';
 import '../widgets/edit_product/edit_product_category_selector.dart';
 import '../widgets/edit_product/edit_product_tags_input.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class EditProductScreen extends ConsumerStatefulWidget {
   final Product product;
@@ -71,8 +72,8 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
 
     final theme = Theme.of(context);
     final bgColor = theme.brightness == Brightness.dark
-        ? const Color(0xFF102216)
-        : const Color(0xFFF6F8F6);
+        ? AppColors.backgroundDark
+        : AppColors.backgroundLight;
 
     Future<void> handleSubmit() async {
       if (!_formKey.currentState!.validate()) {
@@ -198,7 +199,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                           focusedBorder: const OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(12)),
                             borderSide: BorderSide(
-                              color: Color(0xFF22A06B),
+                              color: AppColors.calmGreen,
                               width: 1.5,
                             ),
                           ),
@@ -262,7 +263,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                           focusedBorder: const OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(12)),
                             borderSide: BorderSide(
-                              color: Color(0xFF22A06B),
+                              color: AppColors.calmGreen,
                               width: 1.5,
                             ),
                           ),
@@ -331,7 +332,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                                     ? null
                                     : handleSubmit,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF22A06B),
+                                  backgroundColor: AppColors.calmGreen,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(999),

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/config/constants.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../data/repositories/supabase_product_repository.dart';
 import '../../data/repositories/supabase_review_repository.dart';
@@ -155,7 +156,7 @@ class HomeScreenController extends StateNotifier<HomeScreenState> {
         !searchQueryChanged &&
         state.lastFetchTime != null &&
         DateTime.now().difference(state.lastFetchTime!) <
-            const Duration(seconds: 30)) {
+            AppLimits.homeCacheDuration) {
       return;
     }
 

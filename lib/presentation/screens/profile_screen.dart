@@ -14,6 +14,7 @@ import '../../data/repositories/supabase_review_repository.dart';
 import '../../data/repositories/supabase_like_repository.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../core/providers/notification_providers.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -116,18 +117,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    const primaryColor = Color(0xFF13ec5b);
+    const primaryColor = AppColors.primary;
     final backgroundColor = isDark
-        ? const Color(0xFF102216)
-        : const Color(0xFFF6F8F6);
-    final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+        ? AppColors.backgroundDark
+        : AppColors.backgroundLight;
+    final cardColor = isDark ? AppColors.cardDark : Colors.white;
+    final textColor = isDark ? Colors.white : AppColors.textLight;
     final mutedTextColor = isDark
-        ? const Color(0xFF9CA3AF)
-        : const Color(0xFF6B7280);
+        ? AppColors.subtextDark
+        : AppColors.subtextLight;
     final borderColor = isDark
-        ? const Color(0xFF374151)
-        : const Color(0xFFE5E7EB);
+        ? AppColors.dividerDark
+        : AppColors.dividerLight;
 
     ref.listen<AsyncValue<Profile?>>(profileScreenControllerProvider, (
       previous,
@@ -348,8 +349,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         color: isDark
-                            ? const Color(0xFF374151)
-                            : const Color(0xFFE5E7EB),
+                            ? AppColors.dividerDark
+                            : AppColors.dividerLight,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: TabBar(
@@ -482,7 +483,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         );
       },
       loading: () => const Center(
-        child: CircularProgressIndicator(color: Color(0xFF13ec5b)),
+        child: CircularProgressIndicator(color: AppColors.primary),
       ),
       error: (error, stack) => Center(
         child: Text('レビューの読み込みに失敗しました', style: TextStyle(color: textColor)),
@@ -542,7 +543,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         );
       },
       loading: () => const Center(
-        child: CircularProgressIndicator(color: Color(0xFF13ec5b)),
+        child: CircularProgressIndicator(color: AppColors.primary),
       ),
       error: (error, stack) => Center(
         child: Text(
@@ -612,17 +613,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final backgroundColor = isDark
-        ? const Color(0xFF102216)
-        : const Color(0xFFF6F8F6);
-    final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+        ? AppColors.backgroundDark
+        : AppColors.backgroundLight;
+    final cardColor = isDark ? AppColors.cardDark : Colors.white;
+    final textColor = isDark ? Colors.white : AppColors.textLight;
     final mutedTextColor = isDark
-        ? const Color(0xFF9CA3AF)
-        : const Color(0xFF6B7280);
+        ? AppColors.subtextDark
+        : AppColors.subtextLight;
     final borderColor = isDark
-        ? const Color(0xFF374151)
-        : const Color(0xFFE5E7EB);
-    const primaryColor = Color(0xFF13ec5b);
+        ? AppColors.dividerDark
+        : AppColors.dividerLight;
+    const primaryColor = AppColors.primary;
 
     Navigator.of(context).push(
       MaterialPageRoute(

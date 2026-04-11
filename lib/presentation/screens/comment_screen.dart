@@ -310,18 +310,18 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
       reviewDetailsProvider(widget.reviewId),
     );
 
-    const primaryColor = Color(0xFF13ec5b);
+    const primaryColor = AppColors.primary;
     final backgroundColor = isDark
-        ? const Color(0xFF102216)
-        : const Color(0xFFF6F8F6);
-    final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+        ? AppColors.backgroundDark
+        : AppColors.backgroundLight;
+    final cardColor = isDark ? AppColors.cardDark : Colors.white;
+    final textColor = isDark ? Colors.white : AppColors.textLight;
     final mutedTextColor = isDark
-        ? const Color(0xFF9CA3AF)
-        : const Color(0xFF6B7280);
+        ? AppColors.subtextDark
+        : AppColors.subtextLight;
     final borderColor = isDark
-        ? const Color(0xFF374151)
-        : const Color(0xFFE5E7EB);
+        ? AppColors.dividerDark
+        : AppColors.dividerLight;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -621,8 +621,8 @@ class _CommentScreenState extends ConsumerState<CommentScreen> {
                     hintStyle: TextStyle(color: mutedTextColor),
                     filled: true,
                     fillColor: isDark
-                        ? const Color(0xFF374151)
-                        : const Color(0xFFF3F4F6),
+                        ? AppColors.dividerDark
+                        : AppColors.surfaceLight,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(24),
                       borderSide: BorderSide.none,

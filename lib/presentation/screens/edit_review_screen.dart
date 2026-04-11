@@ -8,6 +8,7 @@ import '../../domain/models/review.dart';
 import '../../domain/models/product.dart';
 import '../providers/edit_review_controller.dart';
 import '../widgets/error_dialog.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class EditReviewScreen extends ConsumerStatefulWidget {
   final Review review;
@@ -133,7 +134,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
     String currentValue,
   ) {
     final isSelected = value == currentValue;
-    const primaryColor = Color(0xFF13ec5b);
+    const primaryColor = AppColors.primary;
 
     return ListTile(
       leading: Icon(icon, color: isSelected ? primaryColor : null),
@@ -160,18 +161,18 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    const primaryColor = Color(0xFF13ec5b);
+    const primaryColor = AppColors.primary;
     final backgroundColor = isDark
-        ? const Color(0xFF102216)
-        : const Color(0xFFF6F8F6);
-    final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+        ? AppColors.backgroundDark
+        : AppColors.backgroundLight;
+    final cardColor = isDark ? AppColors.cardDark : Colors.white;
+    final textColor = isDark ? Colors.white : AppColors.textLight;
     final mutedTextColor = isDark
-        ? const Color(0xFF9CA3AF)
-        : const Color(0xFF6B7280);
+        ? AppColors.subtextDark
+        : AppColors.subtextLight;
     final borderColor = isDark
-        ? const Color(0xFF374151)
-        : const Color(0xFFE5E7EB);
+        ? AppColors.dividerDark
+        : AppColors.dividerLight;
 
     // エラー表示
     if (state.error != null) {
@@ -319,7 +320,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                         filled: true,
                         fillColor: isDark
                             ? Colors.white.withValues(alpha: 0.1)
-                            : const Color(0xFFF3F4F6),
+                            : AppColors.surfaceLight,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(color: borderColor),
@@ -356,7 +357,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                         filled: true,
                         fillColor: isDark
                             ? Colors.white.withValues(alpha: 0.1)
-                            : const Color(0xFFF3F4F6),
+                            : AppColors.surfaceLight,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(color: borderColor),
@@ -435,7 +436,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                         decoration: BoxDecoration(
                           color: isDark
                               ? Colors.white.withValues(alpha: 0.1)
-                              : const Color(0xFFF3F4F6),
+                              : AppColors.surfaceLight,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -552,7 +553,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                 : Icons.star_border,
             size: 36,
             color: isFilled || isHalf
-                ? const Color(0xFF13ec5b)
+                ? AppColors.primary
                 : Colors.grey[400],
           ),
         );

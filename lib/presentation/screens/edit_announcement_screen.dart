@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../domain/models/announcement.dart';
 import '../providers/announcement_providers.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 /// お知らせ編集画面
 class EditAnnouncementScreen extends ConsumerStatefulWidget {
@@ -119,8 +120,8 @@ class _EditAnnouncementScreenState
       appBar: AppBar(
         title: const Text('お知らせ編集'),
         backgroundColor: theme.brightness == Brightness.dark
-            ? const Color(0xFF1B5E20)
-            : const Color(0xFF4CAF50),
+            ? AppColors.deepGreen
+            : AppColors.selectedNav,
         foregroundColor: Colors.white,
       ),
       body: Form(
@@ -238,7 +239,7 @@ class _EditAnnouncementScreenState
                   : const Icon(Icons.save),
               label: Text(_isLoading ? '更新中...' : '更新'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4CAF50),
+                backgroundColor: AppColors.selectedNav,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 textStyle: const TextStyle(fontSize: 16),

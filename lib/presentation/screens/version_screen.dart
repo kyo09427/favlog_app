@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/update_provider.dart';
+import '../../core/providers/update_provider.dart';
 import '../../utils/update_ui_helper.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class VersionScreen extends ConsumerWidget {
   const VersionScreen({super.key});
@@ -12,14 +13,14 @@ class VersionScreen extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final backgroundColor = isDark
-        ? const Color(0xFF102216)
-        : const Color(0xFFF6F8F6);
-    final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+        ? AppColors.backgroundDark
+        : AppColors.backgroundLight;
+    final cardColor = isDark ? AppColors.cardDark : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF111813);
     final mutedTextColor = isDark
-        ? const Color(0xFF9CA3AF)
+        ? AppColors.subtextDark
         : const Color(0xFF61896F);
-    const primaryColor = Color(0xFF13EC5B);
+    const primaryColor = AppColors.primary;
 
     final currentVersionAsync = ref.watch(currentVersionProvider);
     final isUpdateAvailableAsync = ref.watch(isUpdateAvailableProvider);
@@ -57,7 +58,7 @@ class VersionScreen extends ConsumerWidget {
                           gradient: const LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [Color(0xFF13EC5B), Color(0xFF0DBD48)],
+                            colors: [AppColors.primary, Color(0xFF0DBD48)],
                           ),
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
@@ -361,7 +362,7 @@ class VersionScreen extends ConsumerWidget {
         children: [
           Icon(
             Icons.check_circle_outline,
-            color: const Color(0xFF13EC5B),
+            color: AppColors.primary,
             size: 48,
           ),
           const SizedBox(height: 16),

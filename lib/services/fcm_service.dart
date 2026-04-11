@@ -1,26 +1,39 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' show Provider;
+import '../core/router/app_router.dart';
 import '../data/repositories/supabase_fcm_token_repository.dart';
 import '../data/repositories/supabase_auth_repository.dart';
+import '../domain/repositories/fcm_token_repository.dart';
+import '../domain/repositories/auth_repository.dart';
+import 'package:favlog_app/core/utils/app_logger.dart';
 
 // トップレベル関数：バックグラウンド通知のハンドラ
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // バックグラウンドで通知を受信した時の処理
-  debugPrint('Background message received: ${message.messageId}');
+  AppLogger.log('Background message received: ${message.messageId}');
 }
 
 class FCMService {
   final FirebaseMessaging _messaging;
   final FlutterLocalNotificationsPlugin _localNotifications;
-  final Ref _ref;
+  final FCMTokenRepository _fcmTokenRepository;
+  final AuthRepository _authRepository;
 
-  FCMService(this._ref)
-    : _messaging = FirebaseMessaging.instance,
-      _localNotifications = FlutterLocalNotificationsPlugin();
+  /// 通知タップ時に呼ばれるコールバック（review_id を受け取る）
+  final void Function(String reviewId)? onNotificationTap;
+
+  FCMService({
+    required FCMTokenRepository fcmTokenRepository,
+    required AuthRepository authRepository,
+    this.onNotificationTap,
+  }) : _fcmTokenRepository = fcmTokenRepository,
+       _authRepository = authRepository,
+       _messaging = FirebaseMessaging.instance,
+       _localNotifications = FlutterLocalNotificationsPlugin();
 
   /// FCMサービスの初期化
   Future<void> initialize() async {
@@ -33,9 +46,9 @@ class FCMService {
       );
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        debugPrint('User granted permission');
+        AppLogger.log('User granted permission');
       } else {
-        debugPrint('User declined or has not accepted permission');
+        AppLogger.log('User declined or has not accepted permission');
         return;
       }
 
@@ -65,44 +78,42 @@ class FCMService {
         }
       });
     } catch (e) {
-      debugPrint('Failed to initialize FCM: $e');
+      AppLogger.log('Failed to initialize FCM: $e');
     }
   }
 
   /// ログイン後にFCMトークンを取得・保存（公開メソッド）
   Future<void> refreshToken() async {
     try {
-      debugPrint('refreshToken: Getting FCM token...');
+      AppLogger.log('refreshToken: Getting FCM token...');
       final token = await _messaging.getToken();
       if (token != null) {
-        debugPrint('refreshToken: Token obtained, saving...');
+        AppLogger.log('refreshToken: Token obtained, saving...');
         await _saveToken(token);
-        debugPrint('refreshToken: FCM token refreshed and saved');
+        AppLogger.log('refreshToken: FCM token refreshed and saved');
       } else {
-        debugPrint('refreshToken: No token available');
+        AppLogger.log('refreshToken: No token available');
       }
     } catch (e) {
-      debugPrint('refreshToken: Failed to refresh FCM token: $e');
+      AppLogger.log('refreshToken: Failed to refresh FCM token: $e');
     }
   }
 
   /// トークンをサーバーに保存
   Future<void> _saveToken(String token) async {
     try {
-      debugPrint(
+      AppLogger.log(
         '_saveToken: Starting to save token: ${token.substring(0, 20)}...',
       );
 
-      final authRepository = _ref.read(authRepositoryProvider);
-      final currentUser = authRepository.getCurrentUser();
+      final currentUser = _authRepository.getCurrentUser();
 
       if (currentUser == null) {
-        debugPrint('_saveToken: No current user, skipping token save');
+        AppLogger.log('_saveToken: No current user, skipping token save');
         return;
       }
 
-      debugPrint('_saveToken: Current user ID: ${currentUser.id}');
-      final fcmTokenRepository = _ref.read(fcmTokenRepositoryProvider);
+      AppLogger.log('_saveToken: Current user ID: ${currentUser.id}');
 
       // デバイスタイプの取得
       String? deviceType;
@@ -115,18 +126,18 @@ class FCMService {
       }
 
       if (deviceType == null) {
-        debugPrint(
+        AppLogger.log(
           '_saveToken: Unable to determine device type, skipping token save',
         );
         return;
       }
 
-      debugPrint('_saveToken: Device type: $deviceType');
-      debugPrint('_saveToken: Calling fcmTokenRepository.saveToken...');
-      await fcmTokenRepository.saveToken(currentUser.id, token, deviceType);
-      debugPrint('_saveToken: FCM token saved successfully!');
+      AppLogger.log('_saveToken: Device type: $deviceType');
+      AppLogger.log('_saveToken: Calling fcmTokenRepository.saveToken...');
+      await _fcmTokenRepository.saveToken(currentUser.id, token, deviceType);
+      AppLogger.log('_saveToken: FCM token saved successfully!');
     } catch (e) {
-      debugPrint('_saveToken: Failed to save FCM token: $e');
+      AppLogger.log('_saveToken: Failed to save FCM token: $e');
     }
   }
 
@@ -154,14 +165,14 @@ class FCMService {
 
       await _localNotifications.initialize(initSettings);
     } catch (e) {
-      debugPrint('Failed to initialize local notifications: $e');
+      AppLogger.log('Failed to initialize local notifications: $e');
     }
   }
 
   /// フォアグラウンド通知のハンドラを設定
   void setupForegroundHandler() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-      debugPrint('Foreground message received: ${message.notification?.title}');
+      AppLogger.log('Foreground message received: ${message.notification?.title}');
 
       // フォアグラウンドで通知を受信した場合、ローカル通知を表示
       if (message.notification != null) {
@@ -204,15 +215,17 @@ class FCMService {
         details,
       );
     } catch (e) {
-      debugPrint('Failed to show local notification: $e');
+      AppLogger.log('Failed to show local notification: $e');
     }
   }
 
   /// 通知タップ時の処理
   void _handleNotificationTap(RemoteMessage message) {
-    debugPrint('Notification tapped: ${message.data}');
-    // TODO: レビュー詳細画面への遷移を実装
-    // 例: context.push('/review/${message.data['review_id']}');
+    AppLogger.log('Notification tapped: ${message.data}');
+    final reviewId = message.data['review_id'] as String?;
+    if (reviewId != null && onNotificationTap != null) {
+      onNotificationTap!(reviewId);
+    }
   }
 
   /// トークンの削除（ログアウト時などに使用）
@@ -220,17 +233,21 @@ class FCMService {
     try {
       final token = await _messaging.getToken();
       if (token != null) {
-        final fcmTokenRepository = _ref.read(fcmTokenRepositoryProvider);
-        await fcmTokenRepository.deleteToken(token);
+        await _fcmTokenRepository.deleteToken(token);
         await _messaging.deleteToken();
-        debugPrint('FCM token deleted');
+        AppLogger.log('FCM token deleted');
       }
     } catch (e) {
-      debugPrint('Failed to delete FCM token: $e');
+      AppLogger.log('Failed to delete FCM token: $e');
     }
   }
 }
 
 final fcmServiceProvider = Provider<FCMService>((ref) {
-  return FCMService(ref);
+  final router = ref.watch(goRouterProvider);
+  return FCMService(
+    fcmTokenRepository: ref.watch(fcmTokenRepositoryProvider),
+    authRepository: ref.watch(authRepositoryProvider),
+    onNotificationTap: (reviewId) => router.push('/review/$reviewId'),
+  );
 });

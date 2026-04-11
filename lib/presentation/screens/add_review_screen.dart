@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../../domain/models/product.dart';
 import '../providers/add_review_controller.dart';
+import 'package:favlog_app/core/config/constants.dart';
 
 class AddReviewScreen extends ConsumerStatefulWidget {
   final Product? selectedProduct;
@@ -109,16 +110,16 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     final backgroundColor = isDark
-        ? const Color(0xFF102216)
-        : const Color(0xFFF6F8F6);
-    final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+        ? AppColors.backgroundDark
+        : AppColors.backgroundLight;
+    final cardColor = isDark ? AppColors.cardDark : Colors.white;
+    final textColor = isDark ? Colors.white : AppColors.textLight;
     final mutedTextColor = isDark
-        ? const Color(0xFF9CA3AF)
-        : const Color(0xFF6B7280);
+        ? AppColors.subtextDark
+        : AppColors.subtextLight;
     final borderColor = isDark
-        ? const Color(0xFF374151)
-        : const Color(0xFFE5E7EB);
+        ? AppColors.dividerDark
+        : AppColors.dividerLight;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -173,7 +174,7 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                           : const Text(
                               '投稿',
                               style: TextStyle(
-                                color: Color(0xFF13ec5b),
+                                color: AppColors.primary,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
@@ -280,7 +281,7 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
-                            color: Color(0xFF13ec5b),
+                            color: AppColors.primary,
                           ),
                         ),
                       ),
@@ -401,7 +402,7 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                                       _getVisibilityIcon(visibility),
                                       size: 20,
                                       color: isSelected
-                                          ? const Color(0xFF13ec5b)
+                                          ? AppColors.primary
                                           : mutedTextColor,
                                     ),
                                     const SizedBox(width: 12),
@@ -418,7 +419,7 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                                     ),
                                   ],
                                 ),
-                                activeColor: const Color(0xFF13ec5b),
+                                activeColor: AppColors.primary,
                                 contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                   vertical: 0,
@@ -464,7 +465,7 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                 : Icons.star_border,
             size: 36,
             color: isFilled || isHalf
-                ? const Color(0xFF13ec5b)
+                ? AppColors.primary
                 : Colors.grey[400],
           ),
         );
