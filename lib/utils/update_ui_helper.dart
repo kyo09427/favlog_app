@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../models/version_info.dart';
 import '../core/providers/update_provider.dart';
 import '../widgets/update_dialog.dart';
@@ -114,5 +115,60 @@ class UpdateUiHelper {
 
     // ダウンロードを開始
     apkInstaller.downloadAndInstall(downloadUrl);
+  }
+
+  /// アプリ起動時の自動アップデートチェック
+  ///
+  /// - 24時間以内にチェック済みの場合はスキップ
+  /// - 更新があればダイアログを表示
+  /// - インストール権限がなければ権限ガイド画面へ誘導
+  static Future<void> showAutoUpdateCheck({
+    required BuildContext context,
+    required WidgetRef ref,
+  }) async {
+    final updateService = ref.read(updateServiceProvider);
+
+    // 24時間以内にチェック済みならスキップ
+    if (!await updateService.shouldCheckForUpdate()) return;
+    await updateService.updateLastCheckTime();
+
+    final isAvailable = await updateService.isUpdateAvailable();
+    if (!isAvailable) return;
+
+    final versionInfo = await updateService.fetchLatestVersion();
+    if (versionInfo == null) return;
+
+    final isForce = await updateService.isForceUpdateRequired();
+
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: !isForce,
+      builder: (dialogContext) => UpdateDialog(
+        versionInfo: versionInfo,
+        isForceUpdate: isForce,
+        onUpdate: () async {
+          Navigator.of(dialogContext).pop();
+
+          // インストール権限を確認
+          final status = await Permission.requestInstallPackages.status;
+          if (!context.mounted) return;
+
+          if (status.isGranted) {
+            // 権限あり → ダウンロード開始
+            startUpdate(
+              context: context,
+              ref: ref,
+              downloadUrl: versionInfo.downloadUrl,
+            );
+          } else {
+            // 権限なし → ガイド画面へ
+            context.push('/settings/version/permission-guide');
+          }
+        },
+        onLater: isForce ? null : () => Navigator.of(dialogContext).pop(),
+      ),
+    );
   }
 }

@@ -1,19 +1,22 @@
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:favlog_app/core/config/constants.dart';
+import '../../utils/update_ui_helper.dart';
 
 // StatefulShellRouteと共に使用するナビゲーションバーを持つScaffold
-class ScaffoldWithNavBar extends StatefulWidget {
+class ScaffoldWithNavBar extends ConsumerStatefulWidget {
   const ScaffoldWithNavBar({required this.navigationShell, super.key});
 
   // ナビゲーションシェル。UIの構築とブランチ間の移動に使用
   final StatefulNavigationShell navigationShell;
 
   @override
-  State<ScaffoldWithNavBar> createState() => _ScaffoldWithNavBarState();
+  ConsumerState<ScaffoldWithNavBar> createState() => _ScaffoldWithNavBarState();
 }
 
-class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar>
+class _ScaffoldWithNavBarState extends ConsumerState<ScaffoldWithNavBar>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   bool _isAnimating = false;
@@ -25,6 +28,15 @@ class _ScaffoldWithNavBarState extends State<ScaffoldWithNavBar>
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
+
+    // Android のみ: アプリ起動時に自動アップデートチェック
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          UpdateUiHelper.showAutoUpdateCheck(context: context, ref: ref);
+        }
+      });
+    }
   }
 
   @override
