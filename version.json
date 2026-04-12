@@ -1,8 +1,8 @@
 {
-  "version": "2.8.1",
-  "versionCode": 26041235,
-  "downloadUrl": "https://github.com/kyo09427/favlog_app/releases/download/v2.8.1-26041235/app-release.apk",
-  "releaseNotes": "- chore: bump version counter [skip ci]\n- Merge pull request #45 from kyo09427/claude/fix-login-session-expiry-hzEyT\n- fix: メアド/パスワードログイン時にDiscordセッション期限切れエラーが出るバグを修正\n- chore: bump version counter [skip ci]\n- fix: Cloudflare Pages deploy commit message encoding error\n- fix: Discordログイン機能のセキュリティ・堅牢性改善 (v2.8.0)\n- fix: アップデート機能のコード品質改善 (v2.8.0)\n- fix: Discordログインのリダイレクト問題とアップデート検知の修正\n- chore: bump version counter [skip ci]\n- chore: bump version counter [skip ci]",
+  "version": "2.8.2",
+  "versionCode": 26041236,
+  "downloadUrl": "https://github.com/kyo09427/favlog_app/releases/download/v2.8.2-26041236/app-release.apk",
+  "releaseNotes": "- chore: bump version counter [skip ci]\n- Merge pull request #46 from kyo09427/claude/fix-discord-redirect-loop-lxn8U\n- fix: Discord OAuth リダイレクトループを修正\n- chore: bump version counter [skip ci]\n- Merge pull request #45 from kyo09427/claude/fix-login-session-expiry-hzEyT\n- fix: メアド/パスワードログイン時にDiscordセッション期限切れエラーが出るバグを修正\n- chore: bump version counter [skip ci]\n- fix: Cloudflare Pages deploy commit message encoding error\n- fix: Discordログイン機能のセキュリティ・堅牢性改善 (v2.8.0)\n- fix: アップデート機能のコード品質改善 (v2.8.0)",
   "minSupportedVersion": "0.0.1",
   "forceUpdate": false
 }
