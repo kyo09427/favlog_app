@@ -1,14 +1,16 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart' show Color;
 
 class Constants {
   static const String siteUrl = 'https://favlog.okasis.win/';
   static const String customScheme = 'com.example.favlog_app://';
 
-  /// プラットフォームに応じたリダイレクトURLを返します。
-  /// Webの場合は HTTPS URL、それ以外（Android/iOS）の場合はカスタムURLスキームを返します。
+  /// OAuth・メール認証のリダイレクトURLを返します。
+  /// すべてのプラットフォームで HTTPS URL を使用します。
+  /// Android では App Links が自動的にアプリへ誘導し、
+  /// モバイルブラウザ経由の場合は web/index.html の JavaScript が
+  /// カスタムスキームへリダイレクトします。
   static String getRedirectUrl() {
-    return kIsWeb ? siteUrl : customScheme;
+    return siteUrl;
   }
 }
 
