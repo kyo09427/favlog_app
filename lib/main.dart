@@ -98,11 +98,11 @@ class _MyAppState extends ConsumerState<MyApp> {
 
   void _initDeepLinks() {
     _appLinks = AppLinks();
-    // getInitialAppLink().then((uri) {
-    //   if (uri != null) {
-    //     _handleDeepLink(uri);
-    //   }
-    // });
+    _appLinks.getInitialLink().then((uri) {
+      if (uri != null) {
+        _handleDeepLink(uri);
+      }
+    });
     _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
       _handleDeepLink(uri);
     });
@@ -110,8 +110,19 @@ class _MyAppState extends ConsumerState<MyApp> {
 
   void _handleDeepLink(Uri uri) async {
     debugPrint('Handling deep link: $uri');
-    // Supabaseが発行したディープリンク（マジックリンク、パスワードリセット、メールアドレス変更確認など）は
-    // URLにセッション情報を含んでいる可能性があるため、常にセッション回復を試みる。
+
+    // OAuth PKCE コールバック（code パラメータあり、type なし）は
+    // supabase_flutter SDK が内部で自動処理するためスキップする。
+    // アプリ側でも getSessionFromUrl を呼ぶと Authorization Code が
+    // 二重使用となりエラーになり、/auth に強制リダイレクトされてしまう。
+    final type = uri.queryParameters['type'];
+    if (uri.queryParameters.containsKey('code') &&
+        (type == null || type.isEmpty)) {
+      debugPrint('OAuth PKCE callback detected - handled by Supabase SDK internally');
+      return;
+    }
+
+    // マジックリンク・パスワードリセット・メールアドレス変更確認等を処理
     try {
       await Supabase.instance.client.auth.getSessionFromUrl(uri);
       debugPrint('Deep link session recovery handled');

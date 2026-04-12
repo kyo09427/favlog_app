@@ -73,7 +73,7 @@ jobs:
           
           if echo "$LATEST" | jq empty 2>/dev/null; then
             VERSION=$(echo "$LATEST" | jq -r '.tag_name // "v0.0.0"' | sed 's/^v//' | cut -d'-' -f1)
-            VERSION_CODE=$(echo "$LATEST" | jq -r '.tag_name // "v0.0.0-0"' | grep -oP '\-\K[0-9]+$' || echo "0")
+            VERSION_CODE=$(echo "$LATEST" | jq -r '.tag_name // "v0.0.0-0"' | grep -oE '[0-9]+$' || echo "0")
             APK_URL=$(echo "$LATEST" | jq -r '.assets[]? | select(.name | endswith(".apk")) | .browser_download_url' | head -n 1)
             NOTES=$(echo "$LATEST" | jq -r '.body // "Latest release"')
           else
