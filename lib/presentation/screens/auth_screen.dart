@@ -13,7 +13,8 @@ class AuthScreen extends ConsumerStatefulWidget {
   ConsumerState<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends ConsumerState<AuthScreen> {
+class _AuthScreenState extends ConsumerState<AuthScreen>
+    with WidgetsBindingObserver {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _usernameController = TextEditingController();
@@ -21,29 +22,50 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _isSignUp = false; // ログインと新規登録を切り替えるフラグ
+  bool _discordFlowPending = false; // Discord OAuth フロー進行中フラグ
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // ブラウザからアプリに戻ったとき、OAuth が完了していなければローディングをリセット
+    if (state == AppLifecycleState.resumed && _discordFlowPending && mounted) {
+      setState(() {
+        _isLoading = false;
+        _discordFlowPending = false;
+      });
+    }
+  }
 
   Future<void> _signInWithDiscord() async {
+    if (_discordFlowPending) return; // 二重タップ防止
     setState(() {
       _isLoading = true;
+      _discordFlowPending = true;
     });
     try {
       final authRepository = ref.read(authRepositoryProvider);
       await authRepository.signInWithDiscord();
+      // ブラウザが開いた後はローディングを維持したまま待機。
+      // アプリ復帰時（didChangeAppLifecycleState）にリセットされる。
     } catch (error) {
-      if (mounted) {
-        await ErrorDialog.show(context, 'Discord ログインに失敗しました: $error');
-      }
-    } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _discordFlowPending = false;
         });
+        await ErrorDialog.show(context, 'Discord ログインに失敗しました: $error');
       }
     }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _emailController.dispose();
     _passwordController.dispose();
     _usernameController.dispose();

@@ -102,10 +102,32 @@ class SupabaseAuthRepository implements AuthRepository {
       'verify-discord-guild',
       body: {'provider_token': providerToken},
     );
+
+    // response.data は String / Map / null の可能性があるため安全に変換
+    final Map<String, dynamic> data;
+    if (response.data is String) {
+      data = jsonDecode(response.data as String) as Map<String, dynamic>;
+    } else if (response.data is Map) {
+      data = Map<String, dynamic>.from(response.data as Map);
+    } else {
+      data = {};
+    }
+
+    // 200: 検証成功
     if (response.status == 200) {
-      final data = jsonDecode(response.data as String);
       return data['verified'] == true;
     }
-    return false;
+
+    // 403: ギルド未参加（正常な検証結果）
+    if (response.status == 403) {
+      return false;
+    }
+
+    // それ以外 (Discord API障害・内部エラー等) は例外をスロー。
+    // 呼び出し側のキャッチブロックで一時エラーとして扱い、強制ログアウトしない。
+    throw Exception(
+      'Guild verification failed with status ${response.status}: '
+      '${data['error'] ?? 'Unknown error'}',
+    );
   }
 }

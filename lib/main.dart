@@ -193,14 +193,37 @@ class _MyAppState extends ConsumerState<MyApp> {
     final session = Supabase.instance.client.auth.currentSession;
     if (session == null) return;
 
-    final providerToken = session.providerToken;
-    if (providerToken == null) return;
-
     final user = session.user;
     final isDiscord =
         user.appMetadata['provider'] == 'discord' ||
         (user.appMetadata['providers'] as List?)?.contains('discord') == true;
     if (!isDiscord) return;
+
+    final providerToken = session.providerToken;
+    if (providerToken == null) {
+      // Discord ユーザーだが providerToken が取得できない（Discord トークン期限切れ等）。
+      // 検証をスキップするとギルドをキックされたユーザーが引き続き使用できるため、
+      // 再ログインを要求する。
+      await Supabase.instance.client.auth.signOut();
+      if (mounted) {
+        final ctx = ref
+            .read(goRouterProvider)
+            .routerDelegate
+            .navigatorKey
+            .currentContext;
+        if (ctx != null && ctx.mounted) {
+          ScaffoldMessenger.of(ctx).showSnackBar(
+            const SnackBar(
+              content: Text('セッションの有効期限が切れました。再度 Discord でログインしてください。'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+        ref.read(goRouterProvider).go('/auth');
+      }
+      return;
+    }
 
     try {
       final authRepo = ref.read(authRepositoryProvider);
@@ -228,6 +251,8 @@ class _MyAppState extends ConsumerState<MyApp> {
         }
       }
     } catch (e) {
+      // 一時的なエラー（Discord API 障害・ネットワーク障害等）はログのみ。
+      // 正規ユーザーの強制ログアウトを防ぐため、この場合はログインを許可する。
       debugPrint('Discord guild verification error: $e');
     }
   }
