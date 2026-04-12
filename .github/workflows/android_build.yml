@@ -176,6 +176,7 @@ jobs:
           name: FavLog v${{ steps.version.outputs.version_name }} (Build ${{ steps.version.outputs.version_code }})
           body: ${{ steps.notes.outputs.content }}
           draft: ${{ github.event.inputs.create_release == 'draft' }}
+          fail_on_unmatched_files: false
           files: |
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab

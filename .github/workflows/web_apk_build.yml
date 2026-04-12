@@ -37,6 +37,7 @@ jobs:
           cat > .env << EOF
           SUPABASE_URL=${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          DISCORD_TARGET_GUILD_ID=${{ secrets.DISCORD_TARGET_GUILD_ID }}
           EOF
 
       - name: Get dependencies

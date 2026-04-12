@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../models/version_info.dart';
 import '../core/providers/update_provider.dart';
+import '../services/apk_installer.dart';
 import '../widgets/update_dialog.dart';
 import '../widgets/download_progress_dialog.dart';
 import 'package:go_router/go_router.dart';
@@ -47,74 +49,15 @@ class UpdateUiHelper {
   }) {
     final apkInstaller = ref.read(apkInstallerProvider);
 
-    int currentProgress = 0;
-    String currentStatus = 'ダウンロードを準備中...';
-    String? currentError;
-
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) {
-          // ストリームの監視を一元化
-          // 注: 実際の実装では、これらのリスナーはダイアログが閉じられたときにキャンセルされるべきですが、
-          // OTAアップデート中はダイアログが閉じられないため（エラー時を除く）、簡略化しています。
-          final progressSub = apkInstaller.progressStream.listen((progress) {
-            if (context.mounted) {
-              setState(() {
-                currentProgress = progress;
-              });
-            }
-          });
-
-          final statusSub = apkInstaller.statusStream.listen((status) {
-            if (context.mounted) {
-              setState(() {
-                currentStatus = status;
-              });
-            }
-          });
-
-          final errorSub = apkInstaller.errorStream.listen((error) {
-            if (context.mounted) {
-              setState(() {
-                currentError = error;
-              });
-            }
-          });
-
-          return DownloadProgressDialog(
-            progress: currentProgress,
-            status: currentStatus,
-            error: currentError,
-            onClose: currentError != null
-                ? () {
-                    progressSub.cancel();
-                    statusSub.cancel();
-                    errorSub.cancel();
-                    Navigator.of(dialogContext).pop();
-
-                    // 権限エラーの場合、ガイド画面への遷移を促す（オプション）
-                    // ここではダイアログ内のボタンで制御するため、ここでの遷移は行わない
-                  }
-                : null,
-            onOpenGuide:
-                currentError != null && currentError!.contains('インストール権限')
-                ? () {
-                    progressSub.cancel();
-                    statusSub.cancel();
-                    errorSub.cancel();
-                    Navigator.of(dialogContext).pop();
-                    context.push('/settings/version/permission-guide');
-                  }
-                : null,
-          );
-        },
+      builder: (dialogContext) => _DownloadProgressScreen(
+        apkInstaller: apkInstaller,
+        downloadUrl: downloadUrl,
+        parentContext: context,
       ),
     );
-
-    // ダウンロードを開始
-    apkInstaller.downloadAndInstall(downloadUrl);
   }
 
   /// アプリ起動時の自動アップデートチェック
@@ -130,15 +73,23 @@ class UpdateUiHelper {
 
     // 24時間以内にチェック済みならスキップ
     if (!await updateService.shouldCheckForUpdate()) return;
+
+    // 1回のフェッチで全ての情報を取得
+    final latestVersion = await updateService.fetchLatestVersion();
     await updateService.updateLastCheckTime();
 
-    final isAvailable = await updateService.isUpdateAvailable();
-    if (!isAvailable) return;
+    if (latestVersion == null) return;
 
-    final versionInfo = await updateService.fetchLatestVersion();
-    if (versionInfo == null) return;
+    final currentBuildNumber = await updateService.getCurrentBuildNumber();
+    if (latestVersion.versionCode <= currentBuildNumber) return;
 
-    final isForce = await updateService.isForceUpdateRequired();
+    final currentVersion = await updateService.getCurrentVersion();
+    final isForce = latestVersion.forceUpdate ||
+        updateService.compareVersions(
+              currentVersion,
+              latestVersion.minSupportedVersion,
+            ) <
+            0;
 
     if (!context.mounted) return;
 
@@ -146,7 +97,7 @@ class UpdateUiHelper {
       context: context,
       barrierDismissible: !isForce,
       builder: (dialogContext) => UpdateDialog(
-        versionInfo: versionInfo,
+        versionInfo: latestVersion,
         isForceUpdate: isForce,
         onUpdate: () async {
           Navigator.of(dialogContext).pop();
@@ -160,7 +111,7 @@ class UpdateUiHelper {
             startUpdate(
               context: context,
               ref: ref,
-              downloadUrl: versionInfo.downloadUrl,
+              downloadUrl: latestVersion.downloadUrl,
             );
           } else {
             // 権限なし → ガイド画面へ
@@ -169,6 +120,80 @@ class UpdateUiHelper {
         },
         onLater: isForce ? null : () => Navigator.of(dialogContext).pop(),
       ),
+    );
+  }
+}
+
+/// ダウンロード進捗ダイアログのストリーム管理を行うStatefulWidget
+///
+/// StatefulBuilderではビルドのたびにリスナーが追加されてしまうため、
+/// initState/disposeで正しくサブスクリプションを管理する。
+class _DownloadProgressScreen extends StatefulWidget {
+  final ApkInstaller apkInstaller;
+  final String downloadUrl;
+  final BuildContext parentContext;
+
+  const _DownloadProgressScreen({
+    required this.apkInstaller,
+    required this.downloadUrl,
+    required this.parentContext,
+  });
+
+  @override
+  State<_DownloadProgressScreen> createState() =>
+      _DownloadProgressScreenState();
+}
+
+class _DownloadProgressScreenState extends State<_DownloadProgressScreen> {
+  int _progress = 0;
+  String _status = 'ダウンロードを準備中...';
+  String? _error;
+
+  StreamSubscription<int>? _progressSub;
+  StreamSubscription<String>? _statusSub;
+  StreamSubscription<String>? _errorSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _progressSub = widget.apkInstaller.progressStream.listen((progress) {
+      if (mounted) setState(() => _progress = progress);
+    });
+    _statusSub = widget.apkInstaller.statusStream.listen((status) {
+      if (mounted) setState(() => _status = status);
+    });
+    _errorSub = widget.apkInstaller.errorStream.listen((error) {
+      if (mounted) setState(() => _error = error);
+    });
+    widget.apkInstaller.downloadAndInstall(widget.downloadUrl);
+  }
+
+  @override
+  void dispose() {
+    _progressSub?.cancel();
+    _statusSub?.cancel();
+    _errorSub?.cancel();
+    super.dispose();
+  }
+
+  void _close() {
+    Navigator.of(context).pop();
+  }
+
+  void _openGuide() {
+    Navigator.of(context).pop();
+    widget.parentContext.push('/settings/version/permission-guide');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DownloadProgressDialog(
+      progress: _progress,
+      status: _status,
+      error: _error,
+      onClose: _error != null ? _close : null,
+      onOpenGuide:
+          _error != null && _error!.contains('インストール権限') ? _openGuide : null,
     );
   }
 }

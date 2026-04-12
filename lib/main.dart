@@ -10,9 +10,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:favlog_app/core/router/app_router.dart';
 import 'package:favlog_app/presentation/providers/theme_provider.dart';
-import 'package:favlog_app/core/providers/update_provider.dart';
-import 'package:favlog_app/models/version_info.dart';
-import 'package:favlog_app/utils/update_ui_helper.dart';
 import 'package:favlog_app/services/fcm_service.dart';
 import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
 import 'package:favlog_app/core/config/constants.dart';
@@ -83,10 +80,6 @@ class _MyAppState extends ConsumerState<MyApp> {
     _initDeepLinks();
     _initAuthListener();
     _initFCM();
-    // アプリ起動後にバージョンチェックを実行
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkForUpdates();
-    });
   }
 
   @override
@@ -249,57 +242,6 @@ class _MyAppState extends ConsumerState<MyApp> {
         debugPrint('FCM initialization error: $e');
       }
     }
-  }
-
-  /// アプリ起動時のバージョンチェック
-  Future<void> _checkForUpdates() async {
-    try {
-      final updateService = ref.read(updateServiceProvider);
-
-      // 最終チェックから24時間以上経過している場合のみチェック
-      final shouldCheck = await updateService.shouldCheckForUpdate();
-      if (!shouldCheck) {
-        return;
-      }
-
-      // 更新が利用可能かチェック
-      final isAvailable = await updateService.isUpdateAvailable();
-      if (!isAvailable) {
-        // 最終チェック日時を更新
-        await updateService.updateLastCheckTime();
-        return;
-      }
-
-      // 最新バージョン情報を取得
-      final latestVersion = await updateService.fetchLatestVersion();
-      if (latestVersion == null) {
-        return;
-      }
-
-      // 強制更新が必要かチェック
-      final isForceUpdate = await updateService.isForceUpdateRequired();
-
-      // 最終チェック日時を更新
-      await updateService.updateLastCheckTime();
-
-      // ダイアログを表示
-      if (mounted) {
-        _showUpdateDialog(latestVersion, isForceUpdate);
-      }
-    } catch (e) {
-      debugPrint('Error checking for updates: $e');
-    }
-  }
-
-  /// アップデートダイアログを表示
-  void _showUpdateDialog(VersionInfo versionInfo, bool isForceUpdate) {
-    if (!mounted) return;
-    UpdateUiHelper.showUpdateDialog(
-      context: context,
-      ref: ref,
-      versionInfo: versionInfo,
-      isForceUpdate: isForceUpdate,
-    );
   }
 
   @override

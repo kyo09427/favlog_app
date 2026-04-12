@@ -33,7 +33,7 @@ class VersionInfo {
   factory VersionInfo.fromJson(Map<String, dynamic> json) {
     return VersionInfo(
       version: json['version'] as String,
-      versionCode: json['versionCode'] as int,
+      versionCode: (json['versionCode'] as num).toInt(),
       downloadUrl: json['downloadUrl'] as String,
       releaseNotes: json['releaseNotes'] as String? ?? '',
       minSupportedVersion: json['minSupportedVersion'] as String? ?? '0.0.0',

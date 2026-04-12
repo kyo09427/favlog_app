@@ -37,7 +37,10 @@ class UpdateService {
       final response = await http
           .get(
             Uri.parse(versionJsonUrl),
-            headers: {'Accept': 'application/json'},
+            headers: {
+              'Accept': 'application/json',
+              'Cache-Control': 'no-cache',
+            },
           )
           .timeout(
             const Duration(seconds: 10),
@@ -89,8 +92,7 @@ class UpdateService {
 
     // 現在のバージョンがminSupportedVersionより古い場合
     final currentVersion = await getCurrentVersion();
-    return _compareVersions(currentVersion, latestVersion.minSupportedVersion) <
-        0;
+    return compareVersions(currentVersion, latestVersion.minSupportedVersion) < 0;
   }
 
   /// バージョンチェックを実行すべきかどうか
@@ -116,9 +118,9 @@ class UpdateService {
   /// - 負の値: version1 < version2
   /// - 0: version1 == version2
   /// - 正の値: version1 > version2
-  int _compareVersions(String version1, String version2) {
-    final v1Parts = version1.split('.').map(int.parse).toList();
-    final v2Parts = version2.split('.').map(int.parse).toList();
+  int compareVersions(String version1, String version2) {
+    final v1Parts = version1.split('.').map((p) => int.tryParse(p) ?? 0).toList();
+    final v2Parts = version2.split('.').map((p) => int.tryParse(p) ?? 0).toList();
 
     final maxLength = v1Parts.length > v2Parts.length
         ? v1Parts.length
