@@ -2,8 +2,6 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../domain/models/review.dart';
 import '../../domain/models/product.dart';
 import '../providers/edit_review_controller.dart';
@@ -26,7 +24,6 @@ class EditReviewScreen extends ConsumerStatefulWidget {
 
 class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
   final TextEditingController _reviewTextController = TextEditingController();
-  final TextEditingController _tagInputController = TextEditingController();
 
   @override
   void initState() {
@@ -37,7 +34,6 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
   @override
   void dispose() {
     _reviewTextController.dispose();
-    _tagInputController.dispose();
     super.dispose();
   }
 
@@ -52,104 +48,8 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('レビューを更新しました！')));
-      context.pop(true); // 成功したら前の画面に戻る
+      context.pop(true);
     }
-  }
-
-  Future<void> _showImageSourceDialog() async {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('ギャラリーから選択'),
-              onTap: () {
-                context.pop();
-                ref
-                    .read(editReviewControllerProvider(widget.review).notifier)
-                    .addImage(ImageSource.gallery);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_camera),
-              title: const Text('カメラで撮影'),
-              onTap: () {
-                context.pop();
-                ref
-                    .read(editReviewControllerProvider(widget.review).notifier)
-                    .addImage(ImageSource.camera);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _showVisibilityDialog() async {
-    final currentVisibility = ref
-        .read(editReviewControllerProvider(widget.review))
-        .visibility;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('公開範囲'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildVisibilityOption(
-              'public',
-              '全体に公開',
-              Icons.public,
-              currentVisibility,
-            ),
-            _buildVisibilityOption(
-              'friends',
-              '親しい友達',
-              Icons.group,
-              currentVisibility,
-            ),
-            _buildVisibilityOption(
-              'private',
-              '非公開',
-              Icons.lock,
-              currentVisibility,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => context.pop(), child: const Text('閉じる')),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildVisibilityOption(
-    String value,
-    String label,
-    IconData icon,
-    String currentValue,
-  ) {
-    final isSelected = value == currentValue;
-    const primaryColor = AppColors.primary;
-
-    return ListTile(
-      leading: Icon(icon, color: isSelected ? primaryColor : null),
-      title: Text(label),
-      trailing: isSelected
-          ? const Icon(Icons.check, color: primaryColor)
-          : null,
-      selected: isSelected,
-      onTap: () {
-        ref
-            .read(editReviewControllerProvider(widget.review).notifier)
-            .updateVisibility(value);
-        context.pop();
-      },
-    );
   }
 
   @override
@@ -165,7 +65,6 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
     final backgroundColor = isDark
         ? AppColors.backgroundDark
         : AppColors.backgroundLight;
-    final cardColor = isDark ? AppColors.cardDark : Colors.white;
     final textColor = isDark ? Colors.white : AppColors.textLight;
     final mutedTextColor = isDark
         ? AppColors.subtextDark
@@ -174,7 +73,6 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
         ? AppColors.dividerDark
         : AppColors.dividerLight;
 
-    // エラー表示
     if (state.error != null) {
       Future.microtask(() {
         if (context.mounted) {
@@ -231,7 +129,6 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                     // 商品情報
                     Row(
                       children: [
-                        // 商品画像
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: widget.product.imageUrl != null
@@ -249,7 +146,6 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                                 ),
                         ),
                         const SizedBox(width: 16),
-                        // 商品名
                         Expanded(
                           child: Text(
                             widget.product.name,
@@ -277,26 +173,6 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                     ),
                     const SizedBox(height: 12),
                     _buildStarRating(state.rating, controller),
-                    const SizedBox(height: 32),
-
-                    // 写真を追加
-                    Text(
-                      '写真を追加',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: textColor,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildImageGrid(
-                      state,
-                      controller,
-                      cardColor,
-                      borderColor,
-                      textColor,
-                      mutedTextColor,
-                    ),
                     const SizedBox(height: 32),
 
                     // レビュー本文
@@ -336,144 +212,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                         contentPadding: const EdgeInsets.all(15),
                       ),
                     ),
-                    const SizedBox(height: 32),
-
-                    // サブカテゴリ
-                    Text(
-                      'サブカテゴリ (任意)',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: mutedTextColor,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _tagInputController,
-                      style: TextStyle(color: textColor),
-                      decoration: InputDecoration(
-                        hintText: '例：ミステリー小説、ワイヤレスイヤホン',
-                        hintStyle: TextStyle(color: mutedTextColor),
-                        filled: true,
-                        fillColor: isDark
-                            ? Colors.white.withValues(alpha: 0.1)
-                            : AppColors.surfaceLight,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: borderColor),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: borderColor),
-                        ),
-                        focusedBorder: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: primaryColor, width: 2),
-                        ),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed: () {
-                            if (_tagInputController.text.trim().isNotEmpty) {
-                              controller.addSubcategoryTag(
-                                _tagInputController.text.trim(),
-                              );
-                              _tagInputController.clear();
-                            }
-                          },
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 15,
-                          vertical: 14,
-                        ),
-                      ),
-                      onSubmitted: (value) {
-                        if (value.trim().isNotEmpty) {
-                          controller.addSubcategoryTag(value.trim());
-                          _tagInputController.clear();
-                        }
-                      },
-                    ),
-                    if (state.subcategoryTags.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: state.subcategoryTags.map((tag) {
-                          return Chip(
-                            label: Text('#$tag'),
-                            deleteIcon: const Icon(Icons.close, size: 16),
-                            onDeleted: () =>
-                                controller.removeSubcategoryTag(tag),
-                            backgroundColor: primaryColor.withValues(
-                              alpha: 0.2,
-                            ),
-                            labelStyle: const TextStyle(
-                              color: primaryColor,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            deleteIconColor: primaryColor,
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                    const SizedBox(height: 32),
-
-                    // 公開範囲
-                    Text(
-                      '公開範囲',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: textColor,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    InkWell(
-                      onTap: _showVisibilityDialog,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.1)
-                              : AppColors.surfaceLight,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: primaryColor.withValues(alpha: 0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                _getVisibilityIcon(state.visibility),
-                                color: primaryColor,
-                                size: 18,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                _getVisibilityLabel(state.visibility),
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: textColor,
-                                ),
-                              ),
-                            ),
-                            Icon(
-                              Icons.arrow_forward_ios,
-                              size: 16,
-                              color: mutedTextColor,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 100), // ボタン用のスペース
+                    const SizedBox(height: 100),
                   ],
                 ),
               ),
@@ -542,7 +281,6 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
 
         return GestureDetector(
           onTap: () {
-            // タップした星の位置で評価を設定
             controller.updateRating(starValue.toDouble());
           },
           child: Icon(
@@ -559,121 +297,5 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
         );
       }),
     );
-  }
-
-  Widget _buildImageGrid(
-    EditReviewState state,
-    EditReviewController controller,
-    Color cardColor,
-    Color borderColor,
-    Color textColor,
-    Color mutedTextColor,
-  ) {
-    return GridView.count(
-      crossAxisCount: 3,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      children: [
-        ...state.images.map((imageData) {
-          return Stack(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  image: DecorationImage(
-                    image: imageData.url != null
-                        ? CachedNetworkImageProvider(imageData.url!)
-                              as ImageProvider
-                        : (kIsWeb
-                              ? MemoryImage(imageData.bytes!)
-                              : FileImage(imageData.file!) as ImageProvider),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              Positioned(
-                top: -6,
-                right: -6,
-                child: IconButton(
-                  onPressed: () => controller.removeImage(imageData.id!),
-                  icon: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: Colors.black87,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: const Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 14,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        }),
-        if (state.images.length < 3)
-          GestureDetector(
-            onTap: _showImageSourceDialog,
-            child: Container(
-              decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: borderColor,
-                  width: 2,
-                  style: BorderStyle.solid,
-                ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.add_photo_alternate,
-                    color: mutedTextColor,
-                    size: 32,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '追加',
-                    style: TextStyle(color: mutedTextColor, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  IconData _getVisibilityIcon(String visibility) {
-    switch (visibility) {
-      case 'public':
-        return Icons.public;
-      case 'friends':
-        return Icons.group;
-      case 'private':
-        return Icons.lock;
-      default:
-        return Icons.public;
-    }
-  }
-
-  String _getVisibilityLabel(String visibility) {
-    switch (visibility) {
-      case 'public':
-        return '全体に公開';
-      case 'friends':
-        return '親しい友達';
-      case 'private':
-        return '非公開';
-      default:
-        return '全体に公開';
-    }
   }
 }

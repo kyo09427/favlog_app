@@ -3,9 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:image_picker/image_picker.dart';
-
-import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../../domain/models/product.dart';
 import '../providers/add_review_controller.dart';
@@ -22,7 +19,6 @@ class AddReviewScreen extends ConsumerStatefulWidget {
 
 class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
   final TextEditingController _reviewTextController = TextEditingController();
-  final TextEditingController _tagInputController = TextEditingController();
 
   @override
   void initState() {
@@ -39,7 +35,6 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
   @override
   void dispose() {
     _reviewTextController.dispose();
-    _tagInputController.dispose();
     super.dispose();
   }
 
@@ -52,52 +47,6 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
 
     if (success && mounted && selectedProduct != null) {
       context.go('/product/${selectedProduct.id}');
-    }
-  }
-
-  Future<void> _showImageSourceDialog() async {
-    final picker = ImagePicker();
-    final source = await showDialog<ImageSource>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('画像の追加'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('カメラで撮影'),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('アルバムから選択'),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (source != null) {
-      final XFile? image = await picker.pickImage(
-        source: source,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
-      );
-
-      if (image != null) {
-        if (source == ImageSource.camera) {
-          ref
-              .read(addReviewControllerProvider.notifier)
-              .addImage(ImageSource.camera);
-        } else {
-          ref
-              .read(addReviewControllerProvider.notifier)
-              .addImage(ImageSource.gallery);
-        }
-      }
     }
   }
 
@@ -286,153 +235,6 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
-
-                    // 写真
-                    Text(
-                      '写真',
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildImageGrid(
-                      state,
-                      controller,
-                      cardColor,
-                      borderColor,
-                      textColor,
-                      mutedTextColor,
-                    ),
-                    const SizedBox(height: 24),
-
-                    // タグ
-                    Text(
-                      'タグ',
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        ...state.subcategoryTags.map(
-                          (tag) => Chip(
-                            label: Text(
-                              tag,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            backgroundColor: cardColor,
-                            side: BorderSide(color: borderColor),
-                            onDeleted: () =>
-                                controller.removeSubcategoryTag(tag),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 120,
-                          child: TextField(
-                            controller: _tagInputController,
-                            style: TextStyle(fontSize: 13, color: textColor),
-                            decoration: InputDecoration(
-                              hintText: 'タグを追加',
-                              hintStyle: TextStyle(color: mutedTextColor),
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 8,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(20),
-                                borderSide: BorderSide(color: borderColor),
-                              ),
-                            ),
-                            onSubmitted: (value) {
-                              if (value.isNotEmpty) {
-                                controller.addSubcategoryTag(value);
-                                _tagInputController.clear();
-                              }
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    // 公開範囲
-                    Text(
-                      '公開範囲',
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: borderColor),
-                      ),
-                      child: Column(
-                        children: ['public', 'friends', 'private'].map((
-                          visibility,
-                        ) {
-                          final isSelected = state.visibility == visibility;
-                          final isLast = visibility == 'private';
-                          return Column(
-                            children: [
-                              RadioListTile<String>(
-                                value: visibility,
-                                groupValue: state.visibility,
-                                onChanged: (value) {
-                                  if (value != null) {
-                                    controller.updateVisibility(value);
-                                  }
-                                },
-                                title: Row(
-                                  children: [
-                                    Icon(
-                                      _getVisibilityIcon(visibility),
-                                      size: 20,
-                                      color: isSelected
-                                          ? AppColors.primary
-                                          : mutedTextColor,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      _getVisibilityLabel(visibility),
-                                      style: TextStyle(
-                                        color: isSelected
-                                            ? textColor
-                                            : mutedTextColor,
-                                        fontWeight: isSelected
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                activeColor: AppColors.primary,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 0,
-                                ),
-                                dense: true,
-                              ),
-                              if (!isLast)
-                                Divider(height: 1, color: borderColor),
-                            ],
-                          );
-                        }).toList(),
-                      ),
-                    ),
                     const SizedBox(height: 48),
                   ],
                 ),
@@ -446,6 +248,7 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
 
   Widget _buildStarRating(double rating, AddReviewController controller) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(5, (index) {
         final starValue = index + 1;
         final isFilled = rating >= starValue;
@@ -471,118 +274,5 @@ class _AddReviewScreenState extends ConsumerState<AddReviewScreen> {
         );
       }),
     );
-  }
-
-  Widget _buildImageGrid(
-    AddReviewState state,
-    AddReviewController controller,
-    Color cardColor,
-    Color borderColor,
-    Color textColor,
-    Color mutedTextColor,
-  ) {
-    return GridView.count(
-      crossAxisCount: 3,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      children: [
-        ...state.images.map((imageData) {
-          return Stack(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  image: DecorationImage(
-                    image: kIsWeb
-                        ? MemoryImage(imageData.bytes!)
-                        : FileImage(imageData.file!) as ImageProvider,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              Positioned(
-                top: -6,
-                right: -6,
-                child: IconButton(
-                  onPressed: () => controller.removeImage(imageData.id!),
-                  icon: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: Colors.black87,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: const Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 14,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        }),
-        if (state.images.length < 3)
-          GestureDetector(
-            onTap: _showImageSourceDialog,
-            child: Container(
-              decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: borderColor,
-                  width: 2,
-                  style: BorderStyle.solid,
-                ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.add_photo_alternate,
-                    color: mutedTextColor,
-                    size: 32,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '追加',
-                    style: TextStyle(color: mutedTextColor, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  IconData _getVisibilityIcon(String visibility) {
-    switch (visibility) {
-      case 'public':
-        return Icons.public;
-      case 'friends':
-        return Icons.group;
-      case 'private':
-        return Icons.lock;
-      default:
-        return Icons.public;
-    }
-  }
-
-  String _getVisibilityLabel(String visibility) {
-    switch (visibility) {
-      case 'public':
-        return '全体に公開';
-      case 'friends':
-        return '親しい友達';
-      case 'private':
-        return '非公開';
-      default:
-        return '全体に公開';
-    }
   }
 }
