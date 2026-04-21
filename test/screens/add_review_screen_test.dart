@@ -1,33 +1,46 @@
+import 'package:favlog_app/core/providers/common_providers.dart';
 import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
+import 'package:favlog_app/data/repositories/supabase_product_repository.dart';
 import 'package:favlog_app/data/repositories/supabase_review_repository.dart';
 import 'package:favlog_app/domain/repositories/auth_repository.dart';
+import 'package:favlog_app/domain/repositories/product_repository.dart';
 import 'package:favlog_app/domain/repositories/review_repository.dart';
 import 'package:favlog_app/domain/models/product.dart';
+import 'package:favlog_app/core/services/image_compressor.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:favlog_app/presentation/screens/add_review_screen.dart';
 import 'package:mocktail/mocktail.dart';
 
-// Mock classes
+class MockProductRepository extends Mock implements ProductRepository {}
+
 class MockReviewRepository extends Mock implements ReviewRepository {}
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
+class MockImageCompressor extends Mock implements ImageCompressor {}
+
 void main() {
+  late MockProductRepository mockProductRepository;
   late MockReviewRepository mockReviewRepository;
   late MockAuthRepository mockAuthRepository;
+  late MockImageCompressor mockImageCompressor;
 
   setUp(() {
+    mockProductRepository = MockProductRepository();
     mockReviewRepository = MockReviewRepository();
     mockAuthRepository = MockAuthRepository();
+    mockImageCompressor = MockImageCompressor();
   });
 
   Widget createAddReviewScreen({Product? selectedProduct}) {
     return ProviderScope(
       overrides: [
+        productRepositoryProvider.overrideWithValue(mockProductRepository),
         reviewRepositoryProvider.overrideWithValue(mockReviewRepository),
         authRepositoryProvider.overrideWithValue(mockAuthRepository),
+        imageCompressorProvider.overrideWithValue(mockImageCompressor),
       ],
       child: MaterialApp(
         home: AddReviewScreen(selectedProduct: selectedProduct),
@@ -38,7 +51,6 @@ void main() {
   testWidgets('AddReviewScreen renders correctly with selected product', (
     WidgetTester tester,
   ) async {
-    // Create a test product
     final testProduct = Product(
       userId: 'test-user-id',
       name: 'テスト商品',
@@ -52,25 +64,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Check if header title is displayed
     expect(find.text('レビューを書く'), findsOneWidget);
-
-    // Check if product name is displayed
     expect(find.text('テスト商品'), findsOneWidget);
-
-    // Check if rating section is present
     expect(find.text('総合評価'), findsOneWidget);
 
-    // Check if rating stars are present
     // デフォルトの評価が3.5なので、3つのfilled星、1つのhalf星、1つのborder星
     expect(find.byIcon(Icons.star), findsNWidgets(3));
     expect(find.byIcon(Icons.star_half), findsNWidgets(1));
     expect(find.byIcon(Icons.star_border), findsNWidgets(1));
 
-    // Check if review text section is present
     expect(find.textContaining('レビュー詳細'), findsOneWidget);
-
-    // Check if submit button is present
+    expect(find.text('写真'), findsOneWidget);
     expect(find.text('投稿'), findsOneWidget);
   });
 
@@ -80,13 +84,8 @@ void main() {
     await tester.pumpWidget(createAddReviewScreen(selectedProduct: null));
     await tester.pumpAndSettle();
 
-    // レビュー投稿画面はレンダリングされるべき
     expect(find.text('レビューを書く'), findsOneWidget);
-
-    // 商品情報が表示されないことを確認（selectedProductがnullの場合）
-    // UIは表示されるが、商品名は表示されない
     expect(find.text('総合評価'), findsOneWidget);
-    // expect(find.text('レビュー本文'), findsOneWidget); // Label removed
     expect(find.text('投稿'), findsOneWidget);
   });
 }
