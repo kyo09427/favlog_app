@@ -1,7 +1,9 @@
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../domain/models/review.dart';
 import '../../domain/models/product.dart';
 import '../providers/edit_review_controller.dart';
@@ -37,6 +39,38 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
     super.dispose();
   }
 
+  Future<void> _showImageSourceDialog() async {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('ギャラリーから選択'),
+              onTap: () {
+                context.pop();
+                ref
+                    .read(editReviewControllerProvider(widget.review).notifier)
+                    .addImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera),
+              title: const Text('カメラで撮影'),
+              onTap: () {
+                context.pop();
+                ref
+                    .read(editReviewControllerProvider(widget.review).notifier)
+                    .addImage(ImageSource.camera);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _handleSubmit() async {
     final controller = ref.read(
       editReviewControllerProvider(widget.review).notifier,
@@ -65,6 +99,7 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
     final backgroundColor = isDark
         ? AppColors.backgroundDark
         : AppColors.backgroundLight;
+    final cardColor = isDark ? AppColors.cardDark : Colors.white;
     final textColor = isDark ? Colors.white : AppColors.textLight;
     final mutedTextColor = isDark
         ? AppColors.subtextDark
@@ -175,6 +210,25 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
                     _buildStarRating(state.rating, controller),
                     const SizedBox(height: 32),
 
+                    // 写真を追加
+                    Text(
+                      '写真を追加',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildImageGrid(
+                      state,
+                      controller,
+                      cardColor,
+                      borderColor,
+                      mutedTextColor,
+                    ),
+                    const SizedBox(height: 32),
+
                     // レビュー本文
                     Text(
                       'レビュー本文',
@@ -269,6 +323,91 @@ class _EditReviewScreenState extends ConsumerState<EditReviewScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildImageGrid(
+    EditReviewState state,
+    EditReviewController controller,
+    Color cardColor,
+    Color borderColor,
+    Color mutedTextColor,
+  ) {
+    return GridView.count(
+      crossAxisCount: 3,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      children: [
+        ...state.images.map((imageData) {
+          return Stack(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  image: DecorationImage(
+                    image: imageData.url != null
+                        ? CachedNetworkImageProvider(imageData.url!)
+                              as ImageProvider
+                        : (kIsWeb
+                              ? MemoryImage(imageData.bytes!)
+                              : FileImage(imageData.file!) as ImageProvider),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: -6,
+                right: -6,
+                child: IconButton(
+                  onPressed: () => controller.removeImage(imageData.id!),
+                  icon: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Colors.black87,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }),
+        if (state.images.length < 3)
+          GestureDetector(
+            onTap: _showImageSourceDialog,
+            child: Container(
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: borderColor,
+                  width: 2,
+                  style: BorderStyle.solid,
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add_photo_alternate, color: mutedTextColor, size: 32),
+                  const SizedBox(height: 4),
+                  Text(
+                    '追加',
+                    style: TextStyle(color: mutedTextColor, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 
