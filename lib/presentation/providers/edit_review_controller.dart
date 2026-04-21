@@ -107,8 +107,8 @@ class EditReviewController extends StateNotifier<EditReviewState> {
   Future<void> addImage(ImageSource source) async {
     if (_isDisposed) return;
 
-    if (state.images.length >= 3) {
-      state = state.copyWith(error: '画像は最大3枚までです');
+    if (state.images.length >= AppLimits.reviewImageMaxCount) {
+      state = state.copyWith(error: '画像は最大${AppLimits.reviewImageMaxCount}枚までです');
       return;
     }
 
