@@ -1,8 +1,8 @@
 {
-  "version": "2.8.4",
-  "versionCode": 26042138,
-  "downloadUrl": "https://github.com/kyo09427/favlog_app/releases/download/v2.8.4-26042138/app-release.apk",
-  "releaseNotes": "- chore: bump version counter [skip ci]\n- Merge pull request #48 from kyo09427/claude/restore-review-image-upload\n- edit_review_controller の画像枚数制限を AppLimits.reviewImageMaxCount に統一\n- レビュー投稿・編集画面に写真添付機能を復活\n- chore: bump version counter [skip ci]\n- Merge pull request #47 from kyo09427/claude/fix-review-input-fields-7Bec7\n- add_review_screen_test を削除したUIに合わせて更新\n- add_review_screen から不要な lint 抑制アノテーションを削除\n- レビュー投稿・編集画面から写真・タグ・公開範囲の入力欄を削除\n- chore: bump version counter [skip ci]",
+  "version": "2.8.5",
+  "versionCode": 26042739,
+  "downloadUrl": "https://github.com/kyo09427/favlog_app/releases/download/v2.8.5-26042739/app-release.apk",
+  "releaseNotes": "- chore: bump version counter [skip ci]\n- chore: scriptsディレクトリをgitignoreに追加\n- fix: OAuthユーザーのメール認証チェックによるリダイレクトループを修正\n- feat: Discord認証をLogto OAuth認証に移行 (v2.9.0)\n- chore: bump version counter [skip ci]\n- Merge pull request #48 from kyo09427/claude/restore-review-image-upload\n- edit_review_controller の画像枚数制限を AppLimits.reviewImageMaxCount に統一\n- レビュー投稿・編集画面に写真添付機能を復活\n- chore: bump version counter [skip ci]\n- Merge pull request #47 from kyo09427/claude/fix-review-input-fields-7Bec7",
   "minSupportedVersion": "0.0.1",
   "forceUpdate": false
 }
