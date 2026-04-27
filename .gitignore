@@ -54,3 +54,5 @@ app.*.map.json
 
 # Keystore file
 /android/key.properties
+# 移行スクリプト（認証情報を含むため)
+scripts/
