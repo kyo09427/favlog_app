@@ -19,8 +19,6 @@ abstract class AuthRepository {
   // 新規追加: メールアドレス変更関連
   Future<void> updateEmail(String newEmail);
 
-  // Discord ログイン関連
-  Future<void> signInWithDiscord();
-  Future<bool> verifyDiscordGuildMembership(String providerToken);
-  String? getProviderToken();
+  // Logto ログイン
+  Future<void> signInWithLogto();
 }

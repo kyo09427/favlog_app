@@ -22,7 +22,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _isSignUp = false; // ログインと新規登録を切り替えるフラグ
-  bool _discordFlowPending = false; // Discord OAuth フロー進行中フラグ
+  bool _logtoFlowPending = false; // Logto OAuth フロー進行中フラグ
 
   @override
   void initState() {
@@ -33,32 +33,32 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // ブラウザからアプリに戻ったとき、OAuth が完了していなければローディングをリセット
-    if (state == AppLifecycleState.resumed && _discordFlowPending && mounted) {
+    if (state == AppLifecycleState.resumed && _logtoFlowPending && mounted) {
       setState(() {
         _isLoading = false;
-        _discordFlowPending = false;
+        _logtoFlowPending = false;
       });
     }
   }
 
-  Future<void> _signInWithDiscord() async {
-    if (_discordFlowPending) return; // 二重タップ防止
+  Future<void> _signInWithLogto() async {
+    if (_logtoFlowPending) return; // 二重タップ防止
     setState(() {
       _isLoading = true;
-      _discordFlowPending = true;
+      _logtoFlowPending = true;
     });
     try {
       final authRepository = ref.read(authRepositoryProvider);
-      await authRepository.signInWithDiscord();
+      await authRepository.signInWithLogto();
       // ブラウザが開いた後はローディングを維持したまま待機。
       // アプリ復帰時（didChangeAppLifecycleState）にリセットされる。
     } catch (error) {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _discordFlowPending = false;
+          _logtoFlowPending = false;
         });
-        await ErrorDialog.show(context, 'Discord ログインに失敗しました: $error');
+        await ErrorDialog.show(context, 'Logto ログインに失敗しました: $error');
       }
     }
   }
@@ -556,22 +556,19 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
 
                   const SizedBox(height: 24),
 
-                  // Discord ログインボタン
+                  // Logto ログインボタン
                   SizedBox(
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton.icon(
-                      onPressed: _isLoading ? null : _signInWithDiscord,
-                      icon: Image.asset(
-                        'assets/icon/discord_icon.png',
-                        height: 24,
-                      ),
-                      label: const Text('Discordでログイン'),
+                      onPressed: _isLoading ? null : _signInWithLogto,
+                      icon: const Icon(Icons.login, size: 22),
+                      label: const Text('Logtoでログイン'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF5865F2),
+                        backgroundColor: const Color(0xFF7958FF),
                         foregroundColor: Colors.white,
                         disabledBackgroundColor: const Color(
-                          0xFF5865F2,
+                          0xFF7958FF,
                         ).withValues(alpha: 0.5),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),

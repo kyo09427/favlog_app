@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -83,51 +82,13 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> signInWithDiscord() async {
+  Future<void> signInWithLogto() async {
+    // OAuthProvider enum に custom がないため queryParams で provider を上書き
+    // gotrue_client の _getUrlForProvider は urlParams.addAll(queryParams) で上書きされる
     await _supabaseClient.auth.signInWithOAuth(
       OAuthProvider.discord,
       redirectTo: Constants.getRedirectUrl(),
-      scopes: 'identify email guilds',
-    );
-  }
-
-  @override
-  String? getProviderToken() {
-    return _supabaseClient.auth.currentSession?.providerToken;
-  }
-
-  @override
-  Future<bool> verifyDiscordGuildMembership(String providerToken) async {
-    final response = await _supabaseClient.functions.invoke(
-      'verify-discord-guild',
-      body: {'provider_token': providerToken},
-    );
-
-    // response.data は String / Map / null の可能性があるため安全に変換
-    final Map<String, dynamic> data;
-    if (response.data is String) {
-      data = jsonDecode(response.data as String) as Map<String, dynamic>;
-    } else if (response.data is Map) {
-      data = Map<String, dynamic>.from(response.data as Map);
-    } else {
-      data = {};
-    }
-
-    // 200: 検証成功
-    if (response.status == 200) {
-      return data['verified'] == true;
-    }
-
-    // 403: ギルド未参加（正常な検証結果）
-    if (response.status == 403) {
-      return false;
-    }
-
-    // それ以外 (Discord API障害・内部エラー等) は例外をスロー。
-    // 呼び出し側のキャッチブロックで一時エラーとして扱い、強制ログアウトしない。
-    throw Exception(
-      'Guild verification failed with status ${response.status}: '
-      '${data['error'] ?? 'Unknown error'}',
+      queryParams: {'provider': 'custom:logto'},
     );
   }
 }

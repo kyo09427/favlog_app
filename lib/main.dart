@@ -11,7 +11,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:favlog_app/core/router/app_router.dart';
 import 'package:favlog_app/presentation/providers/theme_provider.dart';
 import 'package:favlog_app/services/fcm_service.dart';
-import 'package:favlog_app/data/repositories/supabase_auth_repository.dart';
 import 'package:favlog_app/core/config/constants.dart';
 
 Future<void> main() async {
@@ -155,8 +154,6 @@ class _MyAppState extends ConsumerState<MyApp> {
       if (event == AuthChangeEvent.passwordRecovery) {
         ref.read(goRouterProvider).go('/reset-password');
       } else if (event == AuthChangeEvent.signedIn) {
-        // Discord ログインの場合、ギルドメンバーシップを検証
-        _verifyDiscordMembershipIfNeeded();
         // ログイン時にFCMトークンを取得・保存
         if (!kIsWeb) {
           final fcmService = ref.read(fcmServiceProvider);
@@ -187,54 +184,6 @@ class _MyAppState extends ConsumerState<MyApp> {
         }
       }
     });
-  }
-
-  Future<void> _verifyDiscordMembershipIfNeeded() async {
-    final session = Supabase.instance.client.auth.currentSession;
-    if (session == null) return;
-
-    // providerToken が存在する場合のみ Discord OAuth セッションと判断する。
-    // メール/パスワードでログインした場合は providerToken が常に null となるため、
-    // Discord ギルドメンバーシップの検証をスキップする。
-    final providerToken = session.providerToken;
-    if (providerToken == null) return;
-
-    final user = session.user;
-    final isDiscord =
-        user.appMetadata['provider'] == 'discord' ||
-        (user.appMetadata['providers'] as List?)?.contains('discord') == true;
-    if (!isDiscord) return;
-
-    try {
-      final authRepo = ref.read(authRepositoryProvider);
-      final isVerified = await authRepo.verifyDiscordGuildMembership(
-        providerToken,
-      );
-      if (!isVerified) {
-        await Supabase.instance.client.auth.signOut();
-        if (mounted) {
-          final ctx = ref
-              .read(goRouterProvider)
-              .routerDelegate
-              .navigatorKey
-              .currentContext;
-          if (ctx != null && ctx.mounted) {
-            ScaffoldMessenger.of(ctx).showSnackBar(
-              const SnackBar(
-                content: Text('指定された Discord サーバーに参加していないため、ログインできません。'),
-                backgroundColor: Colors.red,
-                duration: Duration(seconds: 5),
-              ),
-            );
-          }
-          ref.read(goRouterProvider).go('/auth');
-        }
-      }
-    } catch (e) {
-      // 一時的なエラー（Discord API 障害・ネットワーク障害等）はログのみ。
-      // 正規ユーザーの強制ログアウトを防ぐため、この場合はログインを許可する。
-      debugPrint('Discord guild verification error: $e');
-    }
   }
 
   /// FCMサービスの初期化
