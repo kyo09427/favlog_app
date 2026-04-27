@@ -109,7 +109,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final user = session.user;
 
       // ②-a メール認証が済んでいない場合
-      final emailVerified = user.emailConfirmedAt != null;
+      // OAuthプロバイダー（Logtoなど）経由のユーザーはメール認証不要
+      final provider = user.appMetadata['provider'] as String?;
+      final isOAuthUser = provider != null && provider != 'email';
+      final emailVerified = user.emailConfirmedAt != null || isOAuthUser;
       if (!emailVerified) {
         // メール認証ページ以外なら、メール認証ページへ
         return (currentLocation == '/verify-email' || isPublic)
